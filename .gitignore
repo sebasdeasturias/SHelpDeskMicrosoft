@@ -2,6 +2,7 @@
 .env
 .env.*
 env/
+.yml
 
 # Entornos virtuales de Python
 venv/
