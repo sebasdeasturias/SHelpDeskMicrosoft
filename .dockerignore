@@ -1,0 +1,31 @@
+# Archivos y carpetas de Git
+.git
+.gitignore
+
+# Archivos de entorno y secretos
+.env
+.env.*
+env/
+
+# Entornos virtuales / dependencias locales
+venv/
+.venv/
+node_modules/
+
+# Bases de datos y datos locales
+basededatos/
+database/
+*.sqlite
+*.sqlite3
+*.db
+*.sql
+
+# Documentación y pruebas (inútiles en la imagen final)
+README.md
+Dockerfile*
+docker-compose*
+.vscode/
+.idea/
+*.log
+comando
+comando.txt

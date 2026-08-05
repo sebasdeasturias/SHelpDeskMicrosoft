@@ -1,0 +1,37 @@
+# Archivos de entorno y variables secretas
+.env
+.env.*
+env/
+
+# Entornos virtuales de Python
+venv/
+.venv/
+
+# Base de datos y datos locales
+basededatos/
+database/
+db_logic.sql
+*.sql
+
+# --- Python / Bytecode ---
+__pycache__/
+*.py[cod]
+*$py.class
+
+# --- Bases de datos locales / Sqlite ---
+*.sqlite
+*.sqlite3
+*.db
+
+# --- Archivos del Sistema / Editores ---
+.DS_Store
+thumbs.db
+.vscode/
+.idea/
+
+# --- Logs y Archivos Temporales ---
+*.log
+*.tmp
+comando
+comando.txt
+*.txt
