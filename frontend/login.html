@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inicio de Sesión - IT</title>
+    <link rel="stylesheet" href="styles/login.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Switch de Modo Diurno/Nocturno -->
+    <div class="theme-switch-wrapper">
+        <label class="theme-switch" for="checkbox">
+            <input type="checkbox" id="checkbox" />
+            <div class="slider round">
+                <i class="fas fa-sun sun-icon"></i>
+                <i class="fas fa-moon moon-icon"></i>
+            </div>
+        </label>
+        <span class="theme-label">Modo Nocturno</span>
+    </div>
+
+    <div class="background">
+        <div class="grid-overlay"></div>
+        <div class="stars-overlay"></div>
+        
+        <div class="ui-container">
+            <!-- Badges Flotantes Izquierda -->
+            <div class="badges-col">
+                <div class="badge green">
+                    <i class="fas fa-shield-alt"></i> Sistemas en línea
+                </div>
+                <div class="badge blue">
+                    <i class="fas fa-check-circle"></i> SOC 2
+                </div>
+                <div class="badge silver">
+                    <i class="fas fa-clock"></i> Soporte 24/7 
+                </div>
+            </div>
+        <div class="logoHelpdesk">
+            <img class="logohelpdesk" src="logohelpdesk.png">        
+        </div>
+
+            <!-- Panel central de cristal (Glassmorphism) -->
+            <div class="login-panel">
+                <h1>HELPDESK</h1>
+                <h2>Manejo de incidentes TI</h2>
+
+                <form id="loginForm" class="login-form">
+                    <div class="input-group">
+                        <i class="fas fa-envelope input-icon"></i>
+                        <input type="email" id="email" name="email" placeholder="juan.perez@empresa.com" required autocomplete="email">
+                    </div>
+
+                    <div class="input-group">
+                        <i class="fas fa-lock input-icon"></i>
+                        <input type="password" id="password" name="password" placeholder="Enter your password" required autocomplete="current-password">
+                        <button type="button" class="show-pwd" id="togglePassword">
+                            <i class="fas fa-eye"></i> Show
+                        </button>
+                    </div>
+
+                    <button type="submit" class="login-btn" id="btnLogin">
+                        Ingresar
+                    </button>
+
+                    <div id="errorMessage" class="error-message" style="display: none;">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span id="errorText"></span>
+                    </div>
+
+                    <div id="loadingMessage" class="loading-message" style="display: none;">
+                        <i class="fas fa-spinner fa-spin"></i> Autenticando...
+                    </div>
+
+                    <div class="card-footer">
+                        <label class="remember-me">
+                            <input type="checkbox" name="remember" id="remember">
+                            <span>Remember me</span>
+                        </label>
+                        <a href="#" class="forgot-pwd">¿Ha olvidado la contraseña?. Presione aquí</a>
+                    </div>
+                </form>
+
+                <div class="register-link">
+                    <p>¿Usuario nuevo? <a href="register.html">Regístrate aquí</a></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="global-footer">
+            <i class="fas fa-leaf"></i> Sistema HelpDesk V1.0
+        </div>
+    </div>
+
+    <script src="js/login.js"></script>
+    <script src="js/theme-toggle.js"></script>
+</body>
+</html>
