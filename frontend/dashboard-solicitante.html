@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HelpDesk IT - Mi Dashboard</title>
+    <link rel="stylesheet" href="styles/dashboard-solicitante.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Switch de Modo Diurno/Nocturno -->
+    <div class="theme-switch-wrapper">
+        <label class="theme-switch" for="checkbox">
+            <input type="checkbox" id="checkbox" />
+            <div class="slider round">
+                <i class="fas fa-sun sun-icon"></i>
+                <i class="fas fa-moon moon-icon"></i>
+            </div>
+        </label>
+        <span class="theme-label">Modo Nocturno</span>
+    </div>
+
+    <div class="background">
+        <div class="grid-overlay"></div>
+        <div class="stars-overlay"></div>
+        
+        <div class="main-container">
+            <!-- Topbar -->
+            <header class="topbar">
+                <div class="logo-section">
+                    <i class="fas fa-headset logo-icon"></i>
+                    <h1>MI DASHBOARD</h1>
+                </div>
+                <div class="user-section">
+                    <span id="userName">Cargando...</span>
+                    <button id="logoutBtn" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</button>
+                </div>
+            </header>
+
+            <!-- Contenido Principal -->
+            <main class="dashboard-content">
+                <div class="welcome-banner">
+                    <h2>¡Hola, <span id="welcomeName">Usuario</span>! 👋</h2>
+                    <p>¿En qué podemos ayudarte hoy? Gestiona tus solicitudes de soporte desde aquí.</p>
+                </div>
+
+                <!-- Acciones Principales -->
+                <div class="action-cards">
+                    <a href="formulario-ticket.html" class="action-card primary">
+                        <div class="card-icon"><i class="fas fa-plus-circle"></i></div>
+                        <div class="card-text">
+                            <h3>Crear Nuevo Ticket</h3>
+                            <p>Reporta un incidente o solicita soporte técnico.</p>
+        </div>
+                        <div class="card-arrow"><i class="fas fa-arrow-right"></i></div>
+                    </a>
+                    
+                    <div class="action-card secondary" onclick="document.getElementById('historySection').scrollIntoView({behavior: 'smooth'})">
+                        <div class="card-icon"><i class="fas fa-history"></i></div>
+                        <div class="card-text">
+                            <h3>Ver Historial</h3>
+                            <p>Consulta el estado de tus solicitudes anteriores.</p>
+                        </div>
+                        <div class="card-arrow"><i class="fas fa-arrow-down"></i></div>
+                    </div>
+                </div>
+
+                <!-- Sección de Historial -->
+                <section id="historySection" class="history-section">
+                    <div class="section-header">
+                        <h3><i class="fas fa-list-ul"></i> Mis Tickets Recientes</h3>
+                        <button id="refreshBtn" class="refresh-btn"><i class="fas fa-sync-alt"></i> Actualizar</button>
+                    </div>
+                    
+                    <div id="loadingTickets" class="loading-state">
+                        <i class="fas fa-spinner fa-spin"></i> Cargando tus tickets...
+                    </div>
+
+                    <div id="ticketsList" class="tickets-list">
+                        <!-- Los tickets se inyectarán aquí con JS -->
+                    </div>
+                    
+                    <div id="emptyState" class="empty-state" style="display: none;">
+                        <i class="fas fa-inbox"></i>
+                        <p>No tienes tickets registrados aún.</p>
+                        <a href="formulario-ticket.html" class="empty-link">¡Crea tu primer ticket ahora!</a>
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <div class="global-footer">
+            <i class="fas fa-leaf"></i> Sistema HelpDesk V1.0
+        </div>
+    </div>
+
+    <script src="js/dashboard-solicitante.js"></script>
+    <script src="js/theme-toggle.js"></script>
+</body>
+</html>
