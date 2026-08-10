@@ -143,13 +143,37 @@ function showSuccessMessage(message) {
 }
 
 // Verificar si hay token guardado al cargar la página
-window.addEventListener('load', () => {
+window.addEventListener('load', async () => {
     const token = localStorage.getItem('token') || sessionStorage.getItem('token');
     if (token) {
-        // El usuario ya está logueado, redirigir
-        const user = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user'));
-        if (user && user.rol) {
-            window.location.href = getRedirectUrl(user.rol);
+        try {
+            // Verificar que el token sea válido antes de redirigir
+            const response = await fetch(`${API_BASE_URL}/auth/me`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if (response.ok) {
+                const user = await response.json();
+                // Guardar usuario actualizado en localStorage
+                localStorage.setItem('user', JSON.stringify(user));
+                
+                // Redirigir según rol
+                const redirectUrl = getRedirectUrl(user.rol);
+                window.location.href = redirectUrl;
+            } else {
+                // Token inválido, limpiar
+                localStorage.removeItem('token');
+                sessionStorage.removeItem('token');
+                localStorage.removeItem('user');
+                sessionStorage.removeItem('user');
+            }
+        } catch (error) {
+            console.warn('Error verificando token:', error);
+            // Si hay error, limpiar y quedarse en login
+            localStorage.removeItem('token');
+            sessionStorage.removeItem('token');
+            localStorage.removeItem('user');
+            sessionStorage.removeItem('user');
         }
     }
     
