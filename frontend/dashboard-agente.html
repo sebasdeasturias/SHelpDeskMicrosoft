@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HelpDesk IT - Tablero Agente</title>
+    <link rel="stylesheet" href="styles/dashboard-agente.css">
+</head>
+<body>
+    <div class="background"></div>
+    <div class="grid-overlay"></div>
+    <div class="stars-overlay"></div>
+
+    <!-- Topbar -->
+    <div class="topbar">
+        <h1><span class="logo-icon">🐧</span> Tablero Kanban IT</h1>
+        <div class="topbar-right">
+            <div class="theme-switch-wrapper">
+                <span class="theme-icon">☀️</span>
+                <label class="theme-switch">
+                    <input type="checkbox" id="themeCheck">
+                    <span class="slider"></span>
+                </label>
+                <span class="theme-icon">🌙</span>
+            </div>
+            <button class="logout-btn" id="logoutBtn">Cerrar Sesión</button>
+        </div>
+    </div>
+
+    <!-- Kanban Board -->
+    <div class="kanban-board">
+        <div class="kanban-column column-todo">
+            <div class="column-header">
+                <h2>📋 Por Hacer</h2>
+                <span class="count-badge" id="count-todo">0</span>
+            </div>
+            <div class="column-body" id="col-todo"></div>
+        </div>
+        <div class="kanban-column column-progress">
+            <div class="column-header">
+                <h2>🔄 En Progreso</h2>
+                <span class="count-badge" id="count-progress">0</span>
+            </div>
+            <div class="column-body" id="col-progress"></div>
+        </div>
+        <div class="kanban-column column-review">
+            <div class="column-header">
+                <h2>🔍 En Revisión</h2>
+                <span class="count-badge" id="count-review">0</span>
+            </div>
+            <div class="column-body" id="col-review"></div>
+        </div>
+        <div class="kanban-column column-done">
+            <div class="column-header">
+                <h2>✅ Completados</h2>
+                <span class="count-badge" id="count-done">0</span>
+            </div>
+            <div class="column-body" id="col-done"></div>
+        </div>
+    </div>
+    
+
+    <!-- Chat FAB -->
+    <button class="chat-fab" id="chatFab">
+        <span class="fab-icon">💬</span>
+    </button>
+
+    <!-- Chat Panel (flotante) -->
+    <div class="chat-panel" id="chatPanel">
+        <div class="chat-header">
+            <h3>💬 Chat Soporte IA</h3>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <button class="chat-action-btn attach-btn" id="attachBtn" title="Adjuntar ticket">📎</button>
+                <button class="chat-close" id="chatClose">✕</button>
+            </div>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+            <div class="chat-msg bot">
+                ¡Hola! Soy el asistente de IA del HelpDesk. Puedo ayudarte a resolver tickets, buscar soluciones o responder preguntas técnicas. ¿En qué te ayudo? 🌿
+            </div>
+        </div>
+        <div class="chat-input-area">
+            <textarea id="chatInput" rows="1" placeholder="Escribe tu mensaje..."></textarea>
+            <button class="chat-send-btn" id="chatSendBtn">➤</button>
+        </div>
+    </div>
+
+    <!-- Card Selector Overlay -->
+    <div class="card-selector-overlay" id="cardSelectorOverlay">
+        <div class="card-selector">
+            <div class="card-selector-header">
+                <h3>📎 Adjuntar Ticket</h3>
+                <button class="card-selector-close" id="cardSelectorClose">✕</button>
+            </div>
+            <div class="card-selector-search">
+                <input type="text" id="cardSelectorSearch" placeholder="Buscar ticket...">
+            </div>
+            <div class="card-selector-list" id="cardSelectorList"></div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="global-footer">Sistema HelpDesk V1.0</div>
+
+    <script src="js/dashboard-agente.js"></script>
+    <script src="js/theme-toggle.js"></script>
+</body>
+</html>
