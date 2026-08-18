@@ -1,5 +1,4 @@
 :root {
-    /* Variables Modo Diurno */
     --glass-bg: rgba(255, 255, 255, 0.25);
     --glass-border: rgba(255, 255, 255, 0.6);
     --btn-top: #8de3df;
@@ -46,9 +45,13 @@ body.night-mode {
     --link-hover: #aaccff;
 }
 
-body, html {
+* {
     margin: 0;
     padding: 0;
+    box-sizing: border-box;
+}
+
+body, html {
     height: 100%;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     overflow: hidden;
@@ -107,42 +110,18 @@ body.night-mode .stars-overlay {
     opacity: 1;
 }
 
-/* Logo Helpdesk */
-.logoHelpdesk {
-    flex: 0 0 auto;
-    width: clamp(220px, 28vw, 420px);
-    aspect-ratio: 600 / 430;
-    border: 2px solid rgba(255, 255, 255, 0.5);
-    border-radius: 12px;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
-    overflow: hidden;
-}
-
-.logoHelpdesk img {
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: center;
-}
-
 /* Contenedor principal */
 .ui-container {
     position: relative;
     z-index: 2;
     display: flex;
     align-items: center;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: clamp(20px, 3vw, 40px);
-    width: 100%;
-    max-width: 1100px;
-    padding: 60px 20px;
+    gap: 40px;
 }
 
 /* Panel central de cristal */
-.login-panel {
-    width: 420px;
+.form-panel {
+    width: 520px;
     padding: 40px 30px;
     background: linear-gradient(135deg, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.1) 100%);
     border: 2px solid var(--glass-border);
@@ -155,9 +134,11 @@ body.night-mode .stars-overlay {
     text-align: center;
     position: relative;
     transition: all 0.5s ease;
+    max-height: 90vh;
+    overflow-y: auto;
 }
 
-body.night-mode .login-panel {
+body.night-mode .form-panel {
     background: linear-gradient(135deg, rgba(30,30,50,0.6) 0%, rgba(20,20,40,0.3) 100%);
     box-shadow: 
         0 15px 35px rgba(0, 0, 0, 0.5),
@@ -165,7 +146,7 @@ body.night-mode .login-panel {
 }
 
 /* Títulos */
-.login-panel h1 {
+.form-panel h1 {
     margin: 0;
     font-size: 2.8rem;
     color: #ffffff;
@@ -176,12 +157,38 @@ body.night-mode .login-panel {
         0 0 15px rgba(255,255,255,0.9);
 }
 
-.login-panel h2 {
-    margin: 5px 0 30px 0;
+.form-panel h2 {
+    margin: 5px 0 20px 0;
     font-size: 1rem;
     color: #ffffff;
     font-weight: 500;
     text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+}
+
+/* Información del usuario */
+.user-info {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    margin-bottom: 20px;
+    font-size: 0.95rem;
+    color: var(--text-dark);
+    font-weight: 600;
+}
+
+.user-info i {
+    font-size: 1.5rem;
+    color: var(--icon-color);
+}
+
+.user-area {
+    font-size: 0.8rem;
+    color: var(--text-placeholder);
+    font-weight: 400;
 }
 
 /* Inputs y grupos */
@@ -192,7 +199,9 @@ body.night-mode .login-panel {
     align-items: center;
 }
 
-.input-group input {
+.input-group input,
+.input-group select,
+.input-group textarea {
     width: 100%;
     padding: 15px 15px 15px 50px;
     font-size: 1rem;
@@ -204,26 +213,46 @@ body.night-mode .login-panel {
     outline: none;
     box-sizing: border-box;
     transition: all 0.3s ease;
+    font-family: inherit;
 }
 
-body.night-mode .input-group input {
+body.night-mode .input-group input,
+body.night-mode .input-group select,
+body.night-mode .input-group textarea {
     background: linear-gradient(to bottom, rgba(40,40,60,0.6), rgba(30,30,50,0.8));
     border: 1px solid rgba(100, 100, 150, 0.5);
     color: var(--text-dark);
 }
 
-.input-group input::placeholder {
+.input-group input::placeholder,
+.input-group textarea::placeholder {
     color: var(--text-placeholder);
     font-weight: 500;
 }
 
-.input-group input:focus {
+.input-group input:focus,
+.input-group select:focus,
+.input-group textarea:focus {
     box-shadow: inset 0 3px 6px rgba(0,0,0,0.2), 0 0 10px rgba(255,255,255,0.8);
 }
 
-body.night-mode .input-group input:focus {
+body.night-mode .input-group input:focus,
+body.night-mode .input-group select:focus,
+body.night-mode .input-group textarea:focus {
     box-shadow: inset 0 3px 6px rgba(0,0,0,0.4), 0 0 10px rgba(100,100,200,0.5);
     border-color: rgba(150, 150, 255, 0.7);
+}
+
+.textarea-group textarea {
+    border-radius: 20px;
+    resize: vertical;
+    min-height: 120px;
+}
+
+.input-group select {
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
 }
 
 /* Iconos de los inputs */
@@ -240,40 +269,8 @@ body.night-mode .input-icon {
     text-shadow: 1px 1px 0px rgba(0,0,0,0.5);
 }
 
-/* Botón de mostrar contraseña */
-.show-pwd {
-    position: absolute;
-    right: 15px;
-    background: rgba(255,255,255,0.5);
-    border: 1px solid rgba(255,255,255,0.8);
-    padding: 3px 10px;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    color: var(--text-dark);
-    cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    transition: background 0.2s;
-}
-
-body.night-mode .show-pwd {
-    background: rgba(60,60,90,0.6);
-    border: 1px solid rgba(100,100,150,0.6);
-    color: var(--text-dark);
-}
-
-.show-pwd:hover {
-    background: rgba(255,255,255,0.8);
-}
-
-body.night-mode .show-pwd:hover {
-    background: rgba(80,80,120,0.8);
-}
-
 /* Botón principal (Glossy) */
-.login-btn {
+.submit-btn {
     width: 100%;
     padding: 15px;
     margin-top: 10px;
@@ -292,94 +289,49 @@ body.night-mode .show-pwd:hover {
     transition: transform 0.1s, box-shadow 0.1s, background 0.5s ease;
 }
 
-.login-btn:hover {
+.submit-btn:hover {
     filter: brightness(1.1);
 }
 
-.login-btn:active {
+.submit-btn:active {
     transform: translateY(2px);
     box-shadow: 0 2px 5px rgba(0,0,0,0.3), inset 0 4px 10px rgba(0,0,0,0.2);
 }
 
-.login-btn:disabled {
+.submit-btn:disabled {
     opacity: 0.7;
     cursor: not-allowed;
     transform: none;
 }
 
 /* Footer de la tarjeta */
-.card-footer {
+.form-footer {
     margin-top: 25px;
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
     padding: 0 10px;
     font-size: 0.95rem;
 }
 
-.remember-me {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: var(--footer-text);
-    font-weight: bold;
-    text-shadow: 0 1px 2px rgba(255,255,255,0.8);
-    cursor: pointer;
-}
-
-body.night-mode .remember-me {
-    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-}
-
-/* Checkbox personalizado */
-.remember-me input[type="checkbox"] {
-    appearance: none;
-    -webkit-appearance: none;
-    width: 24px;
-    height: 24px;
-    background: linear-gradient(to bottom, #fff, #cde6f5);
-    border: 1px solid #7cb7d4;
-    border-radius: 50%;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2), 0 2px 4px rgba(0,0,0,0.1);
-    cursor: pointer;
-    position: relative;
-}
-
-body.night-mode .remember-me input[type="checkbox"] {
-    background: linear-gradient(to bottom, #2a2a4a, #1a1a3a);
-    border: 1px solid #4a4a7a;
-}
-
-.remember-me input[type="checkbox"]:checked::after {
-    content: '✔';
-    position: absolute;
-    color: #0076a3;
-    font-size: 16px;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    text-shadow: 0 1px 1px rgba(255,255,255,0.8);
-}
-
-body.night-mode .remember-me input[type="checkbox"]:checked::after {
-    color: #88aaff;
-    text-shadow: 0 1px 1px rgba(0,0,0,0.8);
-}
-
-.forgot-pwd {
+.back-link {
     color: var(--link-color);
-    text-decoration: underline;
+    text-decoration: none;
     font-weight: bold;
     text-shadow: 0 1px 2px rgba(255,255,255,0.8);
     transition: color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
-body.night-mode .forgot-pwd {
+body.night-mode .back-link {
     text-shadow: 0 1px 2px rgba(0,0,0,0.5);
 }
 
-.forgot-pwd:hover {
+.back-link:hover {
     color: var(--link-hover);
+    text-decoration: underline;
 }
 
 /* Badges Flotantes Laterales */
@@ -449,9 +401,7 @@ body.night-mode .badge.silver {
     font-size: 1.1rem;
 }
 
-/* ==========================================
-   ESTILOS ADICIONALES PARA COMPATIBILIDAD JS
-   ========================================== */
+/* Mensajes de estado */
 .error-message {
     margin-top: 15px;
     padding: 10px;
@@ -473,7 +423,7 @@ body.night-mode .error-message {
     text-shadow: 0 1px 1px rgba(0,0,0,0.8);
 }
 
-.loading-message {
+.success-message {
     margin-top: 15px;
     padding: 10px;
     background: rgba(100, 255, 100, 0.3);
@@ -489,10 +439,33 @@ body.night-mode .error-message {
     text-shadow: 0 1px 1px rgba(255,255,255,0.8);
 }
 
-body.night-mode .loading-message {
+body.night-mode .success-message {
     background: rgba(100, 200, 100, 0.2);
     border: 1px solid rgba(100, 200, 100, 0.5);
     color: #88ff88;
+    text-shadow: 0 1px 1px rgba(0,0,0,0.8);
+}
+
+.loading-message {
+    margin-top: 15px;
+    padding: 10px;
+    background: rgba(100, 200, 255, 0.3);
+    border: 1px solid rgba(0, 100, 200, 0.5);
+    border-radius: 10px;
+    color: #004080;
+    font-weight: bold;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+    text-shadow: 0 1px 1px rgba(255,255,255,0.8);
+}
+
+body.night-mode .loading-message {
+    background: rgba(100, 150, 255, 0.2);
+    border: 1px solid rgba(100, 150, 255, 0.5);
+    color: #aaccff;
     text-shadow: 0 1px 1px rgba(0,0,0,0.8);
 }
 
@@ -502,9 +475,7 @@ body.night-mode .loading-message {
     75% { transform: translateX(5px); }
 }
 
-/* ==========================================
-   SWITCH DE MODO DIURNO/NOCTURNO
-   ========================================== */
+/* Switch de Modo Diurno/Nocturno */
 .theme-switch-wrapper {
     position: absolute;
     top: 20px;
@@ -624,95 +595,256 @@ body.night-mode .theme-label {
     text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
 }
 
-/* Enlace al registro */
-.register-link {
-    margin-top: 20px;
+/* Modal de Confirmación */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.modal-content {
+    width: 450px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 100%);
+    border: 2px solid var(--glass-border);
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+    animation: slideIn 0.3s ease;
+}
+
+body.night-mode .modal-content {
+    background: linear-gradient(135deg, rgba(40,40,70,0.95) 0%, rgba(30,30,60,0.9) 100%);
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-header {
+    padding: 20px;
+    background: linear-gradient(135deg, var(--btn-top) 0%, var(--btn-bottom) 100%);
+    text-align: center;
+}
+
+.modal-header h3 {
+    color: white;
+    font-size: 1.3rem;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.modal-body {
+    padding: 25px;
+}
+
+.modal-body p {
+    color: var(--text-dark);
+    font-size: 1rem;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.ticket-preview {
+    background: rgba(255, 255, 255, 0.3);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
     padding: 15px;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
-body.night-mode .register-link {
-    background: rgba(30, 30, 50, 0.3);
-    border: 1px solid rgba(100, 100, 150, 0.4);
+body.night-mode .ticket-preview {
+    background: rgba(60, 60, 100, 0.3);
 }
 
-.register-link p {
-    color: var(--footer-text);
-    font-weight: bold;
-    text-shadow: 0 1px 2px rgba(255,255,255,0.8);
-    margin: 0;
+.preview-item {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-bottom: 12px;
+}
+
+.preview-item:last-child {
+    margin-bottom: 0;
+}
+
+.preview-item strong {
+    color: var(--icon-color);
+    font-size: 0.85rem;
+}
+
+.preview-item span {
+    color: var(--text-dark);
     font-size: 0.95rem;
+    font-weight: 600;
 }
 
-body.night-mode .register-link p {
-    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+.modal-footer {
+    padding: 20px;
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.2);
+    border-top: 1px solid var(--glass-border);
 }
 
-.register-link a {
-    color: var(--link-color);
-    text-decoration: underline;
+body.night-mode .modal-footer {
+    background: rgba(60, 60, 100, 0.2);
+}
+
+.btn-cancel,
+.btn-confirm {
+    padding: 12px 30px;
+    border: none;
+    border-radius: 50px;
+    font-size: 1rem;
     font-weight: bold;
-    text-shadow: 0 1px 2px rgba(255,255,255,0.8);
-    transition: color 0.2s;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
-body.night-mode .register-link a {
-    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+.btn-cancel {
+    background: linear-gradient(to bottom, #ff6b6b, #cc4444);
+    color: white;
+    box-shadow: 0 4px 12px rgba(255, 100, 100, 0.3);
 }
 
-.register-link a:hover {
-    color: var(--link-hover);
+.btn-cancel:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(255, 100, 100, 0.4);
+}
+
+.btn-confirm {
+    background: linear-gradient(to bottom, #51cf66, #228b22);
+    color: white;
+    box-shadow: 0 4px 12px rgba(100, 200, 100, 0.3);
+}
+
+.btn-confirm:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(100, 200, 100, 0.4);
 }
 
 /* ==========================================
    RESPONSIVE
 ========================================== */
-@media (max-width: 1024px) {
-    .ui-container { padding: 40px 16px; }
-    .login-panel { width: 380px; }
-}
-
 @media (max-width: 768px), (max-height: 700px) {
     body, html { overflow-y: auto; }
     .background { height: auto; min-height: 100vh; padding: 60px 0; }
     .ui-container {
         flex-direction: column;
-        flex-wrap: nowrap;
-        gap: 24px;
-        padding: 16px;
+        gap: 20px;
     }
-    .logoHelpdesk { width: min(280px, 60vw); }
+    
     .badges-col {
         flex-direction: row;
         flex-wrap: wrap;
         justify-content: center;
         gap: 10px;
     }
-    .login-panel {
+    
+    .form-panel {
         width: 100%;
-        max-width: 420px;
-        max-height: 82vh;
-        overflow-y: auto;
+        max-width: 520px;
     }
+    
     .theme-switch-wrapper {
         top: 10px;
         right: 10px;
     }
+    
     .theme-label {
         display: none;
+    }
+    
+    .modal-content {
+        width: 90%;
+        max-width: 450px;
     }
 }
 
 @media (max-width: 480px) {
-    .login-panel { padding: 28px 18px; }
-    .login-panel h1 { font-size: 2.2rem; }
-    .login-panel h2 { margin-bottom: 20px; }
+    .form-panel { padding: 24px 16px; }
+    .form-panel h1 { font-size: 2rem; letter-spacing: 1px; }
+    .form-panel h2 { font-size: 0.85rem; }
     .badge { font-size: 0.8rem; padding: 8px 14px; }
     .badges-col { gap: 8px; }
-    .logoHelpdesk { width: min(240px, 55vw); }
     .global-footer { font-size: 0.85rem; }
-    .card-footer { flex-direction: column; gap: 12px; text-align: center; }
-    .input-group input { font-size: 0.95rem; }
+    .input-group input, .input-group select, .input-group textarea { padding: 12px 12px 12px 44px; font-size: 0.95rem; }
+    .input-icon { left: 12px; font-size: 1rem; }
+    .submit-btn { font-size: 1.2rem; padding: 13px; }
+    .modal-footer { flex-direction: column; }
+    .btn-cancel, .btn-confirm { width: 100%; justify-content: center; }
+    .modal-body { padding: 18px; }
+}
+
+/* Indicador de procesamiento con IA */
+.ai-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 15px;
+    padding: 12px 20px;
+    background: rgba(138, 43, 226, 0.15);
+    border: 1px solid rgba(138, 43, 226, 0.4);
+    border-radius: 12px;
+    color: #8a2be2;
+    font-weight: 600;
+    font-size: 0.9rem;
+    animation: fadeIn 0.3s ease;
+}
+
+body.night-mode .ai-indicator {
+    background: rgba(147, 112, 219, 0.2);
+    border: 1px solid rgba(147, 112, 219, 0.5);
+    color: #9370db;
+}
+
+.ai-spinner {
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(138, 43, 226, 0.3);
+    border-top-color: #8a2be2;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+body.night-mode .ai-spinner {
+    border: 3px solid rgba(147, 112, 219, 0.3);
+    border-top-color: #9370db;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
 }

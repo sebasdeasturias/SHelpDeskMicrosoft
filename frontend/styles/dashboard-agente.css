@@ -610,3 +610,33 @@ body.night-mode .chat-input-area textarea {
     }
     .card-selector { width: calc(100% - 48px); }
 }
+
+@media (max-width: 600px) {
+    .topbar { flex-wrap: wrap; gap: 8px; padding: 10px 14px; }
+    .topbar h1 { font-size: 1rem; gap: 6px; }
+    .topbar .logo-icon { width: 28px; height: 28px; font-size: 14px; }
+    .topbar-right { gap: 8px; flex-wrap: wrap; }
+    .logout-btn { padding: 5px 10px; font-size: 0.75rem; }
+    .theme-icon { font-size: 0.75rem; }
+    .theme-switch { width: 34px; height: 19px; }
+    .theme-switch .slider:before { height: 13px; width: 13px; left: 3px; bottom: 3px; }
+    input:checked + .slider:before { transform: translateX(15px); }
+    .kanban-board { padding: 10px; gap: 12px; }
+    .kanban-column { border-radius: 12px; }
+    .column-header { padding: 12px 14px; }
+    .column-body { padding: 6px; }
+    .chat-panel {
+        width: calc(100% - 24px);
+        right: 12px; left: 12px;
+        bottom: 84px; height: 55vh;
+    }
+    .chat-fab { bottom: 16px; right: 16px; width: 52px; height: 52px; font-size: 20px; }
+    .card-selector { width: calc(100% - 24px); }
+    .global-footer { font-size: 0.7rem; width: 90%; text-align: center; }
+}
+
+@media (max-width: 360px) {
+    .topbar { padding: 8px 10px; }
+    .topbar h1 { font-size: 0.9rem; }
+    .chat-panel { height: 50vh; }
+}

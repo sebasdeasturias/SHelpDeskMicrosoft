@@ -30,17 +30,44 @@ const PRIO_MAP = {
 // ============================================
 // INICIALIZACIÓN
 // ============================================
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     if (!state.authToken) {
         window.location.href = 'login.html';
         return;
     }
+
+    try {
+        const response = await fetch(`${API}/auth/me`, {
+            headers: { 'Authorization': `Bearer ${state.authToken}` }
+        });
+        if (!response.ok) {
+            throw new Error('Token inválido');
+        }
+
+        const userData = await response.json();
+        state.userData = userData;
+        
+        // Verificar que el usuario tenga acceso al dashboard de agente
+        if (userData.role !== 'agente' && userData.role !== 'coordinador' && userData.role !== 'administrador') {
+            console.warn('Usuario sin permisos de agente, redirigiendo...');
+            window.location.href = 'dashboard-solicitante.html';
+            return;
+        }
+    } catch (error) {
+        console.error('Error de autenticación:', error);
+        localStorage.removeItem('token');
+        sessionStorage.removeItem('token');
+        window.location.href = 'login.html';
+        return;
+    }
+    
     initTheme();
     initKanban();
     initChat();
     fetchTickets();
     setInterval(fetchTickets, 5000);
 });
+
 
 function initTheme() {
     const toggle = document.getElementById('themeCheck');
@@ -223,9 +250,11 @@ function initDragDrop() {
                 } catch (error) {
                     console.error('Error al actualizar estado:', error);
                 } finally {
-                    dragged.style.opacity = '1';
-                    dragged.classList.remove('dragging');
-                    dragged = null;
+                    if (dragged) {
+                        dragged.style.opacity = '1';
+                        dragged.classList.remove('dragging');
+                        dragged = null;
+                    }
                 }
             }
         });
@@ -374,6 +403,13 @@ async function sendChatMessage() {
                 modelo: 'llama3.2:3b'
             })
         });
+
+        if (response.status === 401) {
+            localStorage.removeItem('token');
+            sessionStorage.removeItem('token');
+            window.location.href = 'login.html';
+            return;
+        }
 
         hideTyping();
 

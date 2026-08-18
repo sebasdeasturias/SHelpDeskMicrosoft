@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HelpDesk IT - Crear Ticket</title>
+    <link rel="stylesheet" href="styles/formulario-ticket.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Switch de Modo Diurno/Nocturno -->
+    <div class="theme-switch-wrapper">
+        <label class="theme-switch" for="checkbox">
+            <input type="checkbox" id="checkbox" />
+            <div class="slider round">
+                <i class="fas fa-sun sun-icon"></i>
+                <i class="fas fa-moon moon-icon"></i>
+            </div>
+        </label>
+        <span class="theme-label">Modo Nocturno</span>
+    </div>
+
+    <div class="background">
+        <div class="grid-overlay"></div>
+        <div class="stars-overlay"></div>
+        
+        <div class="ui-container">
+            <!-- Badges Flotantes Izquierda -->
+            <div class="badges-col">
+                <div class="badge green">
+                    <i class="fas fa-ticket-alt"></i> Nuevo Ticket 
+                </div>
+                <div class="badge blue">
+                    <i class="fas fa-shield-alt"></i> Datos Protegidos 
+                </div>
+                <div class="badge silver">
+                    <i class="fas fa-clock"></i> Respuesta Rápida 
+                </div>
+            </div>
+
+            <!-- Panel central de cristal -->
+            <div class="form-panel">
+                <h1>NUEVO TICKET</h1>
+                <h2>Reportar Incidente o Solicitud</h2>
+
+                <!-- Información del usuario -->
+                <div class="user-info">
+                    <i class="fas fa-user-circle"></i>
+                    <span id="userName">Cargando...</span>
+                    <span id="userArea" class="user-area"></span>
+                </div>
+
+                <form id="ticketForm" class="ticket-form">
+                    <!-- Asunto -->
+                    <div class="input-group">
+                        <i class="fas fa-heading input-icon"></i>
+                        <input 
+                            type="text" 
+                            id="asunto" 
+                            name="asunto" 
+                            placeholder="Asunto del ticket (máx. 200 caracteres)" 
+                            required 
+                            maxlength="200"
+                        >
+                    </div>
+
+                    <!-- Descripción -->
+                    <div class="input-group textarea-group">
+                        <i class="fas fa-align-left input-icon"></i>
+                        <textarea 
+                            id="descripcion" 
+                            name="descripcion" 
+                            placeholder="Describe detalladamente el problema o solicitud..." 
+                            required
+                            rows="5"
+                        ></textarea>
+                    </div>
+
+                    <!-- Categoría -->
+                    <div class="input-group">
+                        <i class="fas fa-folder input-icon"></i>
+                        <select id="categoria" name="categoria" required>
+                            <option value="">Selecciona una categoría...</option>
+                            <option value="1">Hardware</option>
+                            <option value="2">Software</option>
+                            <option value="3">Red/Internet</option>
+                            <option value="4">Cuentas/Accesos</option>
+                            <option value="5">Otros</option>
+                        </select>
+                    </div>
+
+                    <!-- Prioridad -->
+                    <div class="input-group">
+                        <i class="fas fa-exclamation-triangle input-icon"></i>
+                        <select id="prioridad" name="prioridad" required>
+                            <option value="">Selecciona prioridad...</option>
+                            <option value="1">Crítica</option>
+                            <option value="2">Alta</option>
+                            <option value="3">Media</option>
+                            <option value="4">Baja</option>
+                        </select>
+                    </div>
+
+                    <!-- Botón de envío -->
+                    <button type="button" class="submit-btn" id="btnEnviar">
+                        <i class="fas fa-paper-plane"></i> Enviar Ticket
+                    </button>
+
+                    <!-- Indicador de procesamiento con IA (nuevo) -->
+                    <div id="aiIndicator" class="ai-indicator" style="display: none;">
+                        <div class="ai-spinner"></div>
+                        <span>Procesando con IA local...</span>
+                    </div>
+
+                    <!-- Mensajes de estado -->
+                    <div id="errorMessage" class="error-message" style="display: none;">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span id="errorText"></span>
+                    </div>
+
+                    <div id="successMessage" class="success-message" style="display: none;">
+                        <i class="fas fa-check-circle"></i>
+                        <span id="successText"></span>
+                    </div>
+
+                    <div id="loadingMessage" class="loading-message" style="display: none;">
+                        <i class="fas fa-spinner fa-spin"></i> Procesando...
+                    </div>
+                </form>
+
+                <!-- Enlaces de navegación -->
+                <div class="form-footer">
+                    <a href="dashboard-solicitante.html" class="back-link">
+                        <i class="fas fa-arrow-left"></i> Volver al Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="global-footer">
+            <i class="fas fa-leaf"></i> Sistema HelpDesk V1.0
+        </div>
+    </div>
+
+    <!-- Modal de confirmación doble -->
+    <div id="confirmModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-question-circle"></i> Confirmar Envío</h3>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que deseas enviar este ticket?</p>
+                <div class="ticket-preview">
+                    <div class="preview-item">
+                        <strong>Asunto:</strong>
+                        <span id="previewAsunto"></span>
+                    </div>
+                    <div class="preview-item">
+                        <strong>Categoría:</strong>
+                        <span id="previewCategoria"></span>
+                    </div>
+                    <div class="preview-item">
+                        <strong>Prioridad:</strong>
+                        <span id="previewPrioridad"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" id="btnCancelar">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button class="btn-confirm" id="btnConfirmar">
+                    <i class="fas fa-check"></i> Sí, Enviar
+                </button>
+            </div>
+        </div>
+    </div>
+    <script src="js/formulario-ticket.js"></script>
+    <script src="js/theme-toggle.js"></script>
+</body>
+</html>
