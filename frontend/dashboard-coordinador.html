@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HelpDesk IT - Tablero Coordinador</title>
+    <link rel="stylesheet" href="styles/dashboard-coordinador.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="background"></div>
+    <div class="grid-overlay"></div>
+    <div class="stars-overlay"></div>
+
+    <!-- Topbar con Menú Coordinador -->
+    <header class="topbar">
+        <div class="topbar-left">
+            <h1><span class="logo-icon">🐧</span> Coordinación HelpDesk</h1>
+        </div>
+        <div class="topbar-center">
+            <nav class="main-nav">
+                <button class="nav-btn active" data-page="kanban">
+                    <i class="fas fa-columns"></i> Kanban
+                </button>
+                <div class="nav-dropdown">
+                    <button class="nav-btn dropdown-toggle" id="menuToggle">
+                        <i class="fas fa-bars"></i> Menú <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="dropdown-menu" id="dropdownMenu">
+                        <a href="#" data-page="asignar" class="dropdown-item">
+                            <i class="fas fa-user-plus"></i> Asignar Tickets
+                            <span class="badge-coming">Próximo</span>
+                        </a>
+                        <a href="#" data-page="reportes" class="dropdown-item">
+                            <i class="fas fa-chart-bar"></i> Generar Reportes
+                            <span class="badge-coming">Próximo</span>
+                        </a>
+                        <a href="#" data-page="streamlit" class="dropdown-item">
+                            <i class="fas fa-chart-pie"></i> Dashboard Streamlit
+                            <span class="badge-coming">Próximo</span>
+                        </a>
+                        <a href="#" data-page="sla" class="dropdown-item">
+                            <i class="fas fa-clock"></i> Configurar SLAs
+                            <span class="badge-coming">Próximo</span>
+                        </a>
+                        <a href="#" data-page="supervisar" class="dropdown-item">
+                            <i class="fas fa-users-cog"></i> Supervisar Agentes
+                            <span class="badge-coming">Próximo</span>
+                        </a>
+                        <a href="#" data-page="chat-ia" class="dropdown-item">
+                            <i class="fas fa-robot"></i> Chat IA
+                            <span class="badge-coming">Próximo</span>
+                        </a>
+                        <a href="#" data-page="rag" class="dropdown-item">
+                            <i class="fas fa-brain"></i> Consultar RAG
+                            <span class="badge-coming">Próximo</span>
+                        </a>
+                        <hr class="dropdown-divider">
+                        <a href="#" data-page="mi-perfil" class="dropdown-item">
+                            <i class="fas fa-user-circle"></i> Mi Perfil
+                        </a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+        <div class="topbar-right">
+            <div class="theme-switch-wrapper">
+                <span class="theme-icon">☀️</span>
+                <label class="theme-switch">
+                    <input type="checkbox" id="themeCheck">
+                    <span class="slider"></span>
+                </label>
+                <span class="theme-icon">🌙</span>
+            </div>
+            <div class="user-badge">
+                <span class="user-role">👑 Coordinador</span>
+                <span class="user-name" id="userName">Cargando...</span>
+            </div>
+            <button class="logout-btn" id="logoutBtn">
+                <i class="fas fa-sign-out-alt"></i> Salir
+            </button>
+        </div>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main class="main-content">
+        <!-- Página Kanban (activa por defecto) -->
+        <section id="page-kanban" class="page-content active">
+            <div class="kanban-board">
+                <div class="kanban-column column-todo">
+                    <div class="column-header">
+                        <h2>📋 Por Hacer</h2>
+                        <span class="count-badge" id="count-todo">0</span>
+                    </div>
+                    <div class="column-body" id="col-todo"></div>
+                </div>
+                <div class="kanban-column column-progress">
+                    <div class="column-header">
+                        <h2>🔄 En Progreso</h2>
+                        <span class="count-badge" id="count-progress">0</span>
+                    </div>
+                    <div class="column-body" id="col-progress"></div>
+                </div>
+                <div class="kanban-column column-review">
+                    <div class="column-header">
+                        <h2>🔍 En Revisión</h2>
+                        <span class="count-badge" id="count-review">0</span>
+                    </div>
+                    <div class="column-body" id="col-review"></div>
+                </div>
+                <div class="kanban-column column-done">
+                    <div class="column-header">
+                        <h2>✅ Completados</h2>
+                        <span class="count-badge" id="count-done">0</span>
+                    </div>
+                    <div class="column-body" id="col-done"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Páginas futuras (placeholder) -->
+        <section id="page-asignar" class="page-content">
+            <div class="placeholder-panel">
+                <i class="fas fa-user-plus placeholder-icon"></i>
+                <h2>Asignar Tickets</h2>
+                <p>Módulo en construcción. Permitirá asignar tickets a agentes de forma manual o automática.</p>
+                <div class="coming-soon-badge">🚧 Próximamente</div>
+            </div>
+        </section>
+
+        <section id="page-reportes" class="page-content">
+            <div class="placeholder-panel">
+                <i class="fas fa-chart-bar placeholder-icon"></i>
+                <h2>Generar Reportes</h2>
+                <p>Módulo en construcción. Generación de reportes de rendimiento y métricas del equipo.</p>
+                <div class="coming-soon-badge">🚧 Próximamente</div>
+            </div>
+        </section>
+
+        <section id="page-streamlit" class="page-content">
+            <div class="placeholder-panel">
+                <i class="fas fa-chart-pie placeholder-icon"></i>
+                <h2>Dashboard Streamlit</h2>
+                <p>Módulo en construcción. Visualizaciones avanzadas con Streamlit.</p>
+                <div class="coming-soon-badge">🚧 Próximamente</div>
+            </div>
+        </section>
+
+        <section id="page-sla" class="page-content">
+            <div class="placeholder-panel">
+                <i class="fas fa-clock placeholder-icon"></i>
+                <h2>Configurar SLAs</h2>
+                <p>Módulo en construcción. Gestión de tiempos de respuesta y solución por prioridad.</p>
+                <div class="coming-soon-badge">🚧 Próximamente</div>
+            </div>
+        </section>
+
+        <section id="page-supervisar" class="page-content">
+            <div class="placeholder-panel">
+                <i class="fas fa-users-cog placeholder-icon"></i>
+                <h2>Supervisar Agentes</h2>
+                <p>Módulo en construcción. Monitoreo de carga de trabajo y rendimiento de agentes.</p>
+                <div class="coming-soon-badge">🚧 Próximamente</div>
+            </div>
+        </section>
+
+        <section id="page-chat-ia" class="page-content">
+            <div class="placeholder-panel">
+                <i class="fas fa-robot placeholder-icon"></i>
+                <h2>Chat IA</h2>
+                <p>Módulo en construcción. Asistente inteligente para el coordinador.</p>
+                <div class="coming-soon-badge">🚧 Próximamente</div>
+            </div>
+        </section>
+
+        <section id="page-rag" class="page-content">
+            <div class="placeholder-panel">
+                <i class="fas fa-brain placeholder-icon"></i>
+                <h2>Consultar RAG</h2>
+                <p>Módulo en construcción. Búsqueda semántica en tickets usando IA.</p>
+                <div class="coming-soon-badge">🚧 Próximamente</div>
+            </div>
+        </section>
+
+        <section id="page-mi-perfil" class="page-content">
+            <div class="placeholder-panel">
+                <i class="fas fa-user-circle placeholder-icon"></i>
+                <h2>Mi Perfil</h2>
+                <p>Módulo en construcción. Gestión de perfil del coordinador.</p>
+                <div class="coming-soon-badge">🚧 Próximamente</div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Chat FAB -->
+    <button class="chat-fab" id="chatFab">
+        <span class="fab-icon">💬</span>
+    </button>
+
+    <!-- Chat Panel -->
+    <div class="chat-panel" id="chatPanel">
+        <div class="chat-header">
+            <h3>💬 Chat Soporte IA</h3>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <button class="chat-action-btn attach-btn" id="attachBtn" title="Adjuntar ticket">📎</button>
+                <button class="chat-close" id="chatClose">✕</button>
+            </div>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+            <div class="chat-msg bot">
+                ¡Hola! Soy el asistente IA para coordinadores. Puedo ayudarte a gestionar tickets, analizar métricas o resolver dudas. 🌿
+            </div>
+        </div>
+        <div class="chat-input-area">
+            <textarea id="chatInput" rows="1" placeholder="Escribe tu mensaje..."></textarea>
+            <button class="chat-send-btn" id="chatSendBtn">➤</button>
+        </div>
+    </div>
+
+    <!-- Card Selector Overlay -->
+    <div class="card-selector-overlay" id="cardSelectorOverlay">
+        <div class="card-selector">
+            <div class="card-selector-header">
+                <h3>📎 Adjuntar Ticket</h3>
+                <button class="card-selector-close" id="cardSelectorClose">✕</button>
+            </div>
+            <div class="card-selector-search">
+                <input type="text" id="cardSelectorSearch" placeholder="Buscar ticket...">
+            </div>
+            <div class="card-selector-list" id="cardSelectorList"></div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="global-footer">Sistema HelpDesk V1.0 • Coordinador</div>
+
+    <script src="js/dashboard-coordinador.js"></script>
+    <script src="js/theme-toggle.js"></script>
+</body>
+</html>
