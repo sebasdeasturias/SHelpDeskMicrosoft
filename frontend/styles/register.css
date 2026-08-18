@@ -1,0 +1,545 @@
+:root {
+    --glass-bg: rgba(255, 255, 255, 0.25);
+    --glass-border: rgba(255, 255, 255, 0.6);
+    --btn-top: #8de3df;
+    --btn-bottom: #1a7495;
+    --text-glow: 0 2px 4px rgba(0,0,0,0.4), 0 0 10px rgba(255,255,255,0.6);
+
+    /* Variables Modo Diurno (para que background use las mismas vars que login.css) */
+    --sky-top: #10599d;
+    --sky-mid: #3ca0d4;
+    --sky-low: #87ceeb;
+    --grass: #429d29;
+    --grid-color: rgba(255, 255, 255, 0.15);
+    --text-dark: #11425e;
+    --text-placeholder: #3b7491;
+    --icon-color: #4a8cae;
+    --footer-text: #0b3147;
+    --link-color: #004d6b;
+    --link-hover: #0076a3;
+}
+
+/* Variables Modo Nocturno */
+body.night-mode {
+    --glass-bg: rgba(30, 30, 50, 0.4);
+    --glass-border: rgba(100, 100, 150, 0.4);
+    --btn-top: #4a6fa5;
+    --btn-bottom: #1a2a4a;
+    --text-glow: 0 2px 4px rgba(0,0,0,0.8), 0 0 10px rgba(200,200,255,0.3);
+    
+    /* Fondo Nocturno */
+    --sky-top: #000000;
+    --sky-mid: #0a0a2e;
+    --sky-low: #1a1a3e;
+    --grass: #0d2818;
+    --grid-color: rgba(100, 100, 200, 0.1);
+    
+    /* Textos */
+    --text-dark: #e0e0ff;
+    --text-placeholder: #8888aa;
+    --icon-color: #a0a0d0;
+    --footer-text: #c0c0e0;
+    --link-color: #88aaff;
+    --link-hover: #aaccff;
+}
+
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    overflow: hidden;
+}
+
+/* Fondo de cielo, césped y cuadrícula */
+.background {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, var(--sky-top) 0%, var(--sky-mid) 50%, var(--sky-low) 75%, var(--grass) 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background 0.5s ease;
+}
+
+/* Cuadrícula láser tipo retro-tech */
+.grid-overlay {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.15) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Contenedor principal para posicionar los badges flotantes */
+.ui-container {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 40px;
+}
+
+/* Panel central de cristal (Glassmorphism) */
+.register-panel {
+    width: 480px;
+    padding: 40px 30px;
+    /* panel slightly adjusted color */
+    background: linear-gradient(135deg, rgba(250,250,255,0.50) 0%, rgba(245,245,255,0.12) 100%);
+    border: 2px solid var(--glass-border);
+    border-radius: 20px;
+    box-shadow: 
+        0 15px 35px rgba(0, 0, 0, 0.3),
+        inset 0 0 20px rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    text-align: center;
+    position: relative;
+    transition: all 0.5s ease;
+    max-height: 92vh;
+    overflow-y: auto;
+}
+
+/* Night mode panel style — matches login.css .login-panel night-mode */
+body.night-mode .register-panel {
+    background: linear-gradient(135deg, rgba(30,30,50,0.6) 0%, rgba(20,20,40,0.3) 100%);
+    box-shadow: 
+        0 15px 35px rgba(0, 0, 0, 0.5),
+        inset 0 0 20px rgba(100, 100, 200, 0.2);
+}
+
+/* Títulos */
+.register-panel h1 {
+    margin: 0;
+    font-size: 2.8rem;
+    color: #ffffff;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-shadow: 
+        0 3px 6px rgba(0,0,0,0.4), 
+        0 0 15px rgba(255,255,255,0.9);
+}
+
+.register-panel h2 {
+    margin: 5px 0 30px 0;
+    font-size: 1rem;
+    color: #ffffff;
+    font-weight: 500;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+}
+
+/* Inputs y grupos */
+.input-group {
+    position: relative;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+}
+
+.input-group input,
+.input-group select {
+    width: 100%;
+    padding: 15px 15px 15px 50px;
+    font-size: 1rem;
+    color: #11425e;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.4), rgba(255,255,255,0.7));
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    border-radius: 50px;
+    box-shadow: inset 0 3px 6px rgba(0,0,0,0.15), 0 2px 4px rgba(255,255,255,0.3);
+    outline: none;
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+}
+
+.input-group input::placeholder {
+    color: #3b7491;
+    font-weight: 500;
+}
+
+.input-group input:focus,
+.input-group select:focus {
+    box-shadow: inset 0 3px 6px rgba(0,0,0,0.2), 0 0 10px rgba(255,255,255,0.8);
+}
+
+.input-group select {
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+/* Iconos de los inputs */
+.input-icon {
+    position: absolute;
+    left: 15px;
+    font-size: 1.2rem;
+    color: #4a8cae;
+    text-shadow: 1px 1px 0px rgba(255,255,255,0.8);
+    z-index: 2;
+}
+
+/* Botón de mostrar contraseña */
+.show-pwd {
+    position: absolute;
+    right: 15px;
+    background: rgba(255,255,255,0.5);
+    border: 1px solid rgba(255,255,255,0.8);
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    color: #11425e;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: background 0.2s;
+}
+
+.show-pwd:hover {
+    background: rgba(255,255,255,0.8);
+}
+
+/* Botón principal (Glossy) */
+.register-btn {
+    width: 100%;
+    padding: 15px;
+    margin-top: 10px;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: white;
+    cursor: pointer;
+    border: 2px solid rgba(255,255,255,0.6);
+    border-radius: 50px;
+    background: linear-gradient(to bottom, var(--btn-top) 0%, #34a4c4 40%, var(--btn-bottom) 100%);
+    box-shadow: 
+        0 6px 15px rgba(0,0,0,0.3), 
+        inset 0 4px 10px rgba(255,255,255,0.6),
+        inset 0 -4px 10px rgba(0,0,0,0.2);
+    text-shadow: var(--text-glow);
+    transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.register-btn:hover {
+    filter: brightness(1.1);
+}
+
+.register-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3), inset 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.register-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Footer de la tarjeta */
+.card-footer {
+    margin-top: 25px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0 10px;
+    font-size: 0.95rem;
+}
+
+.back-to-login {
+    color: #004d6b;
+    text-decoration: none;
+    font-weight: bold;
+    text-shadow: 0 1px 2px rgba(255,255,255,0.8);
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.back-to-login:hover {
+    color: #0076a3;
+    text-decoration: underline;
+}
+
+/* Badges Flotantes Laterales */
+.badges-col {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.badge {
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-size: 0.95rem;
+    font-weight: bold;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid rgba(255,255,255,0.5);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3), inset 0 2px 5px rgba(255,255,255,0.5);
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    backdrop-filter: blur(4px);
+}
+
+.badge.green {
+    background: linear-gradient(to bottom, #6cd970, #228b22);
+}
+
+.badge.blue {
+    background: linear-gradient(to bottom, #dbeffc, #7bb9dc);
+    color: #11425e;
+    text-shadow: 1px 1px 0px rgba(255,255,255,0.8);
+}
+
+.badge.silver {
+    background: linear-gradient(to bottom, #ffffff, #a3c2d1);
+    color: #11425e;
+    text-shadow: 1px 1px 0px rgba(255,255,255,0.8);
+}
+
+/* Footer Global */
+.global-footer {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    color: white;
+    font-weight: bold;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.6);
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.1rem;
+}
+
+/* ==========================================
+   ESTILOS ADICIONALES PARA COMPATIBILIDAD JS
+   ========================================== */
+.error-message {
+    margin-top: 15px;
+    padding: 10px;
+    background: rgba(255, 100, 100, 0.3);
+    border: 1px solid rgba(255, 0, 0, 0.5);
+    border-radius: 10px;
+    color: #8b0000;
+    font-weight: bold;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+    text-shadow: 0 1px 1px rgba(255,255,255,0.8);
+    animation: shake 0.4s ease-in-out;
+}
+
+.success-message {
+    margin-top: 15px;
+    padding: 10px;
+    background: rgba(100, 255, 100, 0.3);
+    border: 1px solid rgba(0, 128, 0, 0.5);
+    border-radius: 10px;
+    color: #006400;
+    font-weight: bold;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+    text-shadow: 0 1px 1px rgba(255,255,255,0.8);
+}
+
+.loading-message {
+    margin-top: 15px;
+    padding: 10px;
+    background: rgba(100, 200, 255, 0.3);
+    border: 1px solid rgba(0, 100, 200, 0.5);
+    border-radius: 10px;
+    color: #004080;
+    font-weight: bold;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+    text-shadow: 0 1px 1px rgba(255,255,255,0.8);
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+/* ==========================================
+   SWITCH DE MODO DIURNO/NOCTURNO (copiado de login.css)
+   ========================================== */
+.theme-switch-wrapper {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.theme-switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+}
+
+.theme-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(to bottom, #87ceeb, #3ca0d4);
+    transition: 0.4s;
+    border-radius: 34px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 8px;
+}
+
+body.night-mode .slider {
+    background: linear-gradient(to bottom, #1a1a3e, #0a0a2e);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5), inset 0 2px 4px rgba(100,100,200,0.2);
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background: linear-gradient(to bottom, #ffffff, #e0e0e0);
+    transition: 0.4s;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    z-index: 2;
+}
+
+body.night-mode .slider:before {
+    background: linear-gradient(to bottom, #f0f0ff, #c0c0e0);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.5), 0 0 10px rgba(200,200,255,0.3);
+}
+
+input:checked + .slider {
+    background: linear-gradient(to bottom, #1a1a3e, #0a0a2e);
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+.slider.round {
+    border-radius: 34px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+
+.sun-icon {
+    color: #ffcc00;
+    font-size: 14px;
+    z-index: 1;
+    text-shadow: 0 0 5px rgba(255,204,0,0.5);
+}
+
+.moon-icon {
+    color: #c0c0e0;
+    font-size: 14px;
+    z-index: 1;
+    opacity: 0.5;
+    text-shadow: 0 0 5px rgba(200,200,255,0.3);
+}
+
+body.night-mode .sun-icon {
+    opacity: 0.5;
+    text-shadow: none;
+}
+
+body.night-mode .moon-icon {
+    opacity: 1;
+    color: #ffffff;
+    text-shadow: 0 0 8px rgba(255,255,255,0.8);
+}
+
+.theme-label {
+    color: white;
+    font-weight: bold;
+    font-size: 0.9rem;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.6);
+    user-select: none;
+}
+
+body.night-mode .theme-label {
+    color: #c0c0e0;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+}
+
+/* ==========================================
+   RESPONSIVE
+========================================== */
+@media (max-width: 1024px) {
+    .register-panel { width: 440px; }
+}
+
+@media (max-width: 768px), (max-height: 700px) {
+    body, html { overflow-y: auto; }
+    .background { height: auto; min-height: 100vh; padding: 60px 0; }
+    .ui-container {
+        flex-direction: column;
+        gap: 24px;
+        padding: 16px;
+    }
+    .badges-col {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+    }
+    .register-panel {
+        width: 100%;
+        max-width: 480px;
+    }
+    .theme-switch-wrapper {
+        top: 10px;
+        right: 10px;
+    }
+    .theme-label {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .register-panel { padding: 28px 18px; }
+    .register-panel h1 { font-size: 2.2rem; }
+    .register-panel h2 { margin-bottom: 20px; }
+    .badge { font-size: 0.8rem; padding: 8px 14px; }
+    .badges-col { gap: 8px; }
+    .global-footer { font-size: 0.85rem; }
+    .input-group input, .input-group select { font-size: 0.95rem; }
+}

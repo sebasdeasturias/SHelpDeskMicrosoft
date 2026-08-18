@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HelpDesk IT - Registro de Usuario</title>
+    <link rel="stylesheet" href="styles/register.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Switch de Modo Diurno/Nocturno -->
+    <div class="theme-switch-wrapper">
+        <label class="theme-switch" for="checkbox">
+            <input type="checkbox" id="checkbox" />
+            <div class="slider round">
+                <i class="fas fa-sun sun-icon"></i>
+                <i class="fas fa-moon moon-icon"></i>
+            </div>
+        </label>
+        <span class="theme-label">Modo Nocturno</span>
+    </div>
+    <div class="background">
+        <div class="grid-overlay"></div>
+        
+        <div class="ui-container">
+            <!-- Badges Flotantes Izquierda -->
+            <div class="badges-col">
+                <div class="badge green">
+                    <i class="fas fa-user-plus"></i> Registro Seguro 
+                </div>
+                <div class="badge blue">
+                    <i class="fas fa-shield-alt"></i> Datos Protegidos 
+                </div>
+                <div class="badge silver">
+                    <i class="fas fa-lock"></i> Contraseña Hasheada 
+                </div>
+            </div>
+
+            <!-- Panel central de cristal (Glassmorphism) -->
+            <div class="register-panel">
+                <h1>REGISTRO</h1>
+                <h2>Crear Cuenta de Solicitante</h2>
+
+                
+
+                <form id="registerForm" class="register-form">
+                    <!-- Nombres -->
+                    <div class="input-group">
+                        <i class="fas fa-user input-icon"></i>
+                        <input 
+                            type="text" 
+                            id="nombres" 
+                            name="nombres" 
+                            placeholder="Nombres" 
+                            required 
+                            autocomplete="given-name"
+                        >
+                    </div>
+
+                    <!-- Apellidos -->
+                    <div class="input-group">
+                        <i class="fas fa-user-tag input-icon"></i>
+                        <input 
+                            type="text" 
+                            id="apellidos" 
+                            name="apellidos" 
+                            placeholder="Apellidos" 
+                            required 
+                            autocomplete="family-name"
+                        >
+                    </div>
+
+                    <!-- Correo Interno -->
+                    <div class="input-group">
+                        <i class="fas fa-envelope input-icon"></i>
+                        <input 
+                            type="email" 
+                            id="email" 
+                            name="email" 
+                            placeholder="Correo interno (ej: juan.perez@empresa.com)" 
+                            required 
+                            autocomplete="email"
+                        >
+                    </div>
+
+                    <!-- Área -->
+                    <div class="input-group">
+                        <i class="fas fa-building input-icon"></i>
+                        <select 
+                            id="area" 
+                            name="area" 
+                            required
+                        >
+                            <option value="">Selecciona tu área...</option>
+                            <option value="Calidad">Calidad</option>
+                            <option value="Producción">Producción</option>
+                            <option value="RRHH">Recursos Humanos</option>
+                            <option value="Finanzas">Finanzas</option>
+                            <option value="Ventas">Ventas</option>
+                            <option value="Marketing">Marketing</option>
+                            <option value="Logística">Logística</option>
+                            <option value="TI">Tecnología de la Información</option>
+                            <option value="Operaciones">Operaciones</option>
+                            <option value="Administración">Administración</option>
+                        </select>
+                    </div>
+
+                    <!-- Contraseña -->
+                    <div class="input-group">
+                        <i class="fas fa-lock input-icon"></i>
+                        <input 
+                            type="password" 
+                            id="password" 
+                            name="password" 
+                            placeholder="Contraseña" 
+                            required 
+                            autocomplete="new-password"
+                        >
+                        <button type="button" class="show-pwd" id="togglePassword">
+                            <i class="fas fa-eye"></i> Show
+                        </button>
+                    </div>
+
+                    <!-- Repetir Contraseña -->
+                    <div class="input-group">
+                        <i class="fas fa-lock input-icon"></i>
+                        <input 
+                            type="password" 
+                            id="password2" 
+                            name="password2" 
+                            placeholder="Repetir contraseña" 
+                            required 
+                            autocomplete="new-password"
+                        >
+                        <button type="button" class="show-pwd" id="togglePassword2">
+                            <i class="fas fa-eye"></i> Show
+                        </button>
+                    </div>
+
+                    <!-- Botón de Registro -->
+                    <button type="submit" class="register-btn" id="btnRegister">
+                        <i class="fas fa-user-plus"></i> Registrar
+                    </button>
+
+                    <!-- Mensajes de estado (Controlados por JS) -->
+                    <div id="errorMessage" class="error-message" style="display: none;">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span id="errorText"></span>
+                    </div>
+
+                    <div id="successMessage" class="success-message" style="display: none;">
+                        <i class="fas fa-check-circle"></i>
+                        <span id="successText"></span>
+                    </div>
+
+                    <div id="loadingMessage" class="loading-message" style="display: none;">
+                        <i class="fas fa-spinner fa-spin"></i> Registrando...
+                    </div>
+                </form>
+
+                <!-- Enlaces de navegación -->
+                <div class="card-footer">
+                    <a href="login.html" class="back-to-login">
+                        <i class="fas fa-arrow-left"></i> Volver al Login
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="global-footer">
+            <i class="fas fa-leaf"></i> Sistema HelpDesk V1.0
+        </div>
+    </div>
+
+    <script src="js/register.js"></script>
+    <script src="js/theme-toggle.js"></script>
+</body>
+</html>
