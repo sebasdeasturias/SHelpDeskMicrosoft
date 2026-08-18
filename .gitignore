@@ -18,7 +18,8 @@ db_logic.sql
 __pycache__/
 *.py[cod]
 *$py.class
-tickets.py
+test_hash.py
+database.py
 
 # --- Bases de datos locales / Sqlite ---
 *.sqlite
