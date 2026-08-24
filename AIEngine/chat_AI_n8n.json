@@ -1,0 +1,212 @@
+{
+  "name": "Chat IA Ollama",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chat",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-1",
+      "name": "Webhook Chat",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [
+        250,
+        300
+      ],
+      "webhookId": "chat-webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "mensaje",
+              "value": "={{ $json.body.mensaje || $json.body.message || 'Hola' }}",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "modelo",
+              "value": "={{ $json.body.modelo || 'qwen2.5:0.5b' }}",
+              "type": "string"
+            },
+            {
+              "id": "3",
+              "name": "sistema",
+              "value": "={{ $json.body.sistema || 'Eres un asistente útil y amigable. Responde en español de forma concisa.' }}",
+              "type": "string"
+            },
+            {
+              "id": "4",
+              "name": "temperatura",
+              "value": "={{ $json.body.temperatura || 0.7 }}",
+              "type": "number"
+            },
+            {
+              "id": "5",
+              "name": "historial",
+              "value": "={{ $json.body.historial || [] }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-1",
+      "name": "Configurar Parámetros",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [
+        470,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Construir el array de mensajes para Ollama\nconst mensajes = [];\n\n// Agregar mensaje del sistema\nif ($input.item.json.sistema) {\n  mensajes.push({\n    role: 'system',\n    content: $input.item.json.sistema\n  });\n}\n\n// Agregar historial si existe\nif ($input.item.json.historial && Array.isArray($input.item.json.historial)) {\n  mensajes.push(...$input.item.json.historial);\n}\n\n// Agregar mensaje actual\nmensajes.push({\n  role: 'user',\n  content: $input.item.json.mensaje\n});\n\nreturn [{\n  json: {\n    model: $input.item.json.modelo,\n    messages: mensajes,\n    stream: false,\n    options: {\n      temperature: parseFloat($input.item.json.temperatura),\n      num_predict: 2048\n    }\n  }\n}];"
+      },
+      "id": "code-1",
+      "name": "Preparar Request Ollama",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        690,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://ollama:11434/api/chat",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "timeout": 120000,
+          "response": {
+            "response": {
+              "fullResponse": false
+            }
+          }
+        }
+      },
+      "id": "http-1",
+      "name": "Ollama API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        910,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Procesar respuesta de Ollama\nconst respuesta = $input.item.json;\n\nlet textoRespuesta = '';\nlet tokensInfo = {};\n\nif (respuesta.message && respuesta.message.content) {\n  textoRespuesta = respuesta.message.content;\n}\n\nif (respuesta.eval_count) {\n  tokensInfo = {\n    tokens_generados: respuesta.eval_count,\n    tokens_segundo: respuesta.eval_count / (respuesta.eval_duration / 1e9 || 1),\n    tiempo_total_ms: Math.round((respuesta.total_duration || 0) / 1e6)\n  };\n}\n\nreturn [{\n  json: {\n    respuesta: textoRespuesta,\n    modelo: respuesta.model,\n    tokens: tokensInfo,\n    timestamp: new Date().toISOString(),\n    status: 'success'\n  }\n}];"
+      },
+      "id": "code-2",
+      "name": "Procesar Respuesta",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1130,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "id": "respond-1",
+      "name": "Responder Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1350,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook Chat": {
+      "main": [
+        [
+          {
+            "node": "Configurar Parámetros",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Configurar Parámetros": {
+      "main": [
+        [
+          {
+            "node": "Preparar Request Ollama",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Request Ollama": {
+      "main": [
+        [
+          {
+            "node": "Ollama API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama API": {
+      "main": [
+        [
+          {
+            "node": "Procesar Respuesta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Procesar Respuesta": {
+      "main": [
+        [
+          {
+            "node": "Responder Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0
+}

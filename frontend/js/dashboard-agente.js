@@ -64,6 +64,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     initTheme();
     initKanban();
     initChat();
+    initTicketDetail();
     fetchTickets();
     setInterval(fetchTickets, 5000);
 });
@@ -125,6 +126,7 @@ function renderBoard() {
     });
 
     initDragDrop();
+    bindInfoButtons();
 }
 
 function mapPriority(prio) {
@@ -147,6 +149,9 @@ function createCardHTML(t) {
     return `
         <div class="kanban-card" draggable="true" data-id="${t.id_solicitud}" data-col="${COLUMN_MAP[t.estado]}">
             <div class="card-priority-bar priority-${mapPriority(t.prio_nivel)}"></div>
+            <button class="card-info-btn" data-id="${t.id_solicitud}" title="Ver todos los detalles del ticket">
+                <i class="fas fa-info-circle"></i>
+            </button>
             <div class="card-title">${t.asunto}</div>
             <div class="card-meta">
                 <span class="card-id">#${t.id_solicitud}</span>
@@ -376,10 +381,15 @@ async function sendChatMessage() {
     chatInput.value = '';
     chatInput.style.height = 'auto';
 
-    // Si hay ticket adjunto, agregar contexto al mensaje
-    let mensajeCompleto = mensaje;
+    // Si hay ticket adjunto, el backend inyectará el contexto completo
+    // (ticket + solicitante + análisis IA) a partir del ticket_id
+    const payload = {
+        mensaje: mensaje,
+        historial: state.chatHistory.slice(-10),
+        modelo: 'llama3.2:3b'
+    };
     if (state.attachedTicket) {
-        mensajeCompleto = `[Contexto del ticket #${state.attachedTicket.id_solicitud}: "${state.attachedTicket.asunto}" - ${state.attachedTicket.descripcion}] ${mensaje}`;
+        payload.ticket_id = state.attachedTicket.id_solicitud;
     }
 
     // Guardar en historial
@@ -397,11 +407,7 @@ async function sendChatMessage() {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${state.authToken}`
             },
-            body: JSON.stringify({
-                mensaje: mensajeCompleto,
-                historial: state.chatHistory.slice(-10),
-                modelo: 'llama3.2:3b'
-            })
+            body: JSON.stringify(payload)
         });
 
         if (response.status === 401) {
@@ -523,9 +529,135 @@ function renderCardSelectorList(tickets) {
             const ticket = state.tickets.find(t => t.id_solicitud === ticketId);
             if (ticket) {
                 state.attachedTicket = ticket;
-                addChatMessage(`📎 Ticket #${ticket.id_solicitud} adjuntado: "${ticket.asunto}"`, 'system');
+                addChatMessage(`📎 Ticket #${ticket.id_solicitud} adjuntado. La IA recibirá el contexto completo (ticket, solicitante y análisis IA).`, 'system');
             }
             closeCardSelector();
         });
     });
+}
+
+// ============================================
+// DETALLE COMPLETO DEL TICKET (Botón "i")
+// ============================================
+function initTicketDetail() {
+    const overlay = document.getElementById('ticketDetailOverlay');
+    const closeBtn = document.getElementById('ticketDetailClose');
+    if (!overlay) return;
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => overlay.classList.remove('open'));
+    }
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) overlay.classList.remove('open');
+    });
+}
+
+function bindInfoButtons() {
+    document.querySelectorAll('.card-info-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            openTicketDetail(parseInt(btn.dataset.id));
+        });
+    });
+}
+
+async function openTicketDetail(ticketId) {
+    const overlay = document.getElementById('ticketDetailOverlay');
+    const body = document.getElementById('ticketDetailBody');
+    document.getElementById('ticketDetailId').textContent = `#${ticketId}`;
+    body.innerHTML = '<div class="detail-loading"><i class="fas fa-spinner fa-spin"></i> Cargando detalles del ticket...</div>';
+    overlay.classList.add('open');
+
+    try {
+        const res = await fetch(`${API}/tickets/${ticketId}`, {
+            headers: { 'Authorization': `Bearer ${state.authToken}` }
+        });
+        if (res.status === 401) {
+            localStorage.removeItem('token');
+            sessionStorage.removeItem('token');
+            window.location.href = 'login.html';
+            return;
+        }
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        body.innerHTML = buildTicketDetailHTML(data);
+    } catch (err) {
+        console.error('Error cargando detalle:', err);
+        body.innerHTML = `<div class="detail-loading">❌ Error al cargar los detalles: ${err.message}</div>`;
+    }
+}
+
+function buildTicketDetailHTML(d) {
+    const t = d.ticket;
+    const sol = d.solicitante;
+    const ag = d.agente_asignado;
+    const ia = d.analisis_ia;
+
+    const fecha = (iso) => iso ? new Date(iso).toLocaleString('es-ES') : 'N/A';
+
+    let html = `
+        <div class="detail-section">
+            <h4>📄 Información del Ticket</h4>
+            <div class="detail-desc"><strong>${t.asunto}</strong></div>
+            <div class="detail-desc">${t.descripcion}</div>
+            <div class="detail-row"><span class="detail-key">Estado</span><span class="detail-val">${t.estado}</span></div>
+            <div class="detail-row"><span class="detail-key">Categoría</span><span class="detail-val">${t.categoria || 'N/A'}</span></div>
+            <div class="detail-row"><span class="detail-key">Prioridad</span><span class="detail-val">${t.prioridad || 'N/A'}</span></div>
+            <div class="detail-row"><span class="detail-key">Creado</span><span class="detail-val">${fecha(t.fecha_creacion)}</span></div>
+            <div class="detail-row"><span class="detail-key">Actualizado</span><span class="detail-val">${fecha(t.fecha_actualizacion)}</span></div>
+        </div>
+
+        <div class="detail-section">
+            <h4>👤 Solicitante</h4>
+            ${sol ? `
+            <div class="detail-row"><span class="detail-key">Nombre</span><span class="detail-val">${sol.nombre}</span></div>
+            <div class="detail-row"><span class="detail-key">Email</span><span class="detail-val">${sol.email}</span></div>
+            <div class="detail-row"><span class="detail-key">Área</span><span class="detail-val">${sol.area || 'N/A'}</span></div>
+            <div class="detail-row"><span class="detail-key">Rol</span><span class="detail-val">${sol.rol}</span></div>
+            <div class="detail-row"><span class="detail-key">Estado cuenta</span><span class="detail-val">${sol.estado}</span></div>
+            <div class="detail-row"><span class="detail-key">Registrado</span><span class="detail-val">${fecha(sol.fecha_registro)}</span></div>
+            <div class="detail-row"><span class="detail-key">Último acceso</span><span class="detail-val">${fecha(sol.fecha_ultimo_acceso)}</span></div>
+            ` : '<div class="detail-row"><span class="detail-val">Sin datos del solicitante</span></div>'}
+        </div>
+
+        <div class="detail-section">
+            <h4>🛠️ Agente Asignado</h4>
+            ${ag ? `
+            <div class="detail-row"><span class="detail-key">Nombre</span><span class="detail-val">${ag.nombre}</span></div>
+            <div class="detail-row"><span class="detail-key">Email</span><span class="detail-val">${ag.email}</span></div>
+            <div class="detail-row"><span class="detail-key">Especialidad</span><span class="detail-val">${ag.especialidad || 'N/A'}</span></div>
+            <div class="detail-row"><span class="detail-key">Carga actual</span><span class="detail-val">${ag.carga_trabajo} ticket(s)</span></div>
+            ` : '<div class="detail-row"><span class="detail-val">Sin asignar</span></div>'}
+        </div>
+
+        <div class="detail-section">
+            <h4>🤖 Análisis IA Local (Ollama)</h4>
+            ${ia ? `
+            <div class="detail-row"><span class="detail-key">Categoría IA</span><span class="detail-val">${ia.categoria_ia || 'N/A'}</span></div>
+            <div class="detail-row"><span class="detail-key">Prioridad IA</span><span class="detail-val">${ia.prioridad_ia || 'N/A'}</span></div>
+            <div class="detail-row"><span class="detail-key">Confianza</span><span class="detail-val">${ia.confianza != null ? (ia.confianza * 100).toFixed(1) + '%' : 'N/A'}</span></div>
+            <div class="detail-row"><span class="detail-key">Modelo</span><span class="detail-val">${ia.modelo_ia || 'N/A'}</span></div>
+            <div class="detail-row"><span class="detail-key">Tokens usados</span><span class="detail-val">${ia.tokens_usados != null ? ia.tokens_usados : 'N/A'}</span></div>
+            <div class="detail-row"><span class="detail-key">Tiempo ejecución</span><span class="detail-val">${ia.tiempo_ejecucion_ms != null ? ia.tiempo_ejecucion_ms + ' ms' : 'N/A'}</span></div>
+            <div class="detail-row"><span class="detail-key">Fecha análisis</span><span class="detail-val">${fecha(ia.fecha_clasificacion)}</span></div>
+            <div class="detail-row"><span class="detail-key">Revisión manual</span><span class="detail-val">${ia.revision_manual ? 'Sí' : 'No'}</span></div>
+            ${ia.comentario_revision ? `<div class="detail-row"><span class="detail-key">Comentario revisión</span><span class="detail-val">${ia.comentario_revision}</span></div>` : ''}
+            ` : '<div class="detail-row"><span class="detail-val">La IA aún no ha analizado este ticket</span></div>'}
+        </div>
+    `;
+
+    if (d.historial && d.historial.length > 0) {
+        html += `
+        <div class="detail-section">
+            <h4>🕘 Historial de Estados</h4>
+            ${d.historial.map(h => `
+                <div class="detail-row">
+                    <span class="detail-key">${h.estado_anterior || '—'} → ${h.estado_nuevo}</span>
+                    <span class="detail-val">${fecha(h.fecha)}</span>
+                </div>
+            `).join('')}
+        </div>`;
+    }
+
+    return html;
 }

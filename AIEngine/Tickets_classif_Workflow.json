@@ -1,0 +1,197 @@
+{
+  "name": "HelpDesk - Clasificación IA de Tickets (Optimizado)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "new-ticket",
+        "options": {}
+      },
+      "id": "f0c2c1cb-d613-4bed-a86a-0701c21cd517",
+      "name": "Recibir Ticket",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "e8011cc6-2521-49bc-a201-42902fb2f440"
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputData = $input.first().json;\n\n// El webhook de n8n entrega los datos dentro de \"body\". \n// Esta línea asegura que lo tomamos de ahí, o de la raíz si cambia.\nconst data = inputData.body || inputData;\n\nconst ticket = data.ticket || {};\nconst solicitante = data.solicitante || {};\n\nconst asunto = ticket.asunto || data.asunto || 'Sin asunto';\nconst descripcion = ticket.descripcion || data.descripcion || 'Sin descripción';\nconst categoria = ticket.categoria?.nombre || data.categoria || 'Sin categoría';\nconst prioridad = ticket.prioridad?.nombre || data.prioridad || 'Sin prioridad';\nconst estado = ticket.estado || data.estado || 'nuevo';\n\nconst nombre = solicitante.nombre || data.nombre || 'Usuario desconocido';\nconst email = solicitante.email || data.email || 'Sin email';\nconst area = solicitante.area || data.area || 'Sin área';\n\n// Extracción robusta: si existe, lo toma; si no, usa el fallback.\nconst ticketId = data.ticket_id !== undefined ? data.ticket_id : 'UNKNOWN_ID';\nconst backendUrl = data.backend_url || 'http://localhost:8000/api';\n\n// DEBUG: Esto aparecerá en la pestaña \"Console\" del nodo para que verifiques que lo lee bien\nconsole.log('🔍 DEBUG Preparar Prompt -> ticket_id:', ticketId, '| backend_url:', backendUrl);\n\nconst systemPrompt = `Eres un asistente de soporte técnico especializado en análisis de tickets. Responde EXCLUSIVAMENTE con un objeto JSON válido, sin markdown ni texto adicional.`;\n\nconst userPrompt = `Se ha recibido un nuevo ticket con los siguientes datos:\n\n📌 ASUNTO: ${asunto}\n📝 DESCRIPCIÓN: ${descripcion}\n📂 CATEGORÍA: ${categoria}\n⚡ PRIORIDAD: ${prioridad}\n👤 SOLICITANTE: ${nombre}\n🏢 ÁREA: ${area}\n📧 EMAIL: ${email}\n📝 ESTADO: ${estado}\n\nIMPORTANTE: Debes responder EXCLUSIVAMENTE en el siguiente formato JSON:\n{\n  \"id_categoria\": 2,\n  \"id_prioridad\": 3,\n  \"confianza\": 0.95,\n  \"justificacion\": \"Breve razón de la clasificación\"\n}\n\nMAPA DE CATEGORÍAS (id_categoria):\n1 = Hardware, 2 = Software, 3 = Red, 4 = Cuentas/Accesos, 5 = Otros\n\nMAPA DE PRIORIDADES (id_prioridad):\n1 = crítica, 2 = alta, 3 = media, 4 = baja\n\nResponde SOLO con el JSON.`;\n\nreturn [{\n  json: {\n    model: 'llama3.2',\n    messages: [\n      { \"role\": \"system\", \"content\": systemPrompt },\n      { \"role\": \"user\", \"content\": userPrompt }\n    ],\n    stream: false,\n    format: \"json\",\n    temperature: 0.1,\n    ticket_id: ticketId,\n    backend_url: backendUrl\n  }\n}];"
+      },
+      "id": "4c89b973-d468-4034-b02c-f0e5bce51026",
+      "name": "Preparar Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        208,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://ollama:11434/api/chat",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "id": "a1de700c-fd6c-4bf0-a510-596e09f10958",
+      "name": "Analizar con Ollama",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        400,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const ollamaResponse = $input.first().json;\nconst rawContent = ollamaResponse.message?.content || '{}';\nconst modelName = ollamaResponse.model || 'llama3.2';\n\nconsole.log('🤖 Respuesta cruda de Ollama:', rawContent);\n\nlet ticketId = 'UNKNOWN_ID';\nlet backendUrl = 'http://localhost:8000/api';\n\ntry {\n  // ¡CLAVE DEL ÉXITO! Recuperamos los datos del nodo anterior por su nombre exacto\n  const promptData = $('Preparar Prompt').first().json;\n  ticketId = promptData.ticket_id !== undefined ? promptData.ticket_id : 'UNKNOWN_ID';\n  backendUrl = promptData.backend_url || 'http://localhost:8000/api';\n  console.log('✅ ÉXITO: Datos recuperados de \"Preparar Prompt\" -> Ticket ID:', ticketId);\n} catch (e) {\n  console.error('❌ ERROR al recuperar datos del nodo \"Preparar Prompt\":', e.message);\n  console.log('⚠️ Asegúrate de que el nodo anterior se llame EXACTAMENTE \"Preparar Prompt\" (sin el 1 y sin espacios al final).');\n}\n\nlet analysis = {};\ntry {\n  // Limpiar posibles bloques de markdown que a veces Ollama añade\n  const cleanContent = rawContent.replace(/```json\\s*/g, '').replace(/```\\s*/g, '').trim();\n  analysis = JSON.parse(cleanContent);\n} catch (e) {\n  console.error('Error parseando JSON, usando fallback:', e.message);\n  analysis = {\n    id_categoria: 5,\n    id_prioridad: 3,\n    confianza: 0.5,\n    justificacion: 'Fallback por error de parseo'\n  };\n}\n\nreturn [{\n  json: {\n    ticket_id: ticketId,\n    callback_url: `${backendUrl}/tickets/${ticketId}/ai-analysis`,\n    ai_analysis_payload: {\n      id_categoria: analysis.id_categoria,\n      id_prioridad: analysis.id_prioridad,\n      confianza: analysis.confianza || 0.8,\n      modelo_ia: modelName,\n      tokens_usados: ollamaResponse.eval_count || 0,\n      tiempo_ejecucion_ms: Math.round((ollamaResponse.total_duration || 0) / 1000000)\n    }\n  }\n}];"
+      },
+      "id": "faf8006c-26b5-43e0-8edc-fd40329ce009",
+      "name": "Parsear Respuesta",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        608,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://host.docker.internal:8000/api/tickets/{{ $json.ticket_id }}/ai-analysis",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.ai_analysis_payload) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "341797ac-8fef-4367-bf6a-9c39acb390ee",
+      "name": "Almacenar Análisis en Backend",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        800,
+        0
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ success: true, message: \"Ticket procesado por IA\", ticket_id: $json.ticket_id }) }}",
+        "options": {}
+      },
+      "id": "a18f87e2-0254-4eb4-a5d5-8b4bb7b495c0",
+      "name": "Responder al Frontend",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1008,
+        0
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Recibir Ticket": {
+      "main": [
+        [
+          {
+            "node": "Preparar Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Prompt": {
+      "main": [
+        [
+          {
+            "node": "Analizar con Ollama",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analizar con Ollama": {
+      "main": [
+        [
+          {
+            "node": "Parsear Respuesta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parsear Respuesta": {
+      "main": [
+        [
+          {
+            "node": "Almacenar Análisis en Backend",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Almacenar Análisis en Backend": {
+      "main": [
+        [
+          {
+            "node": "Responder al Frontend",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "c2ed6d54-540b-4106-a919-de3e199efd34",
+  "meta": {
+    "instanceId": "ea0471fd446af414b1f2372d77bf97a391389eabef7a167420d54c14b886f5c7"
+  },
+  "nodeGroups": [],
+  "id": "bgnR7goDxCkMwg4C",
+  "tags": []
+}

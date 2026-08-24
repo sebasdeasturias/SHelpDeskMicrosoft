@@ -19,48 +19,70 @@
         </div>
         <div class="topbar-center">
             <nav class="main-nav">
-                <button class="nav-btn active" data-page="kanban">
-                    <i class="fas fa-columns"></i> Kanban
+                <!-- 1. Kanban -->
+                <button class="nav-btn active" data-page="kanban" title="Tablero Kanban de Tickets">
+                    <i class="fas fa-columns"></i> <span>Kanban</span>
                 </button>
-                <div class="nav-dropdown">
-                    <button class="nav-btn dropdown-toggle" id="menuToggle">
-                        <i class="fas fa-bars"></i> Menú <i class="fas fa-chevron-down"></i>
+
+                <!-- 2. Estadísticas Streamlit -->
+                <button class="nav-btn" data-page="streamlit" title="Dashboard de Estadísticas con Streamlit">
+                    <i class="fas fa-chart-pie"></i> <span>Estadísticas</span>
+                </button>
+
+                <!-- 3. Reportes de Tickets -->
+                <button class="nav-btn" data-page="reportes" title="Generación y Exportación de Reportes">
+                    <i class="fas fa-file-invoice"></i> <span>Reportes</span>
+                </button>
+
+                <!-- 4. Gestión de Agentes de Soporte (Dropdown) -->
+                <div class="nav-dropdown" id="agentesNavDropdown">
+                    <button class="nav-btn dropdown-toggle" id="menuToggle" title="Gestión de Agentes de Soporte">
+                        <i class="fas fa-users-cog"></i> <span>Gestión Agentes</span> <i class="fas fa-chevron-down nav-caret"></i>
                     </button>
                     <div class="dropdown-menu" id="dropdownMenu">
                         <a href="#" data-page="asignar" class="dropdown-item">
-                            <i class="fas fa-user-plus"></i> Asignar Tickets
-                            <span class="badge-coming">Próximo</span>
-                        </a>
-                        <a href="#" data-page="reportes" class="dropdown-item">
-                            <i class="fas fa-chart-bar"></i> Generar Reportes
-                            <span class="badge-coming">Próximo</span>
-                        </a>
-                        <a href="#" data-page="streamlit" class="dropdown-item">
-                            <i class="fas fa-chart-pie"></i> Dashboard Streamlit
-                            <span class="badge-coming">Próximo</span>
-                        </a>
-                        <a href="#" data-page="sla" class="dropdown-item">
-                            <i class="fas fa-clock"></i> Configurar SLAs
-                            <span class="badge-coming">Próximo</span>
+                            <i class="fas fa-user-plus"></i>
+                            <div class="dropdown-item-text">
+                                <span class="dropdown-item-title">Asignación de Tickets</span>
+                                <span class="dropdown-item-desc">Balancear y asignar carga</span>
+                            </div>
                         </a>
                         <a href="#" data-page="supervisar" class="dropdown-item">
-                            <i class="fas fa-users-cog"></i> Supervisar Agentes
-                            <span class="badge-coming">Próximo</span>
+                            <i class="fas fa-shield-alt"></i>
+                            <div class="dropdown-item-text">
+                                <span class="dropdown-item-title">Permisos y Supervisión</span>
+                                <span class="dropdown-item-desc">Roles, accesos y métricas</span>
+                            </div>
                         </a>
                         <a href="#" data-page="chat-ia" class="dropdown-item">
-                            <i class="fas fa-robot"></i> Chat IA
-                            <span class="badge-coming">Próximo</span>
+                            <i class="fas fa-robot"></i>
+                            <div class="dropdown-item-text">
+                                <span class="dropdown-item-title">Chat IA Asistente</span>
+                                <span class="dropdown-item-desc">Consultas avanzadas de equipo</span>
+                            </div>
                         </a>
                         <a href="#" data-page="rag" class="dropdown-item">
-                            <i class="fas fa-brain"></i> Consultar RAG
-                            <span class="badge-coming">Próximo</span>
+                            <i class="fas fa-brain"></i>
+                            <div class="dropdown-item-text">
+                                <span class="dropdown-item-title">Consultar RAG</span>
+                                <span class="dropdown-item-desc">Búsqueda semántica de tickets</span>
+                            </div>
                         </a>
                         <hr class="dropdown-divider">
                         <a href="#" data-page="mi-perfil" class="dropdown-item">
-                            <i class="fas fa-user-circle"></i> Mi Perfil
+                            <i class="fas fa-user-circle"></i>
+                            <div class="dropdown-item-text">
+                                <span class="dropdown-item-title">Mi Perfil</span>
+                                <span class="dropdown-item-desc">Datos del coordinador</span>
+                            </div>
                         </a>
                     </div>
                 </div>
+
+                <!-- 5. Configuración de SLAs -->
+                <button class="nav-btn" data-page="sla" title="Configuración de Service Level Agreements (SLAs)">
+                    <i class="fas fa-clock"></i> <span>Configurar SLAs</span>
+                </button>
             </nav>
         </div>
         <div class="topbar-right">
@@ -84,7 +106,7 @@
 
     <!-- Contenido Principal -->
     <main class="main-content">
-        <!-- Página Kanban (activa por defecto) -->
+        <!-- 1. Página Kanban (activa por defecto) -->
         <section id="page-kanban" class="page-content active">
             <div class="kanban-board">
                 <div class="kanban-column column-todo">
@@ -118,76 +140,659 @@
             </div>
         </section>
 
-        <!-- Páginas futuras (placeholder) -->
-        <section id="page-asignar" class="page-content">
-            <div class="placeholder-panel">
-                <i class="fas fa-user-plus placeholder-icon"></i>
-                <h2>Asignar Tickets</h2>
-                <p>Módulo en construcción. Permitirá asignar tickets a agentes de forma manual o automática.</p>
-                <div class="coming-soon-badge">🚧 Próximamente</div>
-            </div>
-        </section>
-
-        <section id="page-reportes" class="page-content">
-            <div class="placeholder-panel">
-                <i class="fas fa-chart-bar placeholder-icon"></i>
-                <h2>Generar Reportes</h2>
-                <p>Módulo en construcción. Generación de reportes de rendimiento y métricas del equipo.</p>
-                <div class="coming-soon-badge">🚧 Próximamente</div>
-            </div>
-        </section>
-
+        <!-- 2. Página: Dashboard de Estadísticas con Streamlit -->
         <section id="page-streamlit" class="page-content">
-            <div class="placeholder-panel">
-                <i class="fas fa-chart-pie placeholder-icon"></i>
-                <h2>Dashboard Streamlit</h2>
-                <p>Módulo en construcción. Visualizaciones avanzadas con Streamlit.</p>
-                <div class="coming-soon-badge">🚧 Próximamente</div>
+            <div class="coordinator-panel-scroll">
+                <div class="panel-header-banner">
+                    <div class="header-info">
+                        <h2><i class="fas fa-chart-pie"></i> Dashboard de Analítica & Estadísticas TI</h2>
+                        <p>Visualización avanzada de métricas, rendimiento de agentes y tendencias impulsado por <strong>Streamlit</strong>.</p>
+                    </div>
+                    <div class="header-actions">
+                        <span class="status-indicator-badge live"><i class="fas fa-circle"></i> Streamlit en puerto :8501</span>
+                        <a href="http://localhost:8501" target="_blank" class="action-header-btn primary">
+                            <i class="fas fa-external-link-alt"></i> Abrir Streamlit Externo
+                        </a>
+                    </div>
+                </div>
+
+                <!-- KPIs Cards -->
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-icon blue"><i class="fas fa-ticket-alt"></i></div>
+                        <div class="kpi-content">
+                            <span class="kpi-label">Tickets Totales Mes</span>
+                            <span class="kpi-value" id="kpi-total-tickets">128</span>
+                            <span class="kpi-trend positive"><i class="fas fa-arrow-up"></i> +12% vs mes anterior</span>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon green"><i class="fas fa-shield-alt"></i></div>
+                        <div class="kpi-content">
+                            <span class="kpi-label">Cumplimiento de SLA</span>
+                            <span class="kpi-value">94.8%</span>
+                            <span class="kpi-trend positive"><i class="fas fa-check-circle"></i> Meta cumplida (>90%)</span>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon yellow"><i class="fas fa-stopwatch"></i></div>
+                        <div class="kpi-content">
+                            <span class="kpi-label">Tiempo Medio Solución</span>
+                            <span class="kpi-value">42 min</span>
+                            <span class="kpi-trend positive"><i class="fas fa-arrow-down"></i> -8 min de mejora</span>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon purple"><i class="fas fa-user-check"></i></div>
+                        <div class="kpi-content">
+                            <span class="kpi-label">Agentes Activos</span>
+                            <span class="kpi-value">4 / 5</span>
+                            <span class="kpi-trend neutral"><i class="fas fa-info-circle"></i> 1 en capacitación</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Visualización de Gráficos Integrada -->
+                <div class="analytics-charts-grid">
+                    <div class="chart-glass-card">
+                        <div class="card-header-clean">
+                            <h3><i class="fas fa-chart-bar"></i> Volumen por Categoría</h3>
+                            <span class="badge-tag">Últimos 30 días</span>
+                        </div>
+                        <div class="chart-mock-body">
+                            <div class="bar-chart-row">
+                                <span class="bar-label">Software</span>
+                                <div class="bar-track"><div class="bar-fill blue" style="width: 78%;"></div></div>
+                                <span class="bar-value">42</span>
+                            </div>
+                            <div class="bar-chart-row">
+                                <span class="bar-label">Hardware</span>
+                                <div class="bar-track"><div class="bar-fill orange" style="width: 55%;"></div></div>
+                                <span class="bar-value">28</span>
+                            </div>
+                            <div class="bar-chart-row">
+                                <span class="bar-label">Red / Internet</span>
+                                <div class="bar-track"><div class="bar-fill cyan" style="width: 65%;"></div></div>
+                                <span class="bar-value">34</span>
+                            </div>
+                            <div class="bar-chart-row">
+                                <span class="bar-label">Cuentas / Accesos</span>
+                                <div class="bar-track"><div class="bar-fill red" style="width: 32%;"></div></div>
+                                <span class="bar-value">16</span>
+                            </div>
+                            <div class="bar-chart-row">
+                                <span class="bar-label">Otros</span>
+                                <div class="bar-track"><div class="bar-fill green" style="width: 15%;"></div></div>
+                                <span class="bar-value">8</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chart-glass-card">
+                        <div class="card-header-clean">
+                            <h3><i class="fas fa-user-friends"></i> Carga y Eficiencia de Agentes</h3>
+                            <span class="badge-tag">En tiempo real</span>
+                        </div>
+                        <div class="chart-mock-body">
+                            <div class="agent-efficiency-row">
+                                <div class="agent-avatar-mini" style="background: #3b82f6;">MG</div>
+                                <div class="agent-eff-info">
+                                    <div class="eff-top"><span>María González (Soporte TI)</span> <strong>98% SLA</strong></div>
+                                    <div class="bar-track"><div class="bar-fill green" style="width: 90%;"></div></div>
+                                </div>
+                            </div>
+                            <div class="agent-efficiency-row">
+                                <div class="agent-avatar-mini" style="background: #10b981;">CR</div>
+                                <div class="agent-eff-info">
+                                    <div class="eff-top"><span>Carlos Rodríguez (Senior)</span> <strong>94% SLA</strong></div>
+                                    <div class="bar-track"><div class="bar-fill blue" style="width: 85%;"></div></div>
+                                </div>
+                            </div>
+                            <div class="agent-efficiency-row">
+                                <div class="agent-avatar-mini" style="background: #f59e0b;">AM</div>
+                                <div class="agent-eff-info">
+                                    <div class="eff-top"><span>Ana Martínez (Admin TI)</span> <strong>100% SLA</strong></div>
+                                    <div class="bar-track"><div class="bar-fill purple" style="width: 95%;"></div></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
 
-        <section id="page-sla" class="page-content">
-            <div class="placeholder-panel">
-                <i class="fas fa-clock placeholder-icon"></i>
-                <h2>Configurar SLAs</h2>
-                <p>Módulo en construcción. Gestión de tiempos de respuesta y solución por prioridad.</p>
-                <div class="coming-soon-badge">🚧 Próximamente</div>
+        <!-- 3. Página: Generación de Reportes de Tickets -->
+        <section id="page-reportes" class="page-content">
+            <div class="coordinator-panel-scroll">
+                <div class="panel-header-banner">
+                    <div class="header-info">
+                        <h2><i class="fas fa-file-invoice"></i> Generación & Exportación de Reportes</h2>
+                        <p>Filtra incidentes, analiza tiempos de atención y genera reportes ejecutivos en PDF o Excel/CSV.</p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="action-header-btn success" id="btnExportPDF"><i class="fas fa-file-pdf"></i> Exportar PDF</button>
+                        <button class="action-header-btn primary" id="btnExportCSV"><i class="fas fa-file-csv"></i> Exportar Excel / CSV</button>
+                    </div>
+                </div>
+
+                <!-- Filtros del Reporte -->
+                <div class="filter-panel-card">
+                    <h3><i class="fas fa-sliders-h"></i> Filtros de Reporte</h3>
+                    <div class="filter-grid">
+                        <div class="filter-group">
+                            <label><i class="far fa-calendar-alt"></i> Fecha Desde</label>
+                            <input type="date" id="repFechaDesde" value="2026-08-01" class="glass-input">
+                        </div>
+                        <div class="filter-group">
+                            <label><i class="far fa-calendar-alt"></i> Fecha Hasta</label>
+                            <input type="date" id="repFechaHasta" value="2026-08-18" class="glass-input">
+                        </div>
+                        <div class="filter-group">
+                            <label><i class="fas fa-folder"></i> Categoría</label>
+                            <select id="repCategoria" class="glass-select">
+                                <option value="todas">Todas las Categorías</option>
+                                <option value="Hardware">Hardware</option>
+                                <option value="Software">Software</option>
+                                <option value="Red/Internet">Red / Internet</option>
+                                <option value="Cuentas/Accesos">Cuentas / Accesos</option>
+                                <option value="Otros">Otros</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label><i class="fas fa-exclamation-triangle"></i> Prioridad</label>
+                            <select id="repPrioridad" class="glass-select">
+                                <option value="todas">Todas las Prioridades</option>
+                                <option value="crítica">Crítica</option>
+                                <option value="alta">Alta</option>
+                                <option value="media">Media</option>
+                                <option value="baja">Baja</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label><i class="fas fa-tasks"></i> Estado</label>
+                            <select id="repEstado" class="glass-select">
+                                <option value="todos">Todos los Estados</option>
+                                <option value="nuevo">Nuevo</option>
+                                <option value="asignado">Asignado</option>
+                                <option value="en_proceso">En Progreso</option>
+                                <option value="resuelto">Resuelto</option>
+                                <option value="cerrado">Cerrado</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vista Previa de Tabla de Reporte -->
+                <div class="table-glass-container">
+                    <div class="table-header-bar">
+                        <h3><i class="fas fa-table"></i> Vista Previa de Registros (<span id="repTotalCount">4</span> tickets)</h3>
+                        <span class="badge-clean">Ordenado por Fecha Reciente</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="glass-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Asunto</th>
+                                    <th>Categoría</th>
+                                    <th>Prioridad</th>
+                                    <th>Estado</th>
+                                    <th>Agente</th>
+                                    <th>Fecha</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reportTableBody">
+                                <tr>
+                                    <td><strong>#TK-0001</strong></td>
+                                    <td>Falla de conexión en el servidor de base de datos</td>
+                                    <td><span class="tag tag-network">Red/Internet</span></td>
+                                    <td><span class="priority-pill critical">Crítica</span></td>
+                                    <td><span class="status-pill proceso">En Progreso</span></td>
+                                    <td>María González</td>
+                                    <td>18/08/2026</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>#TK-0002</strong></td>
+                                    <td>Instalación de paquete ofimático y licencia</td>
+                                    <td><span class="tag tag-software">Software</span></td>
+                                    <td><span class="priority-pill medium">Media</span></td>
+                                    <td><span class="status-pill resuelto">Resuelto</span></td>
+                                    <td>Carlos Rodríguez</td>
+                                    <td>17/08/2026</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>#TK-0003</strong></td>
+                                    <td>Reemplazo de periférico teclado y mouse</td>
+                                    <td><span class="tag tag-hardware">Hardware</span></td>
+                                    <td><span class="priority-pill low">Baja</span></td>
+                                    <td><span class="status-pill cerrado">Cerrado</span></td>
+                                    <td>María González</td>
+                                    <td>16/08/2026</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>#TK-0004</strong></td>
+                                    <td>Bloqueo de cuenta de acceso corporativo</td>
+                                    <td><span class="tag tag-access">Cuentas/Accesos</span></td>
+                                    <td><span class="priority-pill high">Alta</span></td>
+                                    <td><span class="status-pill nuevo">Nuevo</span></td>
+                                    <td><em>Sin asignar</em></td>
+                                    <td>18/08/2026</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </section>
 
+        <!-- 4. Página: Asignación de Tickets (Gestión Agentes) -->
+        <section id="page-asignar" class="page-content">
+            <div class="coordinator-panel-scroll">
+                <div class="panel-header-banner">
+                    <div class="header-info">
+                        <h2><i class="fas fa-user-plus"></i> Asignación y Balanceo de Carga de Tickets</h2>
+                        <p>Monitorea la carga activa de cada agente y asigna tickets manualmente o mediante recomendación con IA.</p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="action-header-btn purple" id="btnAutoAsignarIA">
+                            <i class="fas fa-magic"></i> Balanceo Automático IA
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Grid de Carga de Agentes -->
+                <div class="agent-workload-grid">
+                    <div class="agent-card-glass">
+                        <div class="agent-card-top">
+                            <div class="agent-avatar" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);">MG</div>
+                            <div class="agent-details">
+                                <h4>María González</h4>
+                                <span class="agent-spec"><i class="fas fa-microchip"></i> Hardware y Redes</span>
+                            </div>
+                            <span class="agent-status-badge online">Disponible</span>
+                        </div>
+                        <div class="workload-bar-wrap">
+                            <div class="workload-info"><span>Carga de Trabajo:</span> <strong>2 / 5 tickets (40%)</strong></div>
+                            <div class="bar-track"><div class="bar-fill green" style="width: 40%;"></div></div>
+                        </div>
+                    </div>
+
+                    <div class="agent-card-glass">
+                        <div class="agent-card-top">
+                            <div class="agent-avatar" style="background: linear-gradient(135deg, #10b981, #047857);">CR</div>
+                            <div class="agent-details">
+                                <h4>Carlos Rodríguez</h4>
+                                <span class="agent-spec"><i class="fas fa-users"></i> Gestión de Equipos</span>
+                            </div>
+                            <span class="agent-status-badge busy">Ocupado</span>
+                        </div>
+                        <div class="workload-bar-wrap">
+                            <div class="workload-info"><span>Carga de Trabajo:</span> <strong>4 / 5 tickets (80%)</strong></div>
+                            <div class="bar-track"><div class="bar-fill yellow" style="width: 80%;"></div></div>
+                        </div>
+                    </div>
+
+                    <div class="agent-card-glass">
+                        <div class="agent-card-top">
+                            <div class="agent-avatar" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9);">AM</div>
+                            <div class="agent-details">
+                                <h4>Ana Martínez</h4>
+                                <span class="agent-spec"><i class="fas fa-server"></i> Administración Sistemas</span>
+                            </div>
+                            <span class="agent-status-badge online">Disponible</span>
+                        </div>
+                        <div class="workload-bar-wrap">
+                            <div class="workload-info"><span>Carga de Trabajo:</span> <strong>1 / 5 tickets (20%)</strong></div>
+                            <div class="bar-track"><div class="bar-fill green" style="width: 20%;"></div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cola de Tickets sin Asignar -->
+                <div class="table-glass-container">
+                    <div class="table-header-bar">
+                        <h3><i class="fas fa-inbox"></i> Tickets Pendientes de Asignación</h3>
+                        <span class="badge-tag">Prioridad Alta Primero</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="glass-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Asunto</th>
+                                    <th>Categoría</th>
+                                    <th>Prioridad</th>
+                                    <th>Recomendación IA</th>
+                                    <th>Asignar a Agente</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>#TK-0004</strong></td>
+                                    <td>Bloqueo de cuenta de acceso corporativo</td>
+                                    <td><span class="tag tag-access">Cuentas/Accesos</span></td>
+                                    <td><span class="priority-pill high">Alta</span></td>
+                                    <td><span class="ai-badge-chip"><i class="fas fa-robot"></i> María González (92% afinidad)</span></td>
+                                    <td>
+                                        <div class="assign-action-wrap">
+                                            <select class="glass-select-mini">
+                                                <option>María González</option>
+                                                <option>Carlos Rodríguez</option>
+                                                <option>Ana Martínez</option>
+                                            </select>
+                                            <button class="btn-mini-save"><i class="fas fa-check"></i></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. Página: Supervisar Agentes & Permisos (Gestión Agentes) -->
         <section id="page-supervisar" class="page-content">
-            <div class="placeholder-panel">
-                <i class="fas fa-users-cog placeholder-icon"></i>
-                <h2>Supervisar Agentes</h2>
-                <p>Módulo en construcción. Monitoreo de carga de trabajo y rendimiento de agentes.</p>
-                <div class="coming-soon-badge">🚧 Próximamente</div>
+            <div class="coordinator-panel-scroll">
+                <div class="panel-header-banner">
+                    <div class="header-info">
+                        <h2><i class="fas fa-users-cog"></i> Supervisión & Control de Permisos de Agentes</h2>
+                        <p>Administra niveles de acceso, permisos de supervisión y audita el rendimiento del equipo de soporte.</p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="action-header-btn success" id="btnGuardarPermisos">
+                            <i class="fas fa-save"></i> Guardar Cambios
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-glass-container">
+                    <div class="table-header-bar">
+                        <h3><i class="fas fa-id-badge"></i> Directorio de Agentes de Soporte</h3>
+                        <span class="badge-tag">Base de Datos: helpdesk_db</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="glass-table">
+                            <thead>
+                                <tr>
+                                    <th>Agente</th>
+                                    <th>Email</th>
+                                    <th>Especialidad</th>
+                                    <th>Nivel Jerarquía</th>
+                                    <th>Permisos Supervisión</th>
+                                    <th>Permisos Especiales</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>María González</strong></td>
+                                    <td>maria.gonzalez@empresa.com</td>
+                                    <td>Hardware y Redes</td>
+                                    <td>Técnico Junior</td>
+                                    <td>
+                                        <label class="glass-switch">
+                                            <input type="checkbox">
+                                            <span class="slider-switch"></span>
+                                        </label>
+                                    </td>
+                                    <td>
+                                        <label class="glass-switch">
+                                            <input type="checkbox">
+                                            <span class="slider-switch"></span>
+                                        </label>
+                                    </td>
+                                    <td><span class="status-pill resuelto">Activo</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Carlos Rodríguez</strong></td>
+                                    <td>carlos.rodriguez@empresa.com</td>
+                                    <td>Gestión de Equipos</td>
+                                    <td>Senior</td>
+                                    <td>
+                                        <label class="glass-switch">
+                                            <input type="checkbox" checked>
+                                            <span class="slider-switch"></span>
+                                        </label>
+                                    </td>
+                                    <td>
+                                        <label class="glass-switch">
+                                            <input type="checkbox">
+                                            <span class="slider-switch"></span>
+                                        </label>
+                                    </td>
+                                    <td><span class="status-pill resuelto">Activo</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Ana Martínez</strong></td>
+                                    <td>ana.martinez@empresa.com</td>
+                                    <td>Administración Sistemas</td>
+                                    <td>Director / Admin</td>
+                                    <td>
+                                        <label class="glass-switch">
+                                            <input type="checkbox" checked>
+                                            <span class="slider-switch"></span>
+                                        </label>
+                                    </td>
+                                    <td>
+                                        <label class="glass-switch">
+                                            <input type="checkbox" checked>
+                                            <span class="slider-switch"></span>
+                                        </label>
+                                    </td>
+                                    <td><span class="status-pill resuelto">Activo</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </section>
 
+        <!-- 6. Página: Chat IA Coordinador (Gestión Agentes) -->
         <section id="page-chat-ia" class="page-content">
-            <div class="placeholder-panel">
-                <i class="fas fa-robot placeholder-icon"></i>
-                <h2>Chat IA</h2>
-                <p>Módulo en construcción. Asistente inteligente para el coordinador.</p>
-                <div class="coming-soon-badge">🚧 Próximamente</div>
+            <div class="coordinator-panel-scroll">
+                <div class="panel-header-banner">
+                    <div class="header-info">
+                        <h2><i class="fas fa-robot"></i> Asistente de IA para Coordinadores</h2>
+                        <p>Consulta análisis automáticos de métricas, distribución de agentes y detección de cuellos de botella mediante LLM local.</p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="action-header-btn primary" onclick="document.getElementById('chatFab').click();">
+                            <i class="fas fa-comments"></i> Abrir Chat Flotante
+                        </button>
+                    </div>
+                </div>
+
+                <div class="ai-prompts-grid">
+                    <div class="ai-prompt-card" onclick="enviarPromptSugerido('¿Qué agentes tienen mayor sobrecarga de tickets hoy y cómo puedo rebalancear?')">
+                        <div class="prompt-icon"><i class="fas fa-balance-scale"></i></div>
+                        <h4>Análisis de Carga de Agentes</h4>
+                        <p>Detecta agentes con sobrecupo y sugiere redistribución óptima.</p>
+                        <span class="prompt-btn-run"><i class="fas fa-arrow-right"></i> Preguntar a la IA</span>
+                    </div>
+
+                    <div class="ai-prompt-card" onclick="enviarPromptSugerido('Genera un resumen ejecutivo de los tickets críticos y con riesgo de incumplir SLA.')">
+                        <div class="prompt-icon"><i class="fas fa-exclamation-circle"></i></div>
+                        <h4>Resumen de Tickets Críticos</h4>
+                        <p>Identifica tickets urgentes sin resolver o próximos a vencer su SLA.</p>
+                        <span class="prompt-btn-run"><i class="fas fa-arrow-right"></i> Preguntar a la IA</span>
+                    </div>
+
+                    <div class="ai-prompt-card" onclick="enviarPromptSugerido('¿Cuáles son las categorías más reportadas esta semana y sus posibles causas raíz?')">
+                        <div class="prompt-icon"><i class="fas fa-chart-line"></i></div>
+                        <h4>Detección de Cuellos de Botella</h4>
+                        <p>Analiza patrones recurrentes de incidentes en redes, hardware o software.</p>
+                        <span class="prompt-btn-run"><i class="fas fa-arrow-right"></i> Preguntar a la IA</span>
+                    </div>
+                </div>
             </div>
         </section>
 
+        <!-- 7. Página: Consultar RAG (Gestión Agentes) -->
         <section id="page-rag" class="page-content">
-            <div class="placeholder-panel">
-                <i class="fas fa-brain placeholder-icon"></i>
-                <h2>Consultar RAG</h2>
-                <p>Módulo en construcción. Búsqueda semántica en tickets usando IA.</p>
-                <div class="coming-soon-badge">🚧 Próximamente</div>
+            <div class="coordinator-panel-scroll">
+                <div class="panel-header-banner">
+                    <div class="header-info">
+                        <h2><i class="fas fa-brain"></i> Búsqueda Semántica RAG (Retrieval-Augmented Generation)</h2>
+                        <p>Consulta soluciones históricas utilizando embeddings vectoriales almacenados en <strong>PostgreSQL pgvector</strong>.</p>
+                    </div>
+                </div>
+
+                <div class="rag-search-box">
+                    <div class="search-input-wrap">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="ragSearchInput" placeholder="Escribe el problema o síntoma técnico (ej: pantalla azul error driver wifi)...">
+                        <button class="action-header-btn primary" id="btnBuscarRAG"><i class="fas fa-magic"></i> Buscar con RAG</button>
+                    </div>
+                </div>
+
+                <div class="table-glass-container">
+                    <div class="table-header-bar">
+                        <h3><i class="fas fa-list-ol"></i> Soluciones Similares Encontradas</h3>
+                        <span class="badge-tag">Similitud Coseno HNSW</span>
+                    </div>
+                    <div class="rag-results-list" id="ragResultsList">
+                        <div class="rag-result-card">
+                            <div class="rag-result-top">
+                                <h4>Solución para: Error de autenticación y desconexión en VPN Cisco</h4>
+                                <span class="similarity-badge">94.2% Similitud</span>
+                            </div>
+                            <p><strong>Causa raíz:</strong> Certificado caducado en el perfil de cliente VPN.</p>
+                            <p><strong>Solución aplicada:</strong> Renovación de certificado mediante script PowerShell y reinicio del servicio de túnel.</p>
+                            <span class="rag-meta-tag"><i class="fas fa-check-circle"></i> Ticket fuente: #TK-0089 • Resuelto por María González</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
 
+        <!-- 8. Página: Configurar SLAs (Service Level Agreements) -->
+        <section id="page-sla" class="page-content">
+            <div class="coordinator-panel-scroll">
+                <div class="panel-header-banner">
+                    <div class="header-info">
+                        <h2><i class="fas fa-clock"></i> Configuración de Service Level Agreements (SLAs)</h2>
+                        <p>Define tiempos límite máximos de primera respuesta y resolución definitiva según el nivel de criticidad del ticket.</p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="action-header-btn success" id="btnGuardarSLA">
+                            <i class="fas fa-save"></i> Guardar Políticas SLA
+                        </button>
+                    </div>
+                </div>
+
+                <div class="sla-cards-grid">
+                    <!-- Crítica -->
+                    <div class="sla-card-item critical-border">
+                        <div class="sla-card-header">
+                            <div class="priority-title"><span class="color-dot red"></span> Prioridad Crítica</div>
+                            <span class="sla-badge red">SLA Nivel 1</span>
+                        </div>
+                        <div class="sla-inputs">
+                            <div class="sla-input-row">
+                                <label>Tiempo Máx. Respuesta:</label>
+                                <div class="input-unit"><input type="number" value="15" class="glass-input-num"> <span>min</span></div>
+                            </div>
+                            <div class="sla-input-row">
+                                <label>Tiempo Máx. Solución:</label>
+                                <div class="input-unit"><input type="number" value="60" class="glass-input-num"> <span>min (1 h)</span></div>
+                            </div>
+                        </div>
+                        <div class="sla-rules">
+                            <label class="rule-check"><input type="checkbox" checked> Alerta temprana al 75% del tiempo</label>
+                            <label class="rule-check"><input type="checkbox" checked> Escalar al Coordinador automáticamente</label>
+                        </div>
+                    </div>
+
+                    <!-- Alta -->
+                    <div class="sla-card-item high-border">
+                        <div class="sla-card-header">
+                            <div class="priority-title"><span class="color-dot orange"></span> Prioridad Alta</div>
+                            <span class="sla-badge orange">SLA Nivel 2</span>
+                        </div>
+                        <div class="sla-inputs">
+                            <div class="sla-input-row">
+                                <label>Tiempo Máx. Respuesta:</label>
+                                <div class="input-unit"><input type="number" value="30" class="glass-input-num"> <span>min</span></div>
+                            </div>
+                            <div class="sla-input-row">
+                                <label>Tiempo Máx. Solución:</label>
+                                <div class="input-unit"><input type="number" value="240" class="glass-input-num"> <span>min (4 h)</span></div>
+                            </div>
+                        </div>
+                        <div class="sla-rules">
+                            <label class="rule-check"><input type="checkbox" checked> Alerta temprana al 75% del tiempo</label>
+                            <label class="rule-check"><input type="checkbox" checked> Notificación por correo al agente</label>
+                        </div>
+                    </div>
+
+                    <!-- Media -->
+                    <div class="sla-card-item medium-border">
+                        <div class="sla-card-header">
+                            <div class="priority-title"><span class="color-dot yellow"></span> Prioridad Media</div>
+                            <span class="sla-badge yellow">SLA Nivel 3</span>
+                        </div>
+                        <div class="sla-inputs">
+                            <div class="sla-input-row">
+                                <label>Tiempo Máx. Respuesta:</label>
+                                <div class="input-unit"><input type="number" value="60" class="glass-input-num"> <span>min (1 h)</span></div>
+                            </div>
+                            <div class="sla-input-row">
+                                <label>Tiempo Máx. Solución:</label>
+                                <div class="input-unit"><input type="number" value="480" class="glass-input-num"> <span>min (8 h)</span></div>
+                            </div>
+                        </div>
+                        <div class="sla-rules">
+                            <label class="rule-check"><input type="checkbox" checked> Alerta temprana al 75% del tiempo</label>
+                            <label class="rule-check"><input type="checkbox"> Escalamiento automático</label>
+                        </div>
+                    </div>
+
+                    <!-- Baja -->
+                    <div class="sla-card-item low-border">
+                        <div class="sla-card-header">
+                            <div class="priority-title"><span class="color-dot green"></span> Prioridad Baja</div>
+                            <span class="sla-badge green">SLA Nivel 4</span>
+                        </div>
+                        <div class="sla-inputs">
+                            <div class="sla-input-row">
+                                <label>Tiempo Máx. Respuesta:</label>
+                                <div class="input-unit"><input type="number" value="120" class="glass-input-num"> <span>min (2 h)</span></div>
+                            </div>
+                            <div class="sla-input-row">
+                                <label>Tiempo Máx. Solución:</label>
+                                <div class="input-unit"><input type="number" value="1440" class="glass-input-num"> <span>min (24 h)</span></div>
+                            </div>
+                        </div>
+                        <div class="sla-rules">
+                            <label class="rule-check"><input type="checkbox"> Alerta temprana al 75% del tiempo</label>
+                            <label class="rule-check"><input type="checkbox"> Escalamiento automático</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 9. Página: Mi Perfil -->
         <section id="page-mi-perfil" class="page-content">
-            <div class="placeholder-panel">
-                <i class="fas fa-user-circle placeholder-icon"></i>
-                <h2>Mi Perfil</h2>
-                <p>Módulo en construcción. Gestión de perfil del coordinador.</p>
-                <div class="coming-soon-badge">🚧 Próximamente</div>
+            <div class="coordinator-panel-scroll">
+                <div class="panel-header-banner">
+                    <div class="header-info">
+                        <h2><i class="fas fa-user-circle"></i> Perfil de Coordinación</h2>
+                        <p>Consulta tus credenciales y configuración del rol coordinador.</p>
+                    </div>
+                </div>
+                <div class="agent-card-glass" style="max-width: 600px; margin: 0 auto;">
+                    <div class="agent-card-top">
+                        <div class="agent-avatar" style="width: 60px; height: 60px; font-size: 24px; background: linear-gradient(135deg, #10599d, #3ca0d4);">👑</div>
+                        <div class="agent-details">
+                            <h3 id="profileNombre">Coordinador TI</h3>
+                            <p id="profileEmail" style="color: var(--text-placeholder);">coordinador@empresa.com</p>
+                            <span class="user-role" style="display:inline-block; margin-top:4px;">Rol: Coordinador / Supervisor</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
     </main>
@@ -228,6 +833,17 @@
                 <input type="text" id="cardSelectorSearch" placeholder="Buscar ticket...">
             </div>
             <div class="card-selector-list" id="cardSelectorList"></div>
+        </div>
+    </div>
+
+    <!-- Detalle completo del Ticket -->
+    <div class="ticket-detail-overlay" id="ticketDetailOverlay">
+        <div class="ticket-detail-modal">
+            <div class="ticket-detail-header">
+                <h3>📄 Detalle del Ticket <span id="ticketDetailId"></span></h3>
+                <button class="card-selector-close" id="ticketDetailClose">✕</button>
+            </div>
+            <div class="ticket-detail-body" id="ticketDetailBody"></div>
         </div>
     </div>
 

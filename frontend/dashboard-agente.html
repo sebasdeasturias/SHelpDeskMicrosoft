@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HelpDesk IT - Tablero Agente</title>
     <link rel="stylesheet" href="styles/dashboard-agente.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <div class="background"></div>
@@ -96,6 +97,17 @@
                 <input type="text" id="cardSelectorSearch" placeholder="Buscar ticket...">
             </div>
             <div class="card-selector-list" id="cardSelectorList"></div>
+        </div>
+    </div>
+
+    <!-- Detalle completo del Ticket -->
+    <div class="ticket-detail-overlay" id="ticketDetailOverlay">
+        <div class="ticket-detail-modal">
+            <div class="ticket-detail-header">
+                <h3>📄 Detalle del Ticket <span id="ticketDetailId"></span></h3>
+                <button class="card-selector-close" id="ticketDetailClose">✕</button>
+            </div>
+            <div class="ticket-detail-body" id="ticketDetailBody"></div>
         </div>
     </div>
 
