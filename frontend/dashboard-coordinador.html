@@ -199,32 +199,8 @@
                             <h3><i class="fas fa-chart-bar"></i> Volumen por Categoría</h3>
                             <span class="badge-tag">Últimos 30 días</span>
                         </div>
-                        <div class="chart-mock-body">
-                            <div class="bar-chart-row">
-                                <span class="bar-label">Software</span>
-                                <div class="bar-track"><div class="bar-fill blue" style="width: 78%;"></div></div>
-                                <span class="bar-value">42</span>
-                            </div>
-                            <div class="bar-chart-row">
-                                <span class="bar-label">Hardware</span>
-                                <div class="bar-track"><div class="bar-fill orange" style="width: 55%;"></div></div>
-                                <span class="bar-value">28</span>
-                            </div>
-                            <div class="bar-chart-row">
-                                <span class="bar-label">Red / Internet</span>
-                                <div class="bar-track"><div class="bar-fill cyan" style="width: 65%;"></div></div>
-                                <span class="bar-value">34</span>
-                            </div>
-                            <div class="bar-chart-row">
-                                <span class="bar-label">Cuentas / Accesos</span>
-                                <div class="bar-track"><div class="bar-fill red" style="width: 32%;"></div></div>
-                                <span class="bar-value">16</span>
-                            </div>
-                            <div class="bar-chart-row">
-                                <span class="bar-label">Otros</span>
-                                <div class="bar-track"><div class="bar-fill green" style="width: 15%;"></div></div>
-                                <span class="bar-value">8</span>
-                            </div>
+                        <div class="chart-mock-body" id="chartCategoriasBody">
+                            <div style="color:var(--text-placeholder);text-align:center;padding:20px;">Cargando... (vista previa en "Streamlit Externo")</div>
                         </div>
                     </div>
 
@@ -233,28 +209,8 @@
                             <h3><i class="fas fa-user-friends"></i> Carga y Eficiencia de Agentes</h3>
                             <span class="badge-tag">En tiempo real</span>
                         </div>
-                        <div class="chart-mock-body">
-                            <div class="agent-efficiency-row">
-                                <div class="agent-avatar-mini" style="background: #3b82f6;">MG</div>
-                                <div class="agent-eff-info">
-                                    <div class="eff-top"><span>María González (Soporte TI)</span> <strong>98% SLA</strong></div>
-                                    <div class="bar-track"><div class="bar-fill green" style="width: 90%;"></div></div>
-                                </div>
-                            </div>
-                            <div class="agent-efficiency-row">
-                                <div class="agent-avatar-mini" style="background: #10b981;">CR</div>
-                                <div class="agent-eff-info">
-                                    <div class="eff-top"><span>Carlos Rodríguez (Senior)</span> <strong>94% SLA</strong></div>
-                                    <div class="bar-track"><div class="bar-fill blue" style="width: 85%;"></div></div>
-                                </div>
-                            </div>
-                            <div class="agent-efficiency-row">
-                                <div class="agent-avatar-mini" style="background: #f59e0b;">AM</div>
-                                <div class="agent-eff-info">
-                                    <div class="eff-top"><span>Ana Martínez (Admin TI)</span> <strong>100% SLA</strong></div>
-                                    <div class="bar-track"><div class="bar-fill purple" style="width: 95%;"></div></div>
-                                </div>
-                            </div>
+                        <div class="chart-mock-body" id="chartAgentesBody">
+                            <div style="color:var(--text-placeholder);text-align:center;padding:20px;">Cargando... (en tiempo real)</div>
                         </div>
                     </div>
                 </div>
@@ -466,24 +422,8 @@
                                     <th>Asignar a Agente</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                <tr>
-                                    <td><strong>#TK-0004</strong></td>
-                                    <td>Bloqueo de cuenta de acceso corporativo</td>
-                                    <td><span class="tag tag-access">Cuentas/Accesos</span></td>
-                                    <td><span class="priority-pill high">Alta</span></td>
-                                    <td><span class="ai-badge-chip"><i class="fas fa-robot"></i> María González (92% afinidad)</span></td>
-                                    <td>
-                                        <div class="assign-action-wrap">
-                                            <select class="glass-select-mini">
-                                                <option>María González</option>
-                                                <option>Carlos Rodríguez</option>
-                                                <option>Ana Martínez</option>
-                                            </select>
-                                            <button class="btn-mini-save"><i class="fas fa-check"></i></button>
-                                        </div>
-                                    </td>
-                                </tr>
+                            <tbody id="asigQueueBody">
+                                <tr><td colspan="6" style="color:var(--text-placeholder);text-align:center;padding:16px;">Cargando...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -524,64 +464,8 @@
                                     <th>Estado</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                <tr>
-                                    <td><strong>María González</strong></td>
-                                    <td>maria.gonzalez@empresa.com</td>
-                                    <td>Hardware y Redes</td>
-                                    <td>Técnico Junior</td>
-                                    <td>
-                                        <label class="glass-switch">
-                                            <input type="checkbox">
-                                            <span class="slider-switch"></span>
-                                        </label>
-                                    </td>
-                                    <td>
-                                        <label class="glass-switch">
-                                            <input type="checkbox">
-                                            <span class="slider-switch"></span>
-                                        </label>
-                                    </td>
-                                    <td><span class="status-pill resuelto">Activo</span></td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Carlos Rodríguez</strong></td>
-                                    <td>carlos.rodriguez@empresa.com</td>
-                                    <td>Gestión de Equipos</td>
-                                    <td>Senior</td>
-                                    <td>
-                                        <label class="glass-switch">
-                                            <input type="checkbox" checked>
-                                            <span class="slider-switch"></span>
-                                        </label>
-                                    </td>
-                                    <td>
-                                        <label class="glass-switch">
-                                            <input type="checkbox">
-                                            <span class="slider-switch"></span>
-                                        </label>
-                                    </td>
-                                    <td><span class="status-pill resuelto">Activo</span></td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Ana Martínez</strong></td>
-                                    <td>ana.martinez@empresa.com</td>
-                                    <td>Administración Sistemas</td>
-                                    <td>Director / Admin</td>
-                                    <td>
-                                        <label class="glass-switch">
-                                            <input type="checkbox" checked>
-                                            <span class="slider-switch"></span>
-                                        </label>
-                                    </td>
-                                    <td>
-                                        <label class="glass-switch">
-                                            <input type="checkbox" checked>
-                                            <span class="slider-switch"></span>
-                                        </label>
-                                    </td>
-                                    <td><span class="status-pill resuelto">Activo</span></td>
-                                </tr>
+                            <tbody id="supervisarBody">
+                                <tr><td colspan="7" style="color:var(--text-placeholder);text-align:center;padding:16px;">Cargando...</td></tr>
                             </tbody>
                         </table>
                     </div>

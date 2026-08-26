@@ -3,6 +3,7 @@ const API = 'http://localhost:8000/api';
 
 const state = {
     tickets: [],
+    reportes: [],
     lastSync: '1970-01-01T00:00:00Z',
     authToken: localStorage.getItem('token') || sessionStorage.getItem('token'),
     chatHistory: [],
@@ -28,6 +29,80 @@ const PRIO_MAP = {
     'media': 'medium',
     'baja': 'low'
 };
+
+// ============================================
+// HELPERS DE API Y RENDER
+// ============================================
+async function apiFetch(path, options = {}) {
+    const headers = {
+        'Authorization': `Bearer ${state.authToken}`,
+        ...(options.headers || {})
+    };
+    if (options.body && typeof options.body !== 'string') {
+        headers['Content-Type'] = 'application/json';
+        options.body = JSON.stringify(options.body);
+    }
+    const res = await fetch(`${API}${path}`, { ...options, headers });
+    if (res.status === 401) {
+        localStorage.removeItem('token');
+        sessionStorage.removeItem('token');
+        window.location.href = 'login.html';
+        throw new Error('No autorizado');
+    }
+    if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(txt || `HTTP ${res.status}`);
+    }
+    return res.json();
+}
+
+const CAT_CLASS = {
+    'Hardware': 'hardware',
+    'Software': 'software',
+    'Red': 'network',
+    'Red/Internet': 'network',
+    'Cuentas/Accesos': 'access',
+    'Otros': 'network'
+};
+
+function catClass(cat) { return CAT_CLASS[cat] || 'network'; }
+
+function prioClass(prio) {
+    const p = (prio || '').toLowerCase();
+    if (p === 'crítica' || p === 'critica') return 'critical';
+    if (p === 'alta') return 'high';
+    if (p === 'media') return 'medium';
+    return 'low';
+}
+
+function statusClass(est) {
+    const e = (est || '').toLowerCase();
+    if (e === 'nuevo' || e === 'asignado') return 'nuevo';
+    if (e === 'en_proceso' || e === 'escalado') return 'proceso';
+    if (e === 'resuelto') return 'resuelto';
+    return 'cerrado';
+}
+
+function initials(name) {
+    return (name || '?').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+}
+
+function hueFor(name) {
+    return ((name || 'U').charCodeAt(0) * 17) % 360;
+}
+
+function formatDate(iso) {
+    if (!iso) return 'N/A';
+    const d = new Date(iso);
+    return d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function fmt(min) {
+    if (min == null || isNaN(min)) return '—';
+    if (min < 60) return `${min} min`;
+    const h = Math.round(min / 60);
+    return `${h} h`;
+}
 
 // ============================================
 // INICIALIZACIÓN
@@ -173,6 +248,16 @@ function navigateTo(page) {
     if (page === 'mi-perfil') {
         renderPerfil();
     }
+
+    // Cargar datos reales de la BD para cada módulo de coordinación
+    const loaders = {
+        'streamlit': loadEstadisticas,
+        'reportes': loadReportes,
+        'asignar': loadAsignacion,
+        'supervisar': loadSupervisar,
+        'sla': loadSLA
+    };
+    if (loaders[page]) loaders[page]();
 
     console.log(`📄 Navegando a: ${page}`);
 }
@@ -611,24 +696,57 @@ function renderCardSelectorList(tickets) {
 // (Reportes, Asignación, Permisos, SLA, RAG)
 // ============================================
 function initCoordinatorModules() {
+    // --- Reportes ---
     const btnPDF = document.getElementById('btnExportPDF');
     const btnCSV = document.getElementById('btnExportCSV');
     if (btnPDF) btnPDF.addEventListener('click', exportarReportePDF);
     if (btnCSV) btnCSV.addEventListener('click', exportarReporteCSV);
 
+    // Fechas por defecto: últimos 30 días (dinámicas, sin valores estáticos)
+    const fd = document.getElementById('repFechaDesde');
+    const fh = document.getElementById('repFechaHasta');
+    if (fd && fh) {
+        const hoy = new Date();
+        const desde = new Date(hoy.getTime() - 29 * 86400000);
+        fd.value = desde.toISOString().slice(0, 10);
+        fh.value = hoy.toISOString().slice(0, 10);
+    }
+    ['repCategoria', 'repPrioridad', 'repEstado', 'repFechaDesde', 'repFechaHasta'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('change', loadReportes);
+    });
+
+    // --- Asignación ---
     const btnAuto = document.getElementById('btnAutoAsignarIA');
     if (btnAuto) btnAuto.addEventListener('click', autoAsignarIA);
 
-    const btnPermisos = document.getElementById('btnGuardarPermisos');
-    if (btnPermisos) {
-        btnPermisos.addEventListener('click', () => {
-            mostrarToast('✅ Permisos de agentes guardados correctamente');
+    // Delegación para asignar tickets desde la cola
+    const asigQueue = document.getElementById('asigQueueBody');
+    if (asigQueue) {
+        asigQueue.addEventListener('click', async (e) => {
+            const btn = e.target.closest('.btn-mini-save');
+            if (!btn) return;
+            const row = btn.closest('tr');
+            const ticketId = row.getAttribute('data-ticket-id');
+            const select = row.querySelector('.glass-select-mini');
+            const agenteId = select ? select.value : null;
+            if (!ticketId || !agenteId) {
+                mostrarToast('⚠️ Selecciona un agente para asignar el ticket');
+                return;
+            }
+            await asignarTicket(ticketId, agenteId);
         });
     }
 
+    // --- Permisos ---
+    const btnPermisos = document.getElementById('btnGuardarPermisos');
+    if (btnPermisos) btnPermisos.addEventListener('click', guardarPermisos);
+
+    // --- SLA ---
     const btnSLA = document.getElementById('btnGuardarSLA');
     if (btnSLA) btnSLA.addEventListener('click', guardarSLA);
 
+    // --- RAG ---
     const btnRAG = document.getElementById('btnBuscarRAG');
     const ragInput = document.getElementById('ragSearchInput');
     if (btnRAG) btnRAG.addEventListener('click', buscarRAG);
@@ -637,29 +755,46 @@ function initCoordinatorModules() {
             if (e.key === 'Enter') buscarRAG();
         });
     }
-
-    document.querySelectorAll('.btn-mini-save').forEach(btn => {
-        btn.addEventListener('click', () => {
-            mostrarToast('🎫 Ticket asignado al agente correctamente');
-        });
-    });
 }
 
-function obtenerTicketsFiltrados() {
-    const cat = document.getElementById('repCategoria')?.value || 'todas';
-    const prio = document.getElementById('repPrioridad')?.value || 'todas';
-    const est = document.getElementById('repEstado')?.value || 'todos';
-
-    return state.tickets.filter(t => {
-        if (cat !== 'todas' && (t.cat_nombre || '') !== cat) return false;
-        if (prio !== 'todas' && (t.prio_nivel || '').toLowerCase() !== prio) return false;
-        if (est !== 'todos' && t.estado !== est) return false;
-        return true;
+async function obtenerTicketsFiltrados() {
+    // Consulta real al backend con los filtros actuales
+    const q = new URLSearchParams({
+        categoria: document.getElementById('repCategoria')?.value || 'todas',
+        prioridad: document.getElementById('repPrioridad')?.value || 'todas',
+        estado: document.getElementById('repEstado')?.value || 'todos',
     });
+    const fd = document.getElementById('repFechaDesde')?.value;
+    const fh = document.getElementById('repFechaHasta')?.value;
+    if (fd) q.set('fecha_desde', fd);
+    if (fh) q.set('fecha_hasta', fh);
+    const tickets = await apiFetch(`/coordinator/reportes?${q.toString()}`);
+    state.reportes = tickets;
+    return tickets;
 }
 
-function exportarReporteCSV() {
-    const tickets = obtenerTicketsFiltrados();
+function filasReporte(tickets) {
+    return tickets.map(t => `
+        <tr>
+            <td>${t.id_solicitud}</td>
+            <td>${t.asunto || ''}</td>
+            <td>${t.cat_nombre || t.categoria || ''}</td>
+            <td>${t.prio_nivel || t.prioridad || ''}</td>
+            <td>${t.estado || ''}</td>
+            <td>${t.agente || 'Sin asignar'}</td>
+            <td>${formatDate(t.fecha_creacion)}</td>
+        </tr>
+    `).join('');
+}
+
+async function exportarReporteCSV() {
+    let tickets;
+    try {
+        tickets = await obtenerTicketsFiltrados();
+    } catch (e) {
+        mostrarToast(`⚠️ Error al obtener reporte: ${e.message}`);
+        return;
+    }
     if (tickets.length === 0) {
         mostrarToast('⚠️ No hay tickets que coincidan con los filtros');
         return;
@@ -669,8 +804,8 @@ function exportarReporteCSV() {
     const rows = tickets.map(t => [
         t.id_solicitud,
         `"${(t.asunto || '').replace(/"/g, '""')}"`,
-        t.cat_nombre || '',
-        t.prio_nivel || '',
+        t.categoria || t.cat_nombre || '',
+        t.prioridad || t.prio_nivel || '',
         t.estado || '',
         t.agente || 'Sin asignar',
         t.fecha_creacion ? new Date(t.fecha_creacion).toLocaleDateString('es-ES') : ''
@@ -688,8 +823,14 @@ function exportarReporteCSV() {
     mostrarToast(`📊 Reporte CSV exportado (${tickets.length} tickets)`);
 }
 
-function exportarReportePDF() {
-    const tickets = obtenerTicketsFiltrados();
+async function exportarReportePDF() {
+    let tickets;
+    try {
+        tickets = await obtenerTicketsFiltrados();
+    } catch (e) {
+        mostrarToast(`⚠️ Error al obtener reporte: ${e.message}`);
+        return;
+    }
     if (tickets.length === 0) {
         mostrarToast('⚠️ No hay tickets que coincidan con los filtros');
         return;
@@ -699,8 +840,8 @@ function exportarReportePDF() {
         <tr>
             <td>${t.id_solicitud}</td>
             <td>${t.asunto || ''}</td>
-            <td>${t.cat_nombre || ''}</td>
-            <td>${t.prio_nivel || ''}</td>
+            <td>${t.categoria || t.cat_nombre || ''}</td>
+            <td>${t.prioridad || t.prio_nivel || ''}</td>
             <td>${t.estado || ''}</td>
             <td>${t.agente || 'Sin asignar'}</td>
             <td>${t.fecha_creacion ? new Date(t.fecha_creacion).toLocaleDateString('es-ES') : ''}</td>
@@ -745,26 +886,399 @@ function exportarReportePDF() {
     mostrarToast(`📄 Generando PDF (${tickets.length} tickets)...`);
 }
 
-function autoAsignarIA() {
-    const sinAsignar = state.tickets.filter(t => !t.agente || t.agente === 'Sin asignar');
-    if (sinAsignar.length === 0) {
-        mostrarToast('✅ No hay tickets pendientes por asignar');
+// ============================================
+// ESTADÍSTICAS / KPIs (Streamlit)
+// ============================================
+async function loadEstadisticas() {
+    const kpiGrid = document.querySelector('#page-streamlit .kpi-grid');
+    const catBody = document.getElementById('chartCategoriasBody');
+    const agBody = document.getElementById('chartAgentesBody');
+    try {
+        const data = await apiFetch('/coordinator/estadisticas');
+        renderEstadisticas(data, kpiGrid, catBody, agBody);
+    } catch (e) {
+        console.error('Error cargando estadísticas:', e);
+        if (kpiGrid) kpiGrid.innerHTML = `<div style="color:var(--text-placeholder);text-align:center;padding:20px;">Error: ${e.message}</div>`;
+    }
+}
+
+function renderEstadisticas(d, kpiGrid, catBody, agBody) {
+    const k = d.kpis || {};
+    const sla = k.cumplimiento_sla != null ? `${k.cumplimiento_sla}%` : '—';
+    const tme = k.tiempo_medio_solucion_min != null ? fmt(k.tiempo_medio_solucion_min) : '—';
+    const agentes = `${k.agentes_activos} / ${k.agentes_totales}`;
+
+    if (kpiGrid) {
+        kpiGrid.innerHTML = `
+            <div class="kpi-card">
+                <div class="kpi-icon blue"><i class="fas fa-ticket-alt"></i></div>
+                <div class="kpi-content">
+                    <span class="kpi-label">Tickets Totales Mes</span>
+                    <span class="kpi-value">${k.total_tickets_mes ?? 0}</span>
+                    <span class="kpi-trend neutral"><i class="fas fa-chart-line"></i> ${k.tickets_activos ?? 0} activos ahora</span>
+                </div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon green"><i class="fas fa-shield-alt"></i></div>
+                <div class="kpi-content">
+                    <span class="kpi-label">Cumplimiento de SLA</span>
+                    <span class="kpi-value">${sla}</span>
+                    <span class="kpi-trend neutral"><i class="fas fa-info-circle"></i> Resueltos dentro del plazo</span>
+                </div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon yellow"><i class="fas fa-stopwatch"></i></div>
+                <div class="kpi-content">
+                    <span class="kpi-label">Tiempo Medio Solución</span>
+                    <span class="kpi-value">${tme}</span>
+                    <span class="kpi-trend neutral"><i class="fas fa-clock"></i> Tickets resueltos</span>
+                </div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon purple"><i class="fas fa-user-check"></i></div>
+                <div class="kpi-content">
+                    <span class="kpi-label">Agentes Activos</span>
+                    <span class="kpi-value">${agentes}</span>
+                    <span class="kpi-trend neutral"><i class="fas fa-users"></i> Personal de soporte</span>
+                </div>
+            </div>
+        `;
+    }
+
+    if (catBody) {
+        const cats = d.categorias || [];
+        if (cats.length === 0) {
+            catBody.innerHTML = '<div style="color:var(--text-placeholder);text-align:center;padding:20px;">Sin tickets en el último mes</div>';
+        } else {
+            const max = Math.max(...cats.map(c => c.total), 1);
+            const colors = ['blue', 'orange', 'cyan', 'red', 'green'];
+            catBody.innerHTML = cats.map((c, i) => `
+                <div class="bar-chart-row">
+                    <span class="bar-label">${c.categoria}</span>
+                    <div class="bar-track"><div class="bar-fill ${colors[i % colors.length]}" style="width: ${(c.total / max * 100).toFixed(0)}%;"></div></div>
+                    <span class="bar-value">${c.total}</span>
+                </div>
+            `).join('');
+        }
+    }
+
+    if (agBody) {
+        const ags = d.agentes_eficiencia || [];
+        if (ags.length === 0) {
+            agBody.innerHTML = '<div style="color:var(--text-placeholder);text-align:center;padding:20px;">Sin personal de soporte</div>';
+        } else {
+            agBody.innerHTML = ags.map(a => {
+                const max = Math.max(a.carga_trabajo, 1);
+                const pct = Math.round((a.carga_trabajo / max) * 100);
+                return `
+                <div class="agent-efficiency-row">
+                    <div class="agent-avatar-mini" style="background: hsl(${hueFor(a.nombre)},60%,40%);">${initials(a.nombre)}</div>
+                    <div class="agent-eff-info">
+                        <div class="eff-top"><span>${a.nombre} (${a.especialidad})</span> <strong>${a.resueltos} resueltos</strong></div>
+                        <div class="bar-track"><div class="bar-fill green" style="width: ${pct}%;"></div></div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+    }
+}
+
+// ============================================
+// REPORTES
+// ============================================
+async function loadReportes() {
+    const body = document.getElementById('reportTableBody');
+    const count = document.getElementById('repTotalCount');
+    try {
+        const tickets = await obtenerTicketsFiltrados();
+        if (count) count.textContent = tickets.length;
+        if (body) {
+            if (tickets.length === 0) {
+                body.innerHTML = '<tr><td colspan="7" style="color:var(--text-placeholder);text-align:center;padding:16px;">No hay tickets que coincidan con los filtros</td></tr>';
+            } else {
+                body.innerHTML = tickets.map(t => `
+                    <tr>
+                        <td><strong>#${t.id_solicitud}</strong></td>
+                        <td>${t.asunto || ''}</td>
+                        <td><span class="tag tag-${catClass(t.categoria || t.cat_nombre)}">${t.categoria || t.cat_nombre || 'General'}</span></td>
+                        <td><span class="priority-pill ${prioClass(t.prioridad || t.prio_nivel)}">${t.prioridad || t.prio_nivel || 'Baja'}</span></td>
+                        <td><span class="status-pill ${statusClass(t.estado)}">${t.estado}</span></td>
+                        <td>${t.agente || '<em>Sin asignar</em>'}</td>
+                        <td>${formatDate(t.fecha_creacion)}</td>
+                    </tr>
+                `).join('');
+            }
+        }
+    } catch (e) {
+        console.error('Error cargando reportes:', e);
+        if (body) body.innerHTML = '<tr><td colspan="7" style="color:var(--text-placeholder);text-align:center;padding:16px;">Error al cargar reportes</td></tr>';
+    }
+}
+
+// ============================================
+// ASIGNACIÓN DE TICKETS
+// ============================================
+async function loadAsignacion() {
+    const grid = document.querySelector('#page-asignar .agent-workload-grid');
+    const queue = document.getElementById('asigQueueBody');
+    try {
+        const data = await apiFetch('/coordinator/asignacion');
+        renderAsignacion(data, grid, queue);
+    } catch (e) {
+        console.error('Error cargando asignación:', e);
+        if (queue) queue.innerHTML = `<tr><td colspan="6" style="color:var(--text-placeholder);text-align:center;padding:16px;">Error: ${e.message}</td></tr>`;
+    }
+}
+
+function renderAsignacion(d, grid, queue) {
+    const agentes = d.agentes || [];
+    if (grid) {
+        if (agentes.length === 0) {
+            grid.innerHTML = '<div class="agent-card-glass"><div style="color:var(--text-placeholder);text-align:center;">Sin agentes de soporte</div></div>';
+        } else {
+            grid.innerHTML = agentes.map(a => {
+                const capped = Math.min(a.carga_trabajo, 10);
+                const pct = Math.round((capped / 10) * 100);
+                const fill = pct >= 70 ? 'yellow' : (pct >= 45 ? 'orange' : 'green');
+                const estado = a.estado === 'activo' ? 'online' : 'busy';
+                const label = a.estado === 'activo' ? 'Disponible' : 'Ocupado';
+                return `
+                <div class="agent-card-glass">
+                    <div class="agent-card-top">
+                        <div class="agent-avatar" style="background: linear-gradient(135deg, hsl(${hueFor(a.nombre)},60%,40%), hsl(${hueFor(a.nombre)},60%,25%));">${initials(a.nombre)}</div>
+                        <div class="agent-details">
+                            <h4>${a.nombre}</h4>
+                            <span class="agent-spec"><i class="fas fa-microchip"></i> ${a.especialidad}</span>
+                        </div>
+                        <span class="agent-status-badge ${estado}">${label}</span>
+                    </div>
+                    <div class="workload-bar-wrap">
+                        <div class="workload-info"><span>Carga de Trabajo:</span> <strong>${a.carga_trabajo} ticket(s) asignados</strong></div>
+                        <div class="bar-track"><div class="bar-fill ${fill}" style="width: ${pct}%;"></div></div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+    }
+
+    if (queue) {
+        const pendientes = d.sin_asignar || [];
+        if (pendientes.length === 0) {
+            queue.innerHTML = '<tr><td colspan="6" style="color:var(--text-placeholder);text-align:center;padding:16px;">No hay tickets pendientes de asignación</td></tr>';
+        } else {
+            queue.innerHTML = pendientes.map(t => `
+                <tr data-ticket-id="${t.id_solicitud}">
+                    <td><strong>#${t.id_solicitud}</strong></td>
+                    <td>${t.asunto}</td>
+                    <td><span class="tag tag-${catClass(t.categoria)}">${t.categoria}</span></td>
+                    <td><span class="priority-pill ${prioClass(t.prioridad)}">${t.prioridad}</span></td>
+                    <td>${t.recomendacion ? `<span class="ai-badge-chip"><i class="fas fa-robot"></i> ${t.recomendacion.nombre} (${t.recomendacion.afinidad}% afinidad)</span>` : '<em>Sin sugerencia</em>'}</td>
+                    <td>
+                        <div class="assign-action-wrap">
+                            <select class="glass-select-mini">
+                                ${agentes.map(a => `<option value="${a.id_usuario}">${a.nombre}</option>`).join('')}
+                            </select>
+                            <button class="btn-mini-save" title="Asignar agente"><i class="fas fa-check"></i></button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+    }
+}
+
+async function asignarTicket(ticketId, agenteId) {
+    try {
+        const res = await apiFetch(`/coordinator/asignar/${ticketId}`, {
+            method: 'POST',
+            body: { agente_id: parseInt(agenteId, 10) }
+        });
+        mostrarToast(`🎫 Ticket #${ticketId} asignado correctamente`);
+        loadAsignacion();
+        fetchTickets();
+        return res;
+    } catch (e) {
+        mostrarToast(`❌ Error al asignar: ${e.message}`);
+        throw e;
+    }
+}
+
+async function autoAsignarIA() {
+    try {
+        const data = await apiFetch('/coordinator/asignacion');
+        const pendientes = data.sin_asignar || [];
+        if (pendientes.length === 0) {
+            mostrarToast('✅ No hay tickets pendientes por asignar');
+            return;
+        }
+        let asignados = 0;
+        for (const t of pendientes) {
+            if (t.recomendacion && t.recomendacion.id_usuario) {
+                await asignarTicket(t.id_solicitud, t.recomendacion.id_usuario);
+                asignados++;
+            }
+        }
+        mostrarToast(`🤖 IA asignó ${asignados} ticket(s) automáticamente`);
+    } catch (e) {
+        mostrarToast(`❌ Error en balanceo automático: ${e.message}`);
+    }
+}
+
+// ============================================
+// SUPERVISIÓN / PERMISOS
+// ============================================
+async function loadSupervisar() {
+    const body = document.getElementById('supervisarBody');
+    try {
+        const agentes = await apiFetch('/coordinator/agentes');
+        if (body) {
+            if (agentes.length === 0) {
+                body.innerHTML = '<tr><td colspan="7" style="color:var(--text-placeholder);text-align:center;padding:16px;">Sin personal de soporte</td></tr>';
+            } else {
+                body.innerHTML = agentes.map(a => `
+                    <tr data-agente-id="${a.id_usuario}">
+                        <td><strong>${a.nombre}</strong><br><small style="color:var(--text-placeholder);">${a.rol}</small></td>
+                        <td>${a.email}</td>
+                        <td>${a.especialidad}</td>
+                        <td>${a.nivel_jerarquia || 'Técnico'}</td>
+                        <td>
+                            <label class="glass-switch">
+                                <input type="checkbox" data-permiso="supervision" ${a.permisos_supervision ? 'checked' : ''}>
+                                <span class="slider-switch"></span>
+                            </label>
+                        </td>
+                        <td>
+                            <label class="glass-switch">
+                                <input type="checkbox" data-permiso="especiales" ${a.permisos_especiales ? 'checked' : ''}>
+                                <span class="slider-switch"></span>
+                            </label>
+                        </td>
+                        <td><span class="status-pill resuelto">${a.estado}</span></td>
+                    </tr>
+                `).join('');
+            }
+        }
+    } catch (e) {
+        console.error('Error cargando agentes:', e);
+        if (body) body.innerHTML = `<tr><td colspan="7" style="color:var(--text-placeholder);text-align:center;padding:16px;">Error: ${e.message}</td></tr>`;
+    }
+}
+
+async function guardarPermisos() {
+    const rows = document.querySelectorAll('#supervisarBody tr[data-agente-id]');
+    if (rows.length === 0) {
+        mostrarToast('⚠️ No hay agentes para guardar');
         return;
     }
-    mostrarToast(`🤖 IA analizando ${sinAsignar.length} ticket(s) para balanceo de carga...`);
+    let guardados = 0;
+    try {
+        for (const row of rows) {
+            const id = row.getAttribute('data-agente-id');
+            const ps = !!row.querySelector('input[data-permiso="supervision"]')?.checked;
+            const pe = !!row.querySelector('input[data-permiso="especiales"]')?.checked;
+            await apiFetch(`/coordinator/agentes/${id}/permisos`, {
+                method: 'POST',
+                body: { permisos_supervision: ps, permisos_especiales: pe }
+            });
+            guardados++;
+        }
+        mostrarToast(`✅ Permisos de ${guardados} agente(s) guardados correctamente`);
+    } catch (e) {
+        mostrarToast(`❌ Error al guardar permisos: ${e.message}`);
+    }
 }
 
-function guardarSLA() {
-    mostrarToast('⏱️ Políticas SLA guardadas correctamente');
+// ============================================
+// SLAs
+// ============================================
+async function loadSLA() {
+    try {
+        const slaList = await apiFetch('/coordinator/sla');
+        const cards = document.querySelectorAll('#page-sla .sla-card-item');
+        cards.forEach((card, idx) => {
+            const data = slaList[idx];
+            if (!data) return;
+            card.setAttribute('data-prio', data.id_prioridad);
+            const inputs = card.querySelectorAll('input.glass-input-num');
+            if (inputs[0]) inputs[0].value = data.tiempo_respuesta_min;
+            if (inputs[1]) inputs[1].value = data.tiempo_solucion_min;
+            const rules = card.querySelectorAll('input[type="checkbox"]');
+            rules.forEach(cb => { cb.checked = !!data.activo; });
+        });
+    } catch (e) {
+        console.error('Error cargando SLA:', e);
+        mostrarToast(`⚠️ Error al cargar SLA: ${e.message}`);
+    }
 }
 
-function buscarRAG() {
+async function guardarSLA() {
+    const cards = document.querySelectorAll('#page-sla .sla-card-item');
+    const items = [];
+    cards.forEach(card => {
+        const prio = parseInt(card.getAttribute('data-prio'), 10);
+        if (!prio) return;
+        const inputs = card.querySelectorAll('input.glass-input-num');
+        const activo = !!card.querySelector('input[type="checkbox"]')?.checked;
+        items.push({
+            id_prioridad: prio,
+            tiempo_respuesta_min: parseInt(inputs[0]?.value, 10) || 0,
+            tiempo_solucion_min: parseInt(inputs[1]?.value, 10) || 0,
+            activo: activo
+        });
+    });
+    if (items.length === 0) {
+        mostrarToast('⚠️ No hay políticas SLA para guardar');
+        return;
+    }
+    try {
+        await apiFetch('/coordinator/sla', {
+            method: 'POST',
+            body: { sla: items }
+        });
+        mostrarToast('⏱️ Políticas SLA guardadas correctamente');
+    } catch (e) {
+        mostrarToast(`❌ Error al guardar SLA: ${e.message}`);
+    }
+}
+
+// ============================================
+// RAG
+// ============================================
+async function buscarRAG() {
     const q = document.getElementById('ragSearchInput')?.value.trim();
+    const list = document.getElementById('ragResultsList');
     if (!q) {
         mostrarToast('⚠️ Escribe una consulta para buscar en RAG');
         return;
     }
-    mostrarToast('🧠 Consultando embeddings en pgvector... (módulo en integración)');
+    if (list) list.innerHTML = '<div style="color:var(--text-placeholder);text-align:center;padding:20px;"><i class="fas fa-spinner fa-spin"></i> Buscando...</div>';
+    try {
+        const results = await apiFetch(`/coordinator/rag?query=${encodeURIComponent(q)}`);
+        renderRAG(results, list);
+    } catch (e) {
+        console.error('Error buscando RAG:', e);
+        if (list) list.innerHTML = `<div style="color:var(--text-placeholder);text-align:center;padding:20px;">❌ Error: ${e.message}</div>`;
+        mostrarToast(`❌ Error en RAG: ${e.message}`);
+    }
+}
+
+function renderRAG(results, list) {
+    if (!list) return;
+    if (!results || results.length === 0) {
+        list.innerHTML = '<div style="color:var(--text-placeholder);text-align:center;padding:20px;">No se encontraron soluciones similares</div>';
+        return;
+    }
+    list.innerHTML = results.map(r => `
+        <div class="rag-result-card">
+            <div class="rag-result-top">
+                <h4>Solución para: ${r.asunto}</h4>
+                <span class="similarity-badge">${(r.similitud * 100).toFixed(1)}% Similitud</span>
+            </div>
+            <p><strong>Detalle del ticket:</strong> ${r.descripcion}</p>
+            <p><strong>Estado:</strong> ${r.estado} • <strong>Categoría:</strong> ${r.categoria}</p>
+            <span class="rag-meta-tag"><i class="fas fa-check-circle"></i> Ticket fuente: #${r.id_solicitud} • Atención: ${r.agente}</span>
+        </div>
+    `).join('');
 }
 
 function enviarPromptSugerido(texto) {
