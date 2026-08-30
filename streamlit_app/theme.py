@@ -305,8 +305,7 @@ footer {{ visibility: hidden; }}
 
 def banner(title: str, subtitle: str, badge: str = "") -> None:
     """Cabecera tipo panel-header-banner del coordinador."""
-    st.markdown(
-        f"""
+    html = f"""
 <div class="panel-banner" style="
     display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap;
     background: var(--glass-bg);
@@ -318,12 +317,14 @@ def banner(title: str, subtitle: str, badge: str = "") -> None:
             font-size:1.35rem;">{title}</h2>
         <p style="margin:6px 0 0 0; color:var(--text-dark); opacity:0.92; font-size:0.92rem;">
             {subtitle}</p>
-    </div>
-    {f'<span style="background:rgba(255,255,255,0.3); border:1px solid var(--glass-border); color:var(--text-dark); padding:6px 14px; border-radius:999px; font-size:0.78rem; font-weight:600;">{badge}</span>' if badge else ''}
+    </div>"""
+    if badge:
+        html += f"""
+    <span style="background:rgba(255,255,255,0.3); border:1px solid var(--glass-border); color:var(--text-dark); padding:6px 14px; border-radius:999px; font-size:0.78rem; font-weight:600;">{badge}</span>"""
+    html += """
 </div>
-""",
-        unsafe_allow_html=True,
-    )
+"""
+    st.markdown(html, unsafe_allow_html=True)
 
 
 def kpi_card(color: str, label: str, value: str, trend: str = "", trend_type: str = "neutral") -> str:
@@ -334,7 +335,8 @@ def kpi_card(color: str, label: str, value: str, trend: str = "", trend_type: st
         "neutral": "var(--text-placeholder)",
     }
     trend_color = color_map.get(trend_type, color_map["neutral"])
-    return f"""
+
+    html = f"""
 <div class="kpi-card" style="
     display:flex; align-items:center; gap:14px;
     background: var(--glass-bg);
@@ -346,11 +348,15 @@ def kpi_card(color: str, label: str, value: str, trend: str = "", trend_type: st
     <div style="display:flex; flex-direction:column; gap:2px; min-width:0;">
         <span style="font-size:0.72rem; color:var(--text-placeholder); font-weight:600;
             text-transform:uppercase; letter-spacing:0.4px;">{label}</span>
-        <span style="font-size:1.5rem; font-weight:700; color:var(--text-dark); line-height:1.1;">{value}</span>
-        {f'<span style="font-size:0.7rem; font-weight:600; color:{trend_color};">{trend}</span>' if trend else ''}
+        <span style="font-size:1.5rem; font-weight:700; color:var(--text-dark); line-height:1.1;">{value}</span>"""
+    if trend:
+        html += f"""
+        <span style="font-size:0.7rem; font-weight:600; color:{trend_color};">{trend}</span>"""
+    html += """
     </div>
 </div>
 """
+    return html
 
 
 KPI_COLORS = {
