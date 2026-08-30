@@ -50,8 +50,13 @@ async function apiFetch(path, options = {}) {
         throw new Error('No autorizado');
     }
     if (!res.ok) {
-        const txt = await res.text();
-        throw new Error(txt || `HTTP ${res.status}`);
+        // Extraer el detalle legible que envía el backend (p.ej. límite diario)
+        let msg = `HTTP ${res.status}`;
+        try {
+            const err = await res.json();
+            if (err.detail) msg = typeof err.detail === 'string' ? err.detail : JSON.stringify(err.detail);
+        } catch (_) { /* respuesta sin JSON */ }
+        throw new Error(msg);
     }
     return res.json();
 }
@@ -420,7 +425,15 @@ function initDragDrop() {
 
             const ticketId = dragged.dataset.id;
             const newColKey = body.id.replace('col-', '');
-            const newStatus = Object.keys(COLUMN_MAP).find(k => COLUMN_MAP[k] === newColKey);
+            // 'Por Hacer' agrupa dos estados: 'nuevo' (sin agente) y 'asignado'
+            // (con agente). Se elige según si el ticket tiene agente asignado.
+            let newStatus;
+            if (newColKey === 'todo') {
+                const ticket = state.tickets.find(t => t.id_solicitud == ticketId);
+                newStatus = (ticket && ticket.id_agente_asignado) ? 'asignado' : 'nuevo';
+            } else {
+                newStatus = Object.keys(COLUMN_MAP).find(k => COLUMN_MAP[k] === newColKey);
+            }
 
             if (newStatus) {
                 dragged.style.opacity = '0.5';
@@ -1032,6 +1045,7 @@ async function loadAsignacion() {
 
 function renderAsignacion(d, grid, queue) {
     const agentes = d.agentes || [];
+    const maxDiario = d.max_diario || 3;
     if (grid) {
         if (agentes.length === 0) {
             grid.innerHTML = '<div class="agent-card-glass"><div style="color:var(--text-placeholder);text-align:center;">Sin agentes de soporte</div></div>';
@@ -1042,6 +1056,7 @@ function renderAsignacion(d, grid, queue) {
                 const fill = pct >= 70 ? 'yellow' : (pct >= 45 ? 'orange' : 'green');
                 const estado = a.estado === 'activo' ? 'online' : 'busy';
                 const label = a.estado === 'activo' ? 'Disponible' : 'Ocupado';
+                const alCupo = (a.asignados_hoy || 0) >= maxDiario;
                 return `
                 <div class="agent-card-glass">
                     <div class="agent-card-top">
@@ -1053,8 +1068,9 @@ function renderAsignacion(d, grid, queue) {
                         <span class="agent-status-badge ${estado}">${label}</span>
                     </div>
                     <div class="workload-bar-wrap">
-                        <div class="workload-info"><span>Carga de Trabajo:</span> <strong>${a.carga_trabajo} ticket(s) asignados</strong></div>
+                        <div class="workload-info"><span>Carga de Trabajo:</span> <strong>${a.carga_trabajo} ticket(s)</strong></div>
                         <div class="bar-track"><div class="bar-fill ${fill}" style="width: ${pct}%;"></div></div>
+                        <div class="workload-info"><span>Asignados hoy:</span> <strong>${a.asignados_hoy || 0} / ${maxDiario}${alCupo ? ' — cupo diario completo' : ''}</strong></div>
                     </div>
                 </div>`;
             }).join('');
@@ -1076,7 +1092,10 @@ function renderAsignacion(d, grid, queue) {
                     <td>
                         <div class="assign-action-wrap">
                             <select class="glass-select-mini">
-                                ${agentes.map(a => `<option value="${a.id_usuario}">${a.nombre}</option>`).join('')}
+                                ${agentes.map(a => {
+                                    const lleno = (a.asignados_hoy || 0) >= maxDiario;
+                                    return `<option value="${a.id_usuario}" ${lleno ? 'disabled' : ''}>${a.nombre} (${a.asignados_hoy || 0}/${maxDiario} hoy)</option>`;
+                                }).join('')}
                             </select>
                             <button class="btn-mini-save" title="Asignar agente"><i class="fas fa-check"></i></button>
                         </div>
@@ -1087,18 +1106,18 @@ function renderAsignacion(d, grid, queue) {
     }
 }
 
-async function asignarTicket(ticketId, agenteId) {
+async function asignarTicket(ticketId, agenteId, silencioso = false) {
     try {
         const res = await apiFetch(`/coordinator/asignar/${ticketId}`, {
             method: 'POST',
             body: { agente_id: parseInt(agenteId, 10) }
         });
-        mostrarToast(`🎫 Ticket #${ticketId} asignado correctamente`);
+        if (!silencioso) mostrarToast(`Ticket #${ticketId} asignado correctamente`);
         loadAsignacion();
         fetchTickets();
         return res;
     } catch (e) {
-        mostrarToast(`❌ Error al asignar: ${e.message}`);
+        if (!silencioso) mostrarToast(`Error al asignar: ${e.message}`);
         throw e;
     }
 }
@@ -1108,19 +1127,29 @@ async function autoAsignarIA() {
         const data = await apiFetch('/coordinator/asignacion');
         const pendientes = data.sin_asignar || [];
         if (pendientes.length === 0) {
-            mostrarToast('✅ No hay tickets pendientes por asignar');
+            mostrarToast('No hay tickets pendientes por asignar');
             return;
         }
-        let asignados = 0;
+        let asignados = 0, omitidos = 0, ultimoError = '';
         for (const t of pendientes) {
             if (t.recomendacion && t.recomendacion.id_usuario) {
-                await asignarTicket(t.id_solicitud, t.recomendacion.id_usuario);
-                asignados++;
+                try {
+                    await asignarTicket(t.id_solicitud, t.recomendacion.id_usuario, true);
+                    asignados++;
+                } catch (err) {
+                    omitidos++;
+                    ultimoError = err.message;
+                }
             }
         }
-        mostrarToast(`🤖 IA asignó ${asignados} ticket(s) automáticamente`);
+        if (asignados > 0) {
+            mostrarToast(`La IA asignó ${asignados} ticket(s) automáticamente` +
+                (omitidos ? ` · ${omitidos} omitido(s): ${ultimoError}` : ''));
+        } else if (omitidos > 0) {
+            mostrarToast(`Ningún ticket asignado (${omitidos} omitido(s)): ${ultimoError}`);
+        }
     } catch (e) {
-        mostrarToast(`❌ Error en balanceo automático: ${e.message}`);
+        mostrarToast(`Error en balanceo automático: ${e.message}`);
     }
 }
 

@@ -155,19 +155,59 @@ body.night-mode .status-resuelto { color: #34d399; }
 .empty-link:hover { text-decoration: underline; }
 
 /* Theme Switch (Reutilizado) */
+/* ==========================================
+   SWITCH DE MODO DIURNO/NOCTURNO (copiado de login.css)
+   ========================================== */
 .theme-switch-wrapper { position: absolute; top: 20px; right: 20px; z-index: 1000; display: flex; align-items: center; gap: 10px; }
 .theme-switch { position: relative; display: inline-block; width: 60px; height: 34px; }
 .theme-switch input { opacity: 0; width: 0; height: 0; }
-.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(to bottom, #87ceeb, #3ca0d4); transition: 0.4s; border-radius: 34px; box-shadow: 0 2px 8px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.5); display: flex; align-items: center; justify-content: space-between; padding: 0 8px; }
-body.night-mode .slider { background: linear-gradient(to bottom, #1a1a3e, #0a0a2e); }
-.slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background: linear-gradient(to bottom, #fff, #e0e0e0); transition: 0.4s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.3); z-index: 2; }
+.slider {
+    position: absolute; cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(to bottom, #87ceeb, #3ca0d4);
+    transition: 0.4s; border-radius: 34px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.5);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 8px;
+}
+body.night-mode .slider {
+    background: linear-gradient(to bottom, #1a1a3e, #0a0a2e);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5), inset 0 2px 4px rgba(100,100,200,0.2);
+}
+.slider:before {
+    position: absolute; content: "";
+    height: 26px; width: 26px; left: 4px; bottom: 4px;
+    background: linear-gradient(to bottom, #ffffff, #e0e0e0);
+    transition: 0.4s; border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3); z-index: 2;
+}
+body.night-mode .slider:before {
+    background: linear-gradient(to bottom, #f0f0ff, #c0c0e0);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.5), 0 0 10px rgba(200,200,255,0.3);
+}
+input:checked + .slider { background: linear-gradient(to bottom, #1a1a3e, #0a0a2e); }
 input:checked + .slider:before { transform: translateX(26px); }
-.sun-icon { color: #ffcc00; font-size: 14px; z-index: 1; }
-.moon-icon { color: #c0c0e0; font-size: 14px; z-index: 1; opacity: 0.5; }
-body.night-mode .sun-icon { opacity: 0.5; }
-body.night-mode .moon-icon { opacity: 1; color: #fff; text-shadow: 0 0 8px rgba(255,255,255,0.8); }
-.theme-label { color: white; font-weight: bold; font-size: 0.9rem; text-shadow: 1px 1px 3px rgba(0,0,0,0.6); user-select: none; }
-body.night-mode .theme-label { color: #c0c0e0; }
+.sun-icon {
+    color: #ffcc00; font-size: 14px; z-index: 1;
+    text-shadow: 0 0 5px rgba(255,204,0,0.5);
+}
+.moon-icon {
+    color: #c0c0e0; font-size: 14px; z-index: 1; opacity: 0.5;
+    text-shadow: 0 0 5px rgba(200,200,255,0.3);
+}
+body.night-mode .sun-icon { opacity: 0.5; text-shadow: none; }
+body.night-mode .moon-icon {
+    opacity: 1; color: #fff;
+    text-shadow: 0 0 8px rgba(255,255,255,0.8);
+}
+.theme-label {
+    color: white; font-weight: bold; font-size: 0.9rem;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.6); user-select: none;
+}
+body.night-mode .theme-label {
+    color: #c0c0e0;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+}
 
 .global-footer { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); color: white; font-weight: bold; text-shadow: 1px 1px 3px rgba(0,0,0,0.6); z-index: 5; display: flex; align-items: center; gap: 8px; font-size: 1rem; }
 

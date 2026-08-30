@@ -106,7 +106,14 @@ async function fetchTickets() {
             headers: { 'Authorization': `Bearer ${state.authToken}` }
         });
         if (!res.ok) throw new Error('No autorizado');
-        state.tickets = await res.json();
+        let data = await res.json();
+
+        // Defensa en cliente: un agente solo trabaja los tickets que el
+        // coordinador le asignó (el backend ya filtra por rol).
+        if (state.userData && state.userData.role === 'agente') {
+            data = data.filter(t => t.id_agente_asignado === state.userData.user_id);
+        }
+        state.tickets = data;
         renderBoard();
         updateCounts();
     } catch (e) {
@@ -246,7 +253,15 @@ function initDragDrop() {
 
             const ticketId = dragged.dataset.id;
             const newColKey = body.id.replace('col-', '');
-            const newStatus = Object.keys(COLUMN_MAP).find(k => COLUMN_MAP[k] === newColKey);
+            // 'Por Hacer' agrupa dos estados: 'nuevo' (sin agente, solo coordinador)
+            // y 'asignado' (con agente). Se elige según si el ticket tiene agente.
+            let newStatus;
+            if (newColKey === 'todo') {
+                const ticket = state.tickets.find(t => t.id_solicitud == ticketId);
+                newStatus = (ticket && ticket.id_agente_asignado) ? 'asignado' : 'nuevo';
+            } else {
+                newStatus = Object.keys(COLUMN_MAP).find(k => COLUMN_MAP[k] === newColKey);
+            }
 
             if (newStatus) {
                 dragged.style.opacity = '0.5';

@@ -141,27 +141,87 @@ body.night-mode .stars-overlay { opacity: 1; }
 }
 .logout-btn:hover { background: rgba(255,100,100,0.4); }
 
-/* Theme switch */
-.theme-switch-wrapper { display: flex; align-items: center; gap: 8px; }
-.theme-icon { font-size: 0.9rem; }
-.theme-switch { position: relative; display: inline-block; width: 40px; height: 22px; }
+/* ==========================================
+   SWITCH DE MODO DIURNO/NOCTURNO (copiado de login.css)
+   ========================================== */
+.theme-switch-wrapper { display: flex; align-items: center; gap: 10px; }
+.theme-switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+}
 .theme-switch input { opacity: 0; width: 0; height: 0; }
 .slider {
-    position: absolute; cursor: pointer;
+    position: absolute;
+    cursor: pointer;
     top: 0; left: 0; right: 0; bottom: 0;
     background: linear-gradient(to bottom, #87ceeb, #3ca0d4);
-    transition: 0.4s; border-radius: 34px;
+    transition: 0.4s;
+    border-radius: 34px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 8px;
 }
-body.night-mode .slider { background: linear-gradient(to bottom, #1a1a3e, #0a0a2e); }
+body.night-mode .slider {
+    background: linear-gradient(to bottom, #1a1a3e, #0a0a2e);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5), inset 0 2px 4px rgba(100,100,200,0.2);
+}
 .slider:before {
-    position: absolute; content: "";
-    height: 16px; width: 16px; left: 3px; bottom: 3px;
-    background: linear-gradient(to bottom, #fff, #e0e0e0);
-    transition: 0.4s; border-radius: 50%;
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background: linear-gradient(to bottom, #ffffff, #e0e0e0);
+    transition: 0.4s;
+    border-radius: 50%;
     box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    z-index: 2;
 }
-input:checked + .slider:before { transform: translateX(18px); }
+body.night-mode .slider:before {
+    background: linear-gradient(to bottom, #f0f0ff, #c0c0e0);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.5), 0 0 10px rgba(200,200,255,0.3);
+}
+input:checked + .slider {
+    background: linear-gradient(to bottom, #1a1a3e, #0a0a2e);
+}
+input:checked + .slider:before { transform: translateX(26px); }
+.slider.round { border-radius: 34px; }
+.slider.round:before { border-radius: 50%; }
+.sun-icon {
+    color: #ffcc00;
+    font-size: 14px;
+    z-index: 1;
+    text-shadow: 0 0 5px rgba(255,204,0,0.5);
+}
+.moon-icon {
+    color: #c0c0e0;
+    font-size: 14px;
+    z-index: 1;
+    opacity: 0.5;
+    text-shadow: 0 0 5px rgba(200,200,255,0.3);
+}
+body.night-mode .sun-icon { opacity: 0.5; text-shadow: none; }
+body.night-mode .moon-icon {
+    opacity: 1;
+    color: #ffffff;
+    text-shadow: 0 0 8px rgba(255,255,255,0.8);
+}
+.theme-label {
+    color: white;
+    font-weight: bold;
+    font-size: 0.9rem;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.6);
+    user-select: none;
+}
+body.night-mode .theme-label {
+    color: #c0c0e0;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+}
 
 /* ============================================
    KANBAN BOARD
@@ -275,11 +335,11 @@ body.night-mode .kanban-column.drag-over { background: rgba(60,60,120,0.4); }
     border-radius: 6px; font-weight: 600;
     text-transform: uppercase; letter-spacing: 0.3px;
 }
-.tag-network { background: rgba(100,150,255,0.3); color: #2244aa; border: 1px solid rgba(100,150,255,0.4); }
-.tag-hardware { background: rgba(255,150,50,0.3); color: #aa6600; border: 1px solid rgba(255,150,50,0.4); }
-.tag-software { background: rgba(150,100,255,0.3); color: #bcb7c9; border: 1px solid rgba(150,100,255,0.4); }
-.tag-access { background: rgba(255,80,80,0.3); color: #aa2222; border: 1px solid rgba(255,80,80,0.4); }
-.tag-email { background: rgba(50,200,120,0.3); color: #117744; border: 1px solid rgba(50,200,120,0.4); }
+.tag-network { background: rgba(241, 147, 241, 0.3); color: #2244aa; border: 1px solid rgba(100,150,255,0.4); }
+.tag-hardware { background: rgba(172, 111, 55, 0.822); color: #aa6600; border: 1px solid rgba(255,150,50,0.4); }
+.tag-software { background: rgba(158, 118, 243, 0.993); color: #5533aa; border: 1px solid rgba(150,100,255,0.4); }
+.tag-access { background: rgb(255, 80, 80); color: #aa2222; border: 1px solid rgba(255,80,80,0.4); }
+.tag-email { background: rgb(50, 200, 120); color: #117744; border: 1px solid rgba(50,200,120,0.4); }
 
 .card-assignee {
     display: flex; align-items: center; gap: 6px;
@@ -728,10 +788,8 @@ body.night-mode .detail-section { background: rgba(60,60,100,0.3); }
     .topbar .logo-icon { width: 28px; height: 28px; font-size: 14px; }
     .topbar-right { gap: 8px; flex-wrap: wrap; }
     .logout-btn { padding: 5px 10px; font-size: 0.75rem; }
-    .theme-icon { font-size: 0.75rem; }
-    .theme-switch { width: 34px; height: 19px; }
-    .theme-switch .slider:before { height: 13px; width: 13px; left: 3px; bottom: 3px; }
-    input:checked + .slider:before { transform: translateX(15px); }
+    .theme-label { display: none; }
+    .theme-switch-wrapper { gap: 6px; }
     .kanban-board { padding: 10px; gap: 12px; }
     .kanban-column { border-radius: 12px; }
     .column-header { padding: 12px 14px; }

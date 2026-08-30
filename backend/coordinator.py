@@ -9,11 +9,16 @@ from auth import oauth2_scheme, SECRET_KEY, ALGORITHM
 from jose import jwt, JWTError
 from datetime import datetime, timedelta, date
 from typing import List, Optional
+import os
 
 router = APIRouter(prefix="/coordinator", tags=["Coordinador"])
 
 # Roles con acceso al panel de coordinador
 SUPPORT_ROLES = ("agente", "coordinador", "administrador")
+
+# Máximo de tickets que el coordinador puede asignar a un mismo agente por día
+# (control de carga de trabajo). Ajustable desde el .env.
+MAX_TICKETS_AGENTE_DIA = int(os.getenv("MAX_TICKETS_AGENTE_DIA", "3"))
 
 
 def _verify_token(token: str) -> dict:
@@ -269,12 +274,18 @@ async def set_permisos(usuario_id: int, data: dict, db: AsyncSession = Depends(g
 async def get_asignacion(db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
     _verify_token(token)
 
-    # Agentes de soporte con carga
+    # Agentes de soporte con carga y asignaciones de hoy
     result = await db.execute(text("""
-        SELECT id_usuario, nombre, especialidad, carga_trabajo, estado
-        FROM usuarios
-        WHERE rol IN ('agente','coordinador','administrador')
-        ORDER BY carga_trabajo ASC, nombre
+        SELECT u.id_usuario, u.nombre, u.especialidad, u.carga_trabajo, u.estado,
+               (SELECT count(*)
+                FROM historial h
+                JOIN solicitud s ON s.id_solicitud = h.id_solicitud
+                WHERE s.id_agente_asignado = u.id_usuario
+                  AND h.estado_nuevo = 'asignado'
+                  AND h.fecha::date = CURRENT_DATE) AS asignados_hoy
+        FROM usuarios u
+        WHERE u.rol IN ('agente','coordinador','administrador')
+        ORDER BY u.carga_trabajo ASC, u.nombre
     """))
     agentes = [
         {
@@ -283,6 +294,7 @@ async def get_asignacion(db: AsyncSession = Depends(get_db), token: str = Depend
             "especialidad": row[2] or "General",
             "carga_trabajo": row[3],
             "estado": row[4],
+            "asignados_hoy": row[5] or 0,
         }
         for row in result.fetchall()
     ]
@@ -300,7 +312,7 @@ async def get_asignacion(db: AsyncSession = Depends(get_db), token: str = Depend
     """))
     sin_asignar = []
     for row in result.fetchall():
-        recap = _recomendar_agente(agentes, row[4])
+        recap = _recomendar_agente(agentes, row[4], MAX_TICKETS_AGENTE_DIA)
         sin_asignar.append({
             "id_solicitud": row[0],
             "asunto": row[1],
@@ -312,18 +324,21 @@ async def get_asignacion(db: AsyncSession = Depends(get_db), token: str = Depend
             "recomendacion": recap,
         })
 
-    return {"agentes": agentes, "sin_asignar": sin_asignar}
+    return {"agentes": agentes, "sin_asignar": sin_asignar, "max_diario": MAX_TICKETS_AGENTE_DIA}
 
 
-def _recomendar_agente(agentes, categoria_prioridad):
-    """Devuelve el agente con menor carga (y especialidad afín si es posible)."""
+def _recomendar_agente(agentes, categoria_prioridad, max_diario=MAX_TICKETS_AGENTE_DIA):
+    """Devuelve el agente con menor carga (y especialidad afín si es posible),
+    priorizando a quienes aún no alcanzaron el cupo diario."""
     if not agentes:
         return None
-    carga_min = min(a["carga_trabajo"] for a in agentes)
-    favoritos = [a for a in agentes if a["carga_trabajo"] == carga_min]
+    disponibles = [a for a in agentes if a.get("asignados_hoy", 0) < max_diario]
+    candidatos = disponibles or agentes
+    carga_min = min(a["carga_trabajo"] for a in candidatos)
+    favoritos = [a for a in candidatos if a["carga_trabajo"] == carga_min]
     elegido = min(favoritos, key=lambda a: a["nombre"])
     # Afinidad simple: menor carga => mayor afinidad de base
-    afinidad = round(95 - min(a["carga_trabajo"] for a in agentes) * 5, 1)
+    afinidad = round(95 - min(a["carga_trabajo"] for a in candidatos) * 5, 1)
     if afinidad < 60:
         afinidad = 60.0
     return {"id_usuario": elegido["id_usuario"], "nombre": elegido["nombre"], "afinidad": afinidad}
@@ -335,6 +350,53 @@ async def asignar_ticket(ticket_id: int, data: dict, db: AsyncSession = Depends(
     agente_id = data.get("agente_id")
     if not agente_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="agente_id es requerido")
+
+    # El destino debe ser personal de soporte activo
+    agente_row = await db.execute(text("""
+        SELECT nombre, rol, estado FROM usuarios WHERE id_usuario = :id
+    """), {"id": agente_id})
+    agente = agente_row.fetchone()
+    if not agente:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Agente no encontrado")
+    if agente[1] not in SUPPORT_ROLES or agente[2] != "activo":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El usuario destino no es personal de soporte activo"
+        )
+
+    # El ticket debe existir y no estar cerrado
+    ticket_row = await db.execute(text("""
+        SELECT estado, id_agente_asignado FROM solicitud WHERE id_solicitud = :id
+    """), {"id": ticket_id})
+    ticket = ticket_row.fetchone()
+    if not ticket:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket no encontrado")
+    if ticket[0] == "cerrado":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No se puede asignar un ticket cerrado"
+        )
+    if ticket[1] == agente_id:
+        return {"status": "ok", "ticket_id": ticket_id, "agente_id": agente_id,
+                "message": "El ticket ya estaba asignado a ese agente"}
+
+    # Límite diario de asignación por agente (control de carga de trabajo)
+    hoy_row = await db.execute(text("""
+        SELECT count(*)
+        FROM historial h
+        JOIN solicitud s ON s.id_solicitud = h.id_solicitud
+        WHERE s.id_agente_asignado = :agente
+          AND h.estado_nuevo = 'asignado'
+          AND h.fecha::date = CURRENT_DATE
+    """), {"agente": agente_id})
+    asignados_hoy = hoy_row.scalar() or 0
+    if asignados_hoy >= MAX_TICKETS_AGENTE_DIA:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(f"Límite diario alcanzado: {agente[0]} ya recibió {asignados_hoy} "
+                    f"ticket(s) hoy (máximo {MAX_TICKETS_AGENTE_DIA}). "
+                    "Elige otro agente o espera a mañana.")
+        )
 
     result = await db.execute(text("""
         UPDATE solicitud SET id_agente_asignado = :agente, estado = 'asignado'
@@ -350,7 +412,10 @@ async def asignar_ticket(ticket_id: int, data: dict, db: AsyncSession = Depends(
     """), {"id": ticket_id, "user": payload.get("user_id")})
 
     await db.commit()
-    return {"status": "ok", "ticket_id": ticket_id, "agente_id": agente_id}
+    return {
+        "status": "ok", "ticket_id": ticket_id, "agente_id": agente_id,
+        "asignados_hoy": asignados_hoy + 1, "max_diario": MAX_TICKETS_AGENTE_DIA,
+    }
 
 
 # ============================================================

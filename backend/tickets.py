@@ -55,21 +55,53 @@ async def update_ticket(ticket_id: int, data: dict, db: AsyncSession = Depends(g
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     except JWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido")
-        
-    result = await db.execute(text("""
-        UPDATE solicitud SET estado = :estado, fecha_actualizacion = NOW()
-        WHERE id_solicitud = :id RETURNING id_solicitud
-    """), {"estado": data["estado"], "id": ticket_id})
-    
-    if not result.scalar():
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket no encontrado")
-        
+
+    user_role = payload.get("role")
+    user_id = payload.get("user_id")
+    nuevo_estado = data.get("estado")
+    if not nuevo_estado:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El campo 'estado' es requerido")
+
+    if user_role not in ("agente", "coordinador", "administrador"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Sin permisos para mover tickets")
+
+    if user_role == "agente":
+        # Un agente solo trabaja sobre los tickets que el coordinador le asignó
+        # y nunca puede devolverlos a 'nuevo' (ese estado es del coordinador).
+        if nuevo_estado == "nuevo":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Un agente no puede devolver un ticket al estado 'nuevo'"
+            )
+        result = await db.execute(text("""
+            UPDATE solicitud SET estado = :estado, fecha_actualizacion = NOW()
+            WHERE id_solicitud = :id AND id_agente_asignado = :user_id RETURNING id_solicitud
+        """), {"estado": nuevo_estado, "id": ticket_id, "user_id": user_id})
+        if not result.scalar():
+            exists = await db.execute(
+                text("SELECT 1 FROM solicitud WHERE id_solicitud = :id"), {"id": ticket_id})
+            if not exists.scalar():
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket no encontrado")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Solo puedes mover tickets que el coordinador te asignó"
+            )
+    else:
+        # Coordinador / administrador: potestad sobre cualquier ticket
+        result = await db.execute(text("""
+            UPDATE solicitud SET estado = :estado, fecha_actualizacion = NOW()
+            WHERE id_solicitud = :id RETURNING id_solicitud
+        """), {"estado": nuevo_estado, "id": ticket_id})
+
+        if not result.scalar():
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket no encontrado")
+
     await db.execute(text("""
         INSERT INTO historial (estado_anterior, estado_nuevo, comentario, fecha, id_solicitud, id_usuario)
         SELECT estado, :estado, 'Movido en tablero', NOW(), :id, :user_id
         FROM solicitud WHERE id_solicitud = :id
-    """), {"estado": data["estado"], "id": ticket_id, "user_id": payload.get("user_id")})
-    
+    """), {"estado": nuevo_estado, "id": ticket_id, "user_id": user_id})
+
     await db.commit()
     return {"status": "ok", "ticket_id": ticket_id}
 
@@ -279,6 +311,14 @@ async def get_tickets(
     if user_role == 'solicitante':
         conditions.append("s.id_solicitante = :user_id")
         params["user_id"] = user_id
+    elif user_role == 'agente':
+        # Un agente SOLO ve los tickets que el coordinador le asignó.
+        # Los tickets 'nuevo' (sin asignar) son exclusivos del kanban del coordinador,
+        # que es quien los reparte desde la pantalla de Asignación.
+        conditions.append("s.id_agente_asignado = :user_id")
+        conditions.append("s.estado != 'nuevo'")
+        params["user_id"] = user_id
+    # coordinador / administrador: ven todos los tickets (incluidos los 'nuevo')
     if since_dt:
         conditions.append("(s.fecha_actualizacion >= :since OR s.fecha_creacion >= :since)")
         params["since"] = since_dt
