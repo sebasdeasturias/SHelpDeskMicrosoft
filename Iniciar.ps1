@@ -51,35 +51,35 @@ if (-not $pgReady) {
     exit 1
 }
 
-Write-Host "✅ PostgreSQL está listo y aceptando conexiones" -ForegroundColor Green
+Write-Host "`n✅ PostgreSQL está listo y aceptando conexiones" -ForegroundColor Green
 
 # Mostrar estado de contenedores
 Write-Host "`n📊 Estado de los servicios Docker:" -ForegroundColor Cyan
 docker compose -f $ComposeFile ps --format "table {{.Name}}`t{{.Status}}`t{{.Ports}}"
 
 # ============================================
-# 3. BACKEND - Activar venv y ejecutar Uvicorn
+# 3. BACKEND - Corre dentro de Docker (servicio "backend")
 # ============================================
-$VenvActivate = Join-Path $BackendPath ".venv\Scripts\Activate.ps1"
-$MainPy = Join-Path $BackendPath "main.py"
-
-if (-not (Test-Path $VenvActivate)) {
-    Write-Host "`n❌ No se encontró el entorno virtual en: $VenvActivate" -ForegroundColor Red
-    Write-Host "   Crea uno con: python -m venv .venv dentro de la carpeta backend" -ForegroundColor Yellow
+Write-Host "`n🐳 Construyendo/actualizando el backend dentro de Docker..." -ForegroundColor Cyan
+docker compose -f $ComposeFile up -d --build backend
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "❌ Error al iniciar el contenedor del backend" -ForegroundColor Red
     exit 1
 }
 
-if (-not (Test-Path $MainPy)) {
-    Write-Host "`n❌ No se encontró main.py en: $BackendPath" -ForegroundColor Red
+# ============================================
+# 4. STREAMLIT - Dashboard de estadísticas y control admin
+# ============================================
+Write-Host "`n🐳 Construyendo/actualizando Streamlit dentro de Docker..." -ForegroundColor Cyan
+docker compose -f $ComposeFile up -d --build streamlit
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "❌ Error al iniciar el contenedor de Streamlit" -ForegroundColor Red
     exit 1
 }
 
-Write-Host "`n🐍 Activando entorno virtual y ejecutando Uvicorn..." -ForegroundColor Cyan
-Write-Host "   Ruta: $BackendPath" -ForegroundColor DarkGray
+Write-Host "`n✅ Backend corriendo en Docker (sincronizado con .\backend)" -ForegroundColor Green
 Write-Host "   URL:  http://localhost:8000" -ForegroundColor DarkGray
 Write-Host "   Docs: http://localhost:8000/docs" -ForegroundColor DarkGray
-Write-Host "`n💡 Presiona CTRL+C para detener el servidor backend`n" -ForegroundColor Yellow
-
-& $VenvActivate
-Set-Location $BackendPath
-python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
+Write-Host "`n✅ Streamlit corriendo en Docker (sincronizado con .\streamlit_app)" -ForegroundColor Green
+Write-Host "   URL:  http://localhost:8501" -ForegroundColor DarkGray
+Write-Host "`n📋 Logs: docker logs -f helpdesk-backend | docker logs -f helpdesk-streamlit" -ForegroundColor Yellow

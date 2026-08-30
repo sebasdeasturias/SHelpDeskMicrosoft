@@ -8,12 +8,17 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, text
+import os
+from dotenv import load_dotenv
 from database import get_db
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
-# Configuración (Idealmente esto va en un .env)
-SECRET_KEY = "dev_secret_key_change_in_production"
+# Configuración sensible cargada desde el .env (raíz del proyecto)
+load_dotenv()
+SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+if not SECRET_KEY:
+    raise ValueError("Error crítico: No se encontró JWT_SECRET_KEY. Revisa tu archivo .env")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24
 

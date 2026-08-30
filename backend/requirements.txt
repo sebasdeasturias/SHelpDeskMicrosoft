@@ -22,3 +22,22 @@ httpx>=0.27.0,<1.0.0
 
 # Soporte para form-data en FastAPI (recomendado para OAuth2)
 python-multipart>=0.0.9,<1.0.0
+
+# ============================================================
+# MÓDULO STREAMLIT (streamlit_app/ — estadísticas y control admin)
+# Un único requirements para todo el proyecto: un solo venv.
+# ============================================================
+
+# Panel web de estadísticas y control del administrador
+streamlit>=1.40.0,<2.0.0
+watchdog>=4.0.0,<7.0.0
+
+# Gráficos y manejo de datos
+plotly>=5.24.0,<7.0.0
+pandas>=2.2.0,<3.0.0
+
+# Conexión directa a PostgreSQL (psycopg2 síncrono para Streamlit)
+psycopg2-binary>=2.9.9,<3.0.0
+
+# Cliente HTTP (n8n API y Ollama desde el panel admin)
+requests>=2.32.0,<3.0.0

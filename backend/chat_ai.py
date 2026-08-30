@@ -17,6 +17,7 @@ router = APIRouter(prefix="/chat", tags=["Chat IA"])
 
 # Configuración
 N8N_CHAT_URL = os.getenv("N8N_CHAT_URL")
+N8N_URL = os.getenv("N8N_URL", "http://localhost:5678")
 DEFAULT_MODEL = "llama3.2:3b"
 
 SYSTEM_PROMPT = """Eres un asistente técnico experto en soporte IT del sistema HelpDesk realizado por S.Morales.
@@ -141,10 +142,10 @@ async def chat_health():
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
             # Solo verificamos que el puerto responda
-            response = await client.get("http://localhost:5678/healthz")
+            response = await client.get(f"{N8N_URL}/healthz")
             return {"status": "ok", "n8n": "accessible"}
     except Exception:
-        return {"status": "warning", "n8n": "no accesible en localhost:5678"}
+        return {"status": "warning", "n8n": f"no accesible en {N8N_URL}"}
 
 
 @router.post("", response_model=ChatResponse)
@@ -170,16 +171,25 @@ async def chat_with_ai(
             ticket_contexto = contexto
             mensaje_completo = f"{contexto}\n\nPregunta del agente: {request.mensaje}"
 
-    # 3. Preparar payload para n8n
+    # 3. Determinar el modelo: explícito → configuracion_ia (panel admin) → DEFAULT_MODEL
+    modelo_final = request.modelo
+    if not modelo_final:
+        r_modelo = await db.execute(
+            text("SELECT valor FROM configuracion_ia WHERE clave = 'modelo_chat'")
+        )
+        fila_modelo = r_modelo.first()
+        modelo_final = fila_modelo[0] if fila_modelo and fila_modelo[0] else DEFAULT_MODEL
+
+    # 4. Preparar payload para n8n
     n8n_payload = {
         "mensaje": mensaje_completo,
-        "modelo": request.modelo or DEFAULT_MODEL,
+        "modelo": modelo_final,
         "historial": [msg.dict() for msg in request.historial] if request.historial else [],
         "sistema": SYSTEM_PROMPT,
         "temperatura": 0.8
     }
 
-    # 4. Llamar a n8n
+    # 5. Llamar a n8n
     start_time = time.time()
     try:
         async with httpx.AsyncClient(timeout=120.0) as client:
@@ -189,7 +199,7 @@ async def chat_with_ai(
     except httpx.ConnectError:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="No se pudo conectar con n8n. Verifica que esté corriendo en http://localhost:5678"
+            detail=f"No se pudo conectar con n8n. Verifica que esté corriendo en {N8N_URL}"
         )
     except httpx.TimeoutException:
         raise HTTPException(
@@ -209,21 +219,21 @@ async def chat_with_ai(
 
     elapsed_ms = int((time.time() - start_time) * 1000)
 
-    # 5. Extraer respuesta de n8n
+    # 6. Extraer respuesta de n8n
     respuesta = n8n_data.get("respuesta", "Sin respuesta del modelo.")
     tokens_data = n8n_data.get("tokens", {})
     tokens_usados = tokens_data.get("tokens_generados", 0)
 
-    # 6. Guardar log en la BD (no bloquea si falla)
+    # 7. Guardar log en la BD (no bloquea si falla)
     await log_ai_interaction(
         db, user_id, request.mensaje, respuesta,
         tokens_usados, elapsed_ms, request.ticket_id
     )
 
-    # 7. Devolver respuesta al frontend
+    # 8. Devolver respuesta al frontend
     return ChatResponse(
         respuesta=respuesta,
-        modelo=request.modelo or DEFAULT_MODEL,
+        modelo=modelo_final,
         tokens=tokens_data,
         ticket_contexto=ticket_contexto,
         tiempo_ms=elapsed_ms

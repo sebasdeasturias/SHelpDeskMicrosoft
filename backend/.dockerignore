@@ -1,0 +1,9 @@
+# Entorno virtual local (las dependencias se instalan dentro de la imagen)
+.venv/
+
+# Caché de Python
+__pycache__/
+*.pyc
+
+# Entorno: se inyecta vía docker-compose (environment)
+.env
