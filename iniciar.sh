@@ -55,7 +55,7 @@ if [ ! -f "$ENV_FILE" ]; then
 fi
 
 faltan=""
-for var in POSTGRES_USER POSTGRES_PASSWORD POSTGRES_DB JWT_SECRET_KEY N8N_BASIC_AUTH_USER N8N_BASIC_AUTH_PASSWORD; do
+for var in POSTGRES_USER POSTGRES_PASSWORD POSTGRES_DB APP_DB_USER APP_DB_PASSWORD AI_CALLBACK_KEY JWT_SECRET_KEY; do
     grep -qE "^[[:space:]]*${var}[[:space:]]*=" "$ENV_FILE" || faltan="$faltan $var"
 done
 if [ -n "$faltan" ]; then

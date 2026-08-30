@@ -36,8 +36,9 @@ if (-not (Test-Path $EnvFile)) {
 }
 
 $envContent = Get-Content $EnvFile -Raw
-$requiredVars = @("POSTGRES_USER", "POSTGRES_PASSWORD", "POSTGRES_DB", "JWT_SECRET_KEY",
-                  "N8N_BASIC_AUTH_USER", "N8N_BASIC_AUTH_PASSWORD")
+$requiredVars = @("POSTGRES_USER", "POSTGRES_PASSWORD", "POSTGRES_DB",
+                  "APP_DB_USER", "APP_DB_PASSWORD", "AI_CALLBACK_KEY",
+                  "JWT_SECRET_KEY")
 $faltan = $requiredVars | Where-Object { $envContent -notmatch "(?m)^\s*$_\s*=" }
 if ($faltan) {
     Write-Host "❌ Faltan variables obligatorias en .env: $($faltan -join ', ')" -ForegroundColor Red
