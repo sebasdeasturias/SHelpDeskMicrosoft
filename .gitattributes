@@ -1,0 +1,2 @@
+# Forzar saltos de línea Unix en scripts de shell (evita fallos de bash con CRLF)
+*.sh text eol=lf
