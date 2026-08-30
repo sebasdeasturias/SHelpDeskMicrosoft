@@ -6,6 +6,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_db
 from auth import oauth2_scheme, SECRET_KEY, ALGORITHM
+from embeddings import generar_embedding, a_vector_sql, indexar_ticket, EMBEDDING_MODEL
 from jose import jwt, JWTError
 from datetime import datetime, timedelta, date
 from typing import List, Optional
@@ -537,26 +538,26 @@ async def search_rag(query: str = Query(..., min_length=1), db: AsyncSession = D
 
 
 async def _vector_search(db: AsyncSession, query: str):
-    """Consulta embeddings vectoriales (pgvector). Retorna [] si no hay datos."""
+    """Búsqueda semántica real: embed de la consulta (bge-m3) -> pgvector (HNSW coseno).
+    Solo recupera soluciones validadas (tickets resueltos/cerrados). Retorna [] si no hay datos."""
     try:
-        # Genera un embedding simple basado en longitud como fallback seguro
+        vec = await generar_embedding(query)
+        qvec = a_vector_sql(vec)
         result = await db.execute(text("""
             SELECT s.id_solicitud, s.asunto, s.descripcion, s.estado,
                    c.nombre, COALESCE(ag.nombre, 'Sin asignar'),
-                   1 - (e.embedding <=> (
-                       SELECT embedding FROM embedding_vector ORDER BY fecha_creacion DESC LIMIT 1
-                   )) AS similitud
+                   1 - (e.embedding <=> CAST(:qvec AS vector)) AS similitud
             FROM embedding_vector e
             JOIN solicitud s ON s.id_solicitud = e.id_solicitud
             LEFT JOIN categoria c ON s.id_categoria = c.id_categoria
             LEFT JOIN usuarios ag ON s.id_agente_asignado = ag.id_usuario
-            ORDER BY similitud DESC
+            WHERE e.modelo_embedding = :modelo
+              AND s.estado IN ('resuelto', 'cerrado')
+            ORDER BY e.embedding <=> CAST(:qvec AS vector)
             LIMIT 5
-        """))
+        """), {"qvec": qvec, "modelo": EMBEDDING_MODEL})
         filas = result.fetchall()
-        if not filas:
-            return []
-        return [
+        resultados = [
             {
                 "id_solicitud": row[0],
                 "asunto": row[1],
@@ -564,10 +565,54 @@ async def _vector_search(db: AsyncSession, query: str):
                 "estado": row[3],
                 "categoria": row[4] or "General",
                 "agente": row[5],
-                "similitud": round(float(row[6]), 2) if row[6] is not None else 0.0,
+                "similitud": round(float(row[6]), 4),
             }
             for row in filas
         ]
+        # Umbral calibrado para bge-m3: su piso de similitud entre textos no
+        # relacionados es alto (~0.4); los matches útiles quedan por encima de 0.5
+        return [r for r in resultados if r["similitud"] >= 0.50]
     except Exception as e:
-        print(f"[RAG] Vector search no disponible: {e}")
+        print(f"[RAG] Búsqueda vectorial no disponible: {e}")
         return []
+
+
+@router.post("/rag/indexar")
+async def rag_indexar(db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
+    """Indexa (backfill) todos los tickets resueltos/cerrados que aún no tengan
+    embedding para el modelo actual. Exclusivo de coordinador/administrador."""
+    payload = _verify_token(token)
+    if payload.get("role") not in ("coordinador", "administrador"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Solo coordinador o administrador pueden ejecutar la indexación"
+        )
+
+    rows = await db.execute(text("""
+        SELECT s.id_solicitud, s.asunto, s.descripcion
+        FROM solicitud s
+        WHERE s.estado IN ('resuelto', 'cerrado')
+          AND NOT EXISTS (
+              SELECT 1 FROM embedding_vector e
+              WHERE e.id_solicitud = s.id_solicitud AND e.modelo_embedding = :modelo
+          )
+        ORDER BY s.fecha_actualizacion DESC
+    """), {"modelo": EMBEDDING_MODEL})
+    pendientes = rows.fetchall()
+
+    indexados, errores = 0, 0
+    for r in pendientes:
+        try:
+            if await indexar_ticket(db, r[0], r[1], r[2]):
+                indexados += 1
+        except Exception as e:
+            errores += 1
+            print(f"[RAG] Error indexando ticket {r[0]}: {e}")
+
+    return {
+        "status": "ok",
+        "modelo": EMBEDDING_MODEL,
+        "indexados": indexados,
+        "errores": errores,
+        "sin_trabajo": len(pendientes) == 0,
+    }

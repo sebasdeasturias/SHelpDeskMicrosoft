@@ -768,6 +768,32 @@ function initCoordinatorModules() {
             if (e.key === 'Enter') buscarRAG();
         });
     }
+    const btnIndexarRAG = document.getElementById('btnIndexarRAG');
+    if (btnIndexarRAG) btnIndexarRAG.addEventListener('click', indexarTicketsRAG);
+}
+
+async function indexarTicketsRAG() {
+    const btn = document.getElementById('btnIndexarRAG');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Indexando...';
+    }
+    try {
+        const r = await apiFetch('/coordinator/rag/indexar', { method: 'POST' });
+        if (r.sin_trabajo) {
+            mostrarToast('Todos los tickets resueltos ya están indexados');
+        } else {
+            mostrarToast(`Indexados ${r.indexados} ticket(s) con ${r.modelo}` +
+                (r.errores ? ` · ${r.errores} error(es)` : ''));
+        }
+    } catch (e) {
+        mostrarToast(`Error al indexar: ${e.message}`);
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-database"></i> Indexar tickets';
+        }
+    }
 }
 
 async function obtenerTicketsFiltrados() {

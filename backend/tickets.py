@@ -1,12 +1,18 @@
-from fastapi import APIRouter, Depends, Query, HTTPException, status
+from fastapi import APIRouter, Depends, Query, Header, HTTPException, status
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_db
 from auth import oauth2_scheme, SECRET_KEY, ALGORITHM
+from embeddings import indexar_ticket
 from jose import jwt, JWTError
 from datetime import datetime
+import os
 
 router = APIRouter(prefix="/tickets", tags=["Tickets"])
+
+# API key que n8n debe enviar (header X-API-Key) al reportar el análisis de IA.
+# Fail-closed: si no está configurada, el callback siempre se rechaza.
+AI_CALLBACK_KEY = os.getenv("AI_CALLBACK_KEY")
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
@@ -103,7 +109,26 @@ async def update_ticket(ticket_id: int, data: dict, db: AsyncSession = Depends(g
     """), {"estado": nuevo_estado, "id": ticket_id, "user_id": user_id})
 
     await db.commit()
+
+    # Ingesta RAG: al validar la solución, el ticket entra al índice vectorial
+    if nuevo_estado in ("resuelto", "cerrado"):
+        await _indexar_para_rag(db, ticket_id)
+
     return {"status": "ok", "ticket_id": ticket_id}
+
+
+async def _indexar_para_rag(db: AsyncSession, ticket_id: int):
+    """Indexa el ticket en pgvector cuando se resuelve/cierra (solución validada).
+    Nunca rompe el flujo del ticket si Ollama no está disponible."""
+    try:
+        row = await db.execute(text("""
+            SELECT asunto, descripcion FROM solicitud WHERE id_solicitud = :id
+        """), {"id": ticket_id})
+        t = row.fetchone()
+        if t:
+            await indexar_ticket(db, ticket_id, t[0], t[1])
+    except Exception as e:
+        print(f"[RAG] No se pudo indexar el ticket {ticket_id}: {e}")
 
 
 @router.get("/{ticket_id}")
@@ -217,7 +242,19 @@ async def get_ticket_detail(ticket_id: int, db: AsyncSession = Depends(get_db), 
 
 
 @router.post("/{ticket_id}/ai-analysis")
-async def receive_ai_analysis(ticket_id: int, data: dict, db: AsyncSession = Depends(get_db)):
+async def receive_ai_analysis(
+    ticket_id: int,
+    data: dict,
+    db: AsyncSession = Depends(get_db),
+    x_api_key: str = Header(None),
+):
+    """Callback exclusivo de n8n (análisis IA). Protegido con API key compartida."""
+    if not AI_CALLBACK_KEY or x_api_key != AI_CALLBACK_KEY:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Callback no autorizado: falta o es inválido el header X-API-Key"
+        )
+
     id_categoria = data.get("id_categoria")
     id_prioridad = data.get("id_prioridad")
     confianza = float(data.get("confianza", 0.0))
