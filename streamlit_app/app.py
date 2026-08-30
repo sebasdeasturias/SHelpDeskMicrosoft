@@ -79,7 +79,6 @@ def pantalla_login():
 # ============================================================
 def app_principal():
     u = st.session_state.usuario
-    es_admin = u["rol"] == "administrador"
 
     with st.sidebar:
         st.image("assets/logohelpdesk.png", use_container_width=True)
@@ -107,10 +106,9 @@ def app_principal():
                 st.rerun()
 
         st.divider()
-        if es_admin:
-            opciones = ["Dashboard de Estadísticas", "Centro de Control Admin"]
-        else:
-            opciones = ["Dashboard de Estadísticas"]
+        # Ambos roles acceden al centro de control; dentro, el administrador ve
+        # todas las herramientas y el coordinador solo la gestión de n8n.
+        opciones = ["Dashboard de Estadísticas", "Centro de Control"]
         vista = st.radio("Navegación", opciones, label_visibility="collapsed")
 
         st.divider()

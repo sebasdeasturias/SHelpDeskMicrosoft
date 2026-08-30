@@ -18,23 +18,34 @@ palabras_peligrosas = ("insert", "update", "delete", "drop", "alter", "truncate"
 
 
 def render():
-    theme.banner(
-        "Centro de Control del Administrador",
-        "Potestad total: base de datos, logs del sistema, workflows de n8n y modelos de IA.",
-        badge=st.session_state.usuario['nombre'],
-    )
+    es_admin = st.session_state.usuario["rol"] == "administrador"
 
-    tab_bd, tab_logs, tab_n8n, tab_ia = st.tabs(
-        ["Base de Datos", "Logs del Sistema", "N8N Workflows", "IA / Ollama"]
-    )
-    with tab_bd:
-        _consola_bd()
-    with tab_logs:
-        _logs()
-    with tab_n8n:
+    if es_admin:
+        theme.banner(
+            "Centro de Control del Administrador",
+            "Potestad total: base de datos, logs del sistema, workflows de n8n y modelos de IA.",
+            badge=st.session_state.usuario['nombre'],
+        )
+        tab_bd, tab_logs, tab_n8n, tab_ia = st.tabs(
+            ["Base de Datos", "Logs del Sistema", "N8N Workflows", "IA / Ollama"]
+        )
+        with tab_bd:
+            _consola_bd()
+        with tab_logs:
+            _logs()
+        with tab_n8n:
+            _n8n()
+        with tab_ia:
+            _ia()
+    else:
+        # Coordinadores: solo la gestión de workflows n8n (la API key del .env
+        # es compartida únicamente entre coordinadores y administradores).
+        theme.banner(
+            "Gestión de Workflows n8n",
+            "Consulta, activa y desactiva los workflows de automatización de la plataforma.",
+            badge=st.session_state.usuario['nombre'],
+        )
         _n8n()
-    with tab_ia:
-        _ia()
 
 
 # ============================================================
@@ -143,12 +154,17 @@ def _n8n():
     st.link_button("Abrir editor n8n (puerto 5678)", "http://localhost:5678", use_container_width=True)
 
     st.divider()
-    api_key = st.text_input("N8N API Key (Settings → n8n API)", value=st.session_state.get("n8n_key", ""), type="password")
+    api_key = os.getenv("N8N_API_KEY", "").strip()
     if api_key:
-        st.session_state.n8n_key = api_key
+        st.caption("API key cargada desde el servidor (.env) — uso restringido a coordinadores y administradores; nunca sale del backend.")
         _n8n_workflows(api_key)
     else:
-        st.info("Introduce la API Key para listar, activar y desactivar workflows desde aquí (potestad total del administrador).")
+        api_key = st.text_input("N8N API Key (Settings → n8n API)", value=st.session_state.get("n8n_key", ""), type="password")
+        if api_key:
+            st.session_state.n8n_key = api_key
+            _n8n_workflows(api_key)
+        else:
+            st.info("Configura N8N_API_KEY en el .env (recomendado) o introduce la API Key manualmente para listar, activar y desactivar workflows.")
 
 
 def _n8n_health() -> tuple[bool, str]:
