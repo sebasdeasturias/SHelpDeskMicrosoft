@@ -1,6 +1,8 @@
 ﻿# Iniciar.ps1
 # Script seguro: Verifica y arranca toda la infraestructura de SHelpDesk SIN borrar nada
 #   PostgreSQL (pgvector) + Ollama + n8n + Backend FastAPI + Streamlit
+# Además monta la base de datos completa si no existe:
+#   esquema (db_logic.sql) + rol de app (helpdesk_app) + usuarios de prueba (seed_usuarios.sql)
 
 $ErrorActionPreference = "Stop"
 $ProjectRoot = $PSScriptRoot
@@ -50,13 +52,13 @@ $PgUser = "postgres"
 if ($envContent -match "(?m)^\s*POSTGRES_USER\s*=\s*(.+?)\s*$") { $PgUser = $Matches[1] }
 
 # ============================================
-# 1. DOCKER COMPOSE - Levantar la pila base
+# 1. DOCKER COMPOSE - Levantar servicios base
 # ============================================
-Write-Host "`n🐳 Verificando y levantando contenedores Docker..." -ForegroundColor Cyan
-# up -d es idempotente: si ya están corriendo, no hace nada. Si están parados, los inicia.
-docker compose -f $ComposeFile up -d
+Write-Host "`n🐳 Levantando servicios base (postgres, ollama)..." -ForegroundColor Cyan
+# Solo servicios base: n8n/backend/streamlit se levantan DESPUÉS de configurar la BD.
+docker compose -f $ComposeFile up -d postgres ollama
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "❌ Error al iniciar los contenedores" -ForegroundColor Red
+    Write-Host "❌ Error al iniciar los contenedores base" -ForegroundColor Red
     exit 1
 }
 
@@ -92,6 +94,137 @@ Write-Host "`n✅ PostgreSQL está listo y aceptando conexiones" -ForegroundColo
 # Mostrar estado de contenedores
 Write-Host "`n📊 Estado de los servicios Docker:" -ForegroundColor Cyan
 docker compose -f $ComposeFile ps --format "table {{.Name}}`t{{.Status}}`t{{.Ports}}"
+
+# Variables de la BD de la aplicación (leídas del .env)
+$SchemaFile = Join-Path $ProjectRoot "db_logic.sql"
+$SeedFile = Join-Path $ProjectRoot "seed_usuarios.sql"
+$AppUser = "helpdesk_app"
+if ($envContent -match "(?m)^\s*APP_DB_USER\s*=\s*(.+?)\s*$") { $AppUser = $Matches[1] }
+$AppPass = ""
+if ($envContent -match "(?m)^\s*APP_DB_PASSWORD\s*=\s*(.+?)\s*$") { $AppPass = $Matches[1] }
+$PgDb = "helpdesk_db"
+if ($envContent -match "(?m)^\s*POSTGRES_DB\s*=\s*(.+?)\s*$") { $PgDb = $Matches[1] }
+
+if ([string]::IsNullOrWhiteSpace($AppPass)) {
+    Write-Host "❌ APP_DB_PASSWORD está vacía en .env" -ForegroundColor Red
+    exit 1
+}
+if ($AppUser -notmatch "^[a-z_][a-z0-9_]*$" -or $PgDb -notmatch "^[a-z_][a-z0-9_]*$") {
+    Write-Host "❌ APP_DB_USER y POSTGRES_DB deben ser solo minúsculas/números/guion bajo" -ForegroundColor Red
+    exit 1
+}
+
+# ============================================
+# 2.5 ESQUEMA DE LA BD (db_logic.sql)
+#     Se aplica solo si la BD está vacía (primera vez / volumen nuevo).
+#     Va ANTES de los permisos para que el rol herede acceso a las tablas.
+# ============================================
+Write-Host "`n🗄️ Verificando esquema de la BD..." -ForegroundColor Cyan
+
+$SchemaAplicado = (docker exec helpdesk-db psql -tA -U $PgUser -d $PgDb -c `
+    "SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='usuarios'") -eq "1"
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "❌ No se pudo consultar el esquema de la BD" -ForegroundColor Red
+    exit 1
+}
+
+if (-not $SchemaAplicado) {
+    if (-not (Test-Path $SchemaFile)) {
+        Write-Host "❌ No se encontró db_logic.sql en: $SchemaFile" -ForegroundColor Red
+        exit 1
+    }
+    Write-Host "   Esquema vacío; aplicando db_logic.sql..." -ForegroundColor DarkGray
+    docker cp $SchemaFile "helpdesk-db:/tmp/db_logic.sql"
+    if ($LASTEXITCODE -ne 0) { Write-Host "❌ No se pudo copiar db_logic.sql al contenedor" -ForegroundColor Red; exit 1 }
+    docker exec helpdesk-db psql -v ON_ERROR_STOP=1 -U $PgUser -d $PgDb -f /tmp/db_logic.sql *> $null
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "❌ Error aplicando db_logic.sql. Revisa: docker exec helpdesk-db psql -U $PgUser -d $PgDb -f /tmp/db_logic.sql" -ForegroundColor Red
+        exit 1
+    }
+    docker exec helpdesk-db rm -f /tmp/db_logic.sql
+    Write-Host "✅ Esquema (db_logic.sql) aplicado" -ForegroundColor Green
+} else {
+    Write-Host "✅ El esquema ya existe; no se toca" -ForegroundColor Green
+}
+
+# ============================================
+# 2.6 USUARIO DE BD DE LA APLICACIÓN (mínimo privilegio)
+#     docker-compose solo inyecta APP_DB_USER/APP_DB_PASSWORD al backend;
+#     el rol debe existir dentro de PostgreSQL. Idempotente.
+# ============================================
+Write-Host "`n👤 Configurando el usuario de BD de la aplicación..." -ForegroundColor Cyan
+
+$EscPass = $AppPass.Replace("'", "''")
+$Sql = @'
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = '__USER__') THEN
+    CREATE ROLE __USER__ LOGIN PASSWORD '__PASS__';
+  ELSE
+    ALTER ROLE __USER__ WITH LOGIN PASSWORD '__PASS__';
+  END IF;
+END
+$$;
+GRANT CONNECT ON DATABASE __DB__ TO __USER__;
+GRANT USAGE ON SCHEMA public TO __USER__;
+DO $$
+DECLARE
+  t text;
+BEGIN
+  FOREACH t IN ARRAY ARRAY['usuarios','categoria','prioridad','solicitud','adjunto',
+                           'comentario','historial','sla','log','clasificacion_ia',
+                           'embedding_vector','sugerencia_rag','log_ia','configuracion_ia'] LOOP
+    IF EXISTS (SELECT 1 FROM information_schema.tables
+               WHERE table_schema = 'public' AND table_name = t) THEN
+      EXECUTE format('GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE %I TO __USER__', t);
+    END IF;
+  END LOOP;
+END
+$$;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO __USER__;
+'@
+$Sql = $Sql.Replace('__USER__', $AppUser).Replace('__PASS__', $EscPass).Replace('__DB__', $PgDb)
+
+$TmpSql = Join-Path $env:TEMP "helpdesk_app_init.sql"
+[System.IO.File]::WriteAllText($TmpSql, $Sql, (New-Object System.Text.UTF8Encoding($false)))
+try {
+    docker cp $TmpSql "helpdesk-db:/tmp/helpdesk_app_init.sql"
+    if ($LASTEXITCODE -ne 0) { throw "No se pudo copiar el SQL al contenedor" }
+    docker exec helpdesk-db psql -v ON_ERROR_STOP=1 -U $PgUser -d $PgDb -f /tmp/helpdesk_app_init.sql
+    if ($LASTEXITCODE -ne 0) { throw "Error configurando el rol $AppUser en PostgreSQL" }
+    docker exec helpdesk-db rm -f /tmp/helpdesk_app_init.sql
+    Write-Host "✅ Usuario '$AppUser' listo (rol + permisos sobre las tablas de la app)" -ForegroundColor Green
+} finally {
+    Remove-Item $TmpSql -ErrorAction SilentlyContinue
+}
+
+# ============================================
+# 2.7 DATOS INICIALES (seed_usuarios.sql)
+#     Idempotente: sincroniza los usuarios de prueba (password123).
+# ============================================
+if (-not (Test-Path $SeedFile)) {
+    Write-Host "⚠️ No se encontró seed_usuarios.sql; se omiten los usuarios de prueba" -ForegroundColor Yellow
+} else {
+    docker cp $SeedFile "helpdesk-db:/tmp/seed_usuarios.sql"
+    if ($LASTEXITCODE -ne 0) { Write-Host "❌ No se pudo copiar seed_usuarios.sql al contenedor" -ForegroundColor Red; exit 1 }
+    docker exec helpdesk-db psql -v ON_ERROR_STOP=1 -U $PgUser -d $PgDb -f /tmp/seed_usuarios.sql *> $null
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "❌ Error aplicando seed_usuarios.sql" -ForegroundColor Red
+        exit 1
+    }
+    docker exec helpdesk-db rm -f /tmp/seed_usuarios.sql
+    Write-Host "✅ Usuarios de prueba sincronizados (contraseña: password123)" -ForegroundColor Green
+}
+
+# ============================================
+# 2.8 n8n (requiere PostgreSQL listo; crea sus tablas al primer arranque)
+# ============================================
+Write-Host "`n🐳 Levantando n8n..." -ForegroundColor Cyan
+docker compose -f $ComposeFile up -d n8n
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "❌ Error al iniciar n8n" -ForegroundColor Red
+    exit 1
+}
 
 # ============================================
 # 3. BACKEND - Corre dentro de Docker (servicio "backend")

@@ -3,6 +3,8 @@
 # iniciar.sh — SHelpDesk Microsoft
 # Monta toda la infraestructura del proyecto de un tirón:
 #   PostgreSQL (pgvector) + Ollama + n8n + Backend FastAPI + Streamlit
+# Además monta la base de datos completa si no existe:
+#   esquema (db_logic.sql) + rol de app (helpdesk_app) + usuarios de prueba (seed_usuarios.sql)
 # Uso:
 #   chmod +x iniciar.sh
 #   ./iniciar.sh
@@ -68,12 +70,13 @@ PG_USER="$(grep -E '^POSTGRES_USER=' "$ENV_FILE" | head -n1 | cut -d= -f2- | tr 
 PG_USER="${PG_USER:-postgres}"
 
 # ============================================
-# 1. DOCKER COMPOSE - Construir y levantar TODO
+# 1. DOCKER COMPOSE - Levantar servicios base
 # ============================================
-say "🐳 Construyendo y levantando contenedores (postgres, ollama, n8n, backend, streamlit)..."
-docker compose -f "$COMPOSE_FILE" up -d --build
+say "🐳 Levantando servicios base (postgres, ollama)..."
+# Solo servicios base: n8n/backend/streamlit se levantan DESPUÉS de configurar la BD.
+docker compose -f "$COMPOSE_FILE" up -d postgres ollama
 if [ $? -ne 0 ]; then
-    err "❌ Error al iniciar los contenedores"
+    err "❌ Error al iniciar los contenedores base"
     exit 1
 fi
 
@@ -101,6 +104,133 @@ if [ "$pg_ready" = false ]; then
 fi
 
 ok "✅ PostgreSQL está listo y aceptando conexiones"
+
+# Variables de la BD de la aplicación (leídas del .env)
+SCHEMA_FILE="$PROJECT_ROOT/db_logic.sql"
+SEED_FILE="$PROJECT_ROOT/seed_usuarios.sql"
+APP_USER="$(grep -E '^APP_DB_USER=' "$ENV_FILE" | head -n1 | cut -d= -f2- | tr -d ' \t\r\"')"
+APP_USER="${APP_USER:-helpdesk_app}"
+APP_PASS="$(grep -E '^APP_DB_PASSWORD=' "$ENV_FILE" | head -n1 | cut -d= -f2- | tr -d ' \t\r\"')"
+PG_DB="$(grep -E '^POSTGRES_DB=' "$ENV_FILE" | head -n1 | cut -d= -f2- | tr -d ' \t\r\"')"
+PG_DB="${PG_DB:-helpdesk_db}"
+
+if [ -z "$APP_PASS" ]; then
+    err "❌ APP_DB_PASSWORD está vacía en .env"
+    exit 1
+fi
+if ! [[ "$APP_USER" =~ ^[a-z_][a-z0-9_]*$ ]] || ! [[ "$PG_DB" =~ ^[a-z_][a-z0-9_]*$ ]]; then
+    err "❌ APP_DB_USER y POSTGRES_DB deben ser solo minúsculas/números/guion bajo"
+    exit 1
+fi
+
+# ============================================
+# 2.5 ESQUEMA DE LA BD (db_logic.sql)
+#     Se aplica solo si la BD está vacía (primera vez / volumen nuevo).
+#     Va ANTES de los permisos para que el rol herede acceso a las tablas.
+# ============================================
+say "🗄️ Verificando esquema de la BD..."
+schema_ok="$(docker exec helpdesk-db psql -tA -U "$PG_USER" -d "$PG_DB" \
+    -c "SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='usuarios'" 2>/dev/null || true)"
+if [ "$schema_ok" != "1" ]; then
+    if [ ! -f "$SCHEMA_FILE" ]; then
+        err "❌ No se encontró db_logic.sql en: $SCHEMA_FILE"
+        exit 1
+    fi
+    dim "   Esquema vacío; aplicando db_logic.sql..."
+    cat "$SCHEMA_FILE" | docker exec -i helpdesk-db psql -v ON_ERROR_STOP=1 -U "$PG_USER" -d "$PG_DB" >/dev/null
+    if [ $? -ne 0 ]; then
+        err "❌ Error aplicando db_logic.sql"
+        exit 1
+    fi
+    ok "✅ Esquema (db_logic.sql) aplicado"
+else
+    ok "✅ El esquema ya existe; no se toca"
+fi
+
+# ============================================
+# 2.6 USUARIO DE BD DE LA APLICACIÓN (mínimo privilegio)
+#     docker-compose solo inyecta APP_DB_USER/APP_DB_PASSWORD al backend;
+#     el rol debe existir dentro de PostgreSQL. Idempotente.
+# ============================================
+say "👤 Configurando el usuario de BD de la aplicación..."
+
+# Escapar comillas simples del password para el literal SQL (' -> '')
+q="'"
+APP_PASS_ESC="${APP_PASS//$q/$q$q}"
+
+SQL="$(cat <<'SQLEOF'
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = '__USER__') THEN
+    CREATE ROLE __USER__ LOGIN PASSWORD '__PASS__';
+  ELSE
+    ALTER ROLE __USER__ WITH LOGIN PASSWORD '__PASS__';
+  END IF;
+END
+$$;
+GRANT CONNECT ON DATABASE __DB__ TO __USER__;
+GRANT USAGE ON SCHEMA public TO __USER__;
+DO $$
+DECLARE
+  t text;
+BEGIN
+  FOREACH t IN ARRAY ARRAY['usuarios','categoria','prioridad','solicitud','adjunto',
+                           'comentario','historial','sla','log','clasificacion_ia',
+                           'embedding_vector','sugerencia_rag','log_ia','configuracion_ia'] LOOP
+    IF EXISTS (SELECT 1 FROM information_schema.tables
+               WHERE table_schema = 'public' AND table_name = t) THEN
+      EXECUTE format('GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE %I TO __USER__', t);
+    END IF;
+  END LOOP;
+END
+$$;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO __USER__;
+SQLEOF
+)"
+SQL="${SQL//__USER__/$APP_USER}"
+SQL="${SQL//__PASS__/$APP_PASS_ESC}"
+SQL="${SQL//__DB__/$PG_DB}"
+
+printf '%s\n' "$SQL" | docker exec -i helpdesk-db psql -v ON_ERROR_STOP=1 -U "$PG_USER" -d "$PG_DB" >/dev/null
+if [ $? -ne 0 ]; then
+    err "❌ Error configurando el rol $APP_USER en PostgreSQL"
+    exit 1
+fi
+ok "✅ Usuario '$APP_USER' listo (rol + permisos sobre las tablas de la app)"
+
+# ============================================
+# 2.7 DATOS INICIALES (seed_usuarios.sql)
+#     Idempotente: sincroniza los usuarios de prueba (password123).
+# ============================================
+if [ ! -f "$SEED_FILE" ]; then
+    warn "⚠️ No se encontró seed_usuarios.sql; se omiten los usuarios de prueba"
+else
+    cat "$SEED_FILE" | docker exec -i helpdesk-db psql -v ON_ERROR_STOP=1 -U "$PG_USER" -d "$PG_DB" >/dev/null
+    if [ $? -ne 0 ]; then
+        err "❌ Error aplicando seed_usuarios.sql"
+        exit 1
+    fi
+    ok "✅ Usuarios de prueba sincronizados (contraseña: password123)"
+fi
+
+# ============================================
+# 2.8 n8n + BACKEND + STREAMLIT (requieren la BD lista)
+#     n8n crea sus tablas al primer arranque; backend/streamlit se
+#     reconstruyen con el código actual del repo.
+# ============================================
+say "🐳 Levantando n8n..."
+docker compose -f "$COMPOSE_FILE" up -d n8n
+if [ $? -ne 0 ]; then
+    err "❌ Error al iniciar n8n"
+    exit 1
+fi
+
+say "🐳 Construyendo y levantando backend y streamlit..."
+docker compose -f "$COMPOSE_FILE" up -d --build backend streamlit
+if [ $? -ne 0 ]; then
+    err "❌ Error al iniciar backend/streamlit"
+    exit 1
+fi
 
 # ============================================
 # 3. HEALTH CHECKS (no fatales)
