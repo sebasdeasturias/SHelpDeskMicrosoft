@@ -180,13 +180,34 @@ async def chat_with_ai(
         fila_modelo = r_modelo.first()
         modelo_final = fila_modelo[0] if fila_modelo and fila_modelo[0] else DEFAULT_MODEL
 
+    # 3b. Parámetros de generación configurables por el administrador (configuracion_ia)
+    r_params = await db.execute(text("""
+        SELECT clave, valor FROM configuracion_ia
+        WHERE clave IN ('temperatura', 'num_predict', 'top_p')
+    """))
+    params = {row[0]: row[1] for row in r_params.fetchall()}
+    try:
+        temperatura = float(params.get("temperatura", 0.8))
+    except (TypeError, ValueError):
+        temperatura = 0.8
+    try:
+        num_predict = int(float(params.get("num_predict", 512)))
+    except (TypeError, ValueError):
+        num_predict = 512
+    try:
+        top_p = float(params.get("top_p", 0.9))
+    except (TypeError, ValueError):
+        top_p = 0.9
+
     # 4. Preparar payload para n8n
     n8n_payload = {
         "mensaje": mensaje_completo,
         "modelo": modelo_final,
         "historial": [msg.dict() for msg in request.historial] if request.historial else [],
         "sistema": SYSTEM_PROMPT,
-        "temperatura": 0.8
+        "temperatura": temperatura,
+        "num_predict": num_predict,
+        "top_p": top_p,
     }
 
     # 5. Llamar a n8n

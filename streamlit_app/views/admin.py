@@ -10,6 +10,7 @@ import pandas as pd
 import db
 import theme
 import docker_api
+import backups
 
 N8N_URL = os.getenv("N8N_URL", "http://localhost:5678")
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")
@@ -23,14 +24,18 @@ def render():
     if es_admin:
         theme.banner(
             "Centro de Control del Administrador",
-            "Potestad total: base de datos, logs del sistema, workflows de n8n y modelos de IA.",
+            "Potestad total: usuarios y roles, base de datos, respaldos, logs del sistema, workflows de n8n y modelos de IA.",
             badge=st.session_state.usuario['nombre'],
         )
-        tab_bd, tab_logs, tab_n8n, tab_ia = st.tabs(
-            ["Base de Datos", "Logs del Sistema", "N8N Workflows", "IA / Ollama"]
+        tab_usuarios, tab_bd, tab_backups, tab_logs, tab_n8n, tab_ia = st.tabs(
+            ["Usuarios y Roles", "Base de Datos", "Respaldos", "Logs del Sistema", "N8N Workflows", "IA / Ollama"]
         )
+        with tab_usuarios:
+            _usuarios()
         with tab_bd:
             _consola_bd()
+        with tab_backups:
+            _respaldos()
         with tab_logs:
             _logs()
         with tab_n8n:
@@ -46,6 +51,234 @@ def render():
             badge=st.session_state.usuario['nombre'],
         )
         _n8n()
+
+
+# ============================================================
+# USUARIOS Y ROLES
+# ============================================================
+ROLES_CANONICOS = ("solicitante", "agente", "coordinador", "administrador")
+
+
+def _degradar_admins_vencidos():
+    """Restaura el rol de los admins temporales cuya vigencia ya expiró."""
+    db.execute("""
+        UPDATE usuarios
+        SET rol = rol_anterior, rol_anterior = NULL, admin_temporal_hasta = NULL
+        WHERE rol = 'administrador' AND rol_anterior IS NOT NULL
+          AND admin_temporal_hasta IS NOT NULL AND admin_temporal_hasta < NOW()
+    """)
+
+
+def _admins_activos() -> int:
+    return db.query(
+        "SELECT count(*) AS c FROM usuarios WHERE rol='administrador' AND estado='activo'"
+    )[0]["c"]
+
+
+def _usuarios():
+    st.markdown("<h3 style='color:#fff; text-shadow:0 1px 4px rgba(0,0,0,0.5);'>Gestión de Usuarios y Roles</h3>", unsafe_allow_html=True)
+    _degradar_admins_vencidos()
+
+    df = db.query_df("""
+        SELECT id_usuario, nombre, email, rol, area, estado, carga_trabajo,
+               rol_anterior, admin_temporal_hasta, fecha_ultimo_acceso
+        FROM usuarios ORDER BY id_usuario
+    """)
+    st.dataframe(df, use_container_width=True, hide_index=True)
+    admins_activos = _admins_activos()
+    st.caption(f"Administradores activos: {admins_activos} · Los admins temporales vuelven a su rol anterior al vencer (se degradan en el próximo login).")
+
+    yo = st.session_state.usuario["id_usuario"]
+
+    # ---------- Crear usuario ----------
+    with st.expander("Crear nuevo usuario"):
+        c1, c2 = st.columns(2)
+        with c1:
+            nombre = st.text_input("Nombre completo", key="u_nombre")
+            email = st.text_input("Correo", key="u_email", placeholder="usuario@empresa.com")
+            area = st.text_input("Área", key="u_area", placeholder="TI, Producción, Calidad...")
+        with c2:
+            rol = st.selectbox("Rol", list(ROLES_CANONICOS), key="u_rol")
+            password = st.text_input("Contraseña inicial", type="password", key="u_pass",
+                                     help="Mínimo 8 caracteres")
+        if st.button("Crear usuario", type="primary", key="u_crear"):
+            email_n = email.strip().lower()
+            if not nombre or not email_n or not password:
+                st.error("Nombre, correo y contraseña son obligatorios.")
+            elif len(password) < 8:
+                st.error("La contraseña debe tener al menos 8 caracteres.")
+            elif db.query("SELECT 1 FROM usuarios WHERE email = %s", (email_n,)):
+                st.error("Ese correo ya está registrado.")
+            else:
+                from passlib.context import CryptContext
+                hash_pwd = CryptContext(schemes=["bcrypt"], deprecated="auto").hash(password)
+                db.execute(
+                    """INSERT INTO usuarios (nombre, email, contraseña, rol, area, estado,
+                       carga_trabajo, permisos_supervision, permisos_especiales)
+                       VALUES (%s, %s, %s, %s, %s, 'activo', 0, FALSE, FALSE)""",
+                    (nombre.strip(), email_n, hash_pwd, rol, area.strip() or None),
+                )
+                st.success(f"Usuario '{nombre}' creado con rol {rol}.")
+                time.sleep(0.4)
+                st.rerun()
+
+    # ---------- Modificar usuario ----------
+    with st.expander("Modificar usuario existente"):
+        opciones = {f"#{r['id_usuario']} {r['nombre']} — {r['rol']}": r["id_usuario"]
+                    for _, r in df.iterrows()}
+        elegido = st.selectbox("Usuario", list(opciones.keys()), key="u_elegido")
+        uid = opciones[elegido]
+        fila = df[df["id_usuario"] == uid].iloc[0]
+
+        accion = st.radio(
+            "Acción",
+            ["Cambiar rol (permanente o temporal)", "Activar / Desactivar",
+             "Restablecer contraseña", "Eliminar usuario"],
+            horizontal=True, key="u_accion",
+        )
+
+        if accion == "Cambiar rol (permanente o temporal)":
+            nuevo_rol = st.selectbox("Nuevo rol", list(ROLES_CANONICOS), key="u_nrol",
+                                     index=list(ROLES_CANONICOS).index(fila["rol"]))
+            temporal = st.checkbox("Temporal (solo para administrador)", key="u_temporal",
+                                   help="El usuario vuelve automáticamente a su rol anterior al vencer.")
+            horas = st.number_input("Duración (horas)", min_value=1, max_value=720, value=24,
+                                    key="u_horas", disabled=not temporal)
+            if st.button("Aplicar cambio de rol", key="u_aplicar_rol"):
+                if uid == yo:
+                    st.error("No puedes cambiar tu propio rol (bloqueo anti-encierro).")
+                elif fila["rol"] == "administrador" and nuevo_rol != "administrador" and _admins_activos() <= 1:
+                    st.error("Es el último administrador activo: crea/promueve otro admin antes de degradarlo.")
+                else:
+                    if nuevo_rol == "administrador" and temporal:
+                        db.execute(
+                            """UPDATE usuarios SET rol='administrador', rol_anterior=%s,
+                               admin_temporal_hasta = NOW() + (%s * interval '1 hour') WHERE id_usuario=%s""",
+                            (fila["rol"], int(horas), uid),
+                        )
+                        st.success(f"{fila['nombre']} es administrador por {int(horas)} h y volverá a '{fila['rol']}'.")
+                    else:
+                        db.execute(
+                            """UPDATE usuarios SET rol=%s, rol_anterior=NULL,
+                               admin_temporal_hasta=NULL WHERE id_usuario=%s""",
+                            (nuevo_rol, uid),
+                        )
+                        st.success(f"Rol de {fila['nombre']} cambiado a {nuevo_rol}.")
+                    time.sleep(0.4)
+                    st.rerun()
+
+        elif accion == "Activar / Desactivar":
+            nuevo_estado = "inactivo" if fila["estado"] == "activo" else "activo"
+            if st.button(f"Marcar como {nuevo_estado}", key="u_estado"):
+                if fila["estado"] == "activo" and fila["rol"] == "administrador" and _admins_activos() <= 1:
+                    st.error("Es el último administrador activo: no puede desactivarse.")
+                else:
+                    db.execute("UPDATE usuarios SET estado=%s WHERE id_usuario=%s", (nuevo_estado, uid))
+                    st.success(f"{fila['nombre']} ahora está {nuevo_estado}.")
+                    time.sleep(0.4)
+                    st.rerun()
+
+        elif accion == "Restablecer contraseña":
+            nueva = st.text_input("Nueva contraseña", type="password", key="u_nueva_pass")
+            if st.button("Restablecer", key="u_reset"):
+                if len(nueva or "") < 8:
+                    st.error("La contraseña debe tener al menos 8 caracteres.")
+                else:
+                    from passlib.context import CryptContext
+                    hash_pwd = CryptContext(schemes=["bcrypt"], deprecated="auto").hash(nueva)
+                    db.execute("UPDATE usuarios SET contraseña=%s WHERE id_usuario=%s", (hash_pwd, uid))
+                    st.success(f"Contraseña de {fila['nombre']} restablecida.")
+
+        elif accion == "Eliminar usuario":
+            st.warning("Eliminación permanente. Si el usuario tiene tickets/asociaciones, la BD lo impedirá: desactívalo en su lugar.")
+            confirmar = st.checkbox("Confirmo la eliminación definitiva", key="u_confirm_del")
+            if st.button("Eliminar definitivamente", key="u_eliminar", disabled=not confirmar):
+                if uid == yo:
+                    st.error("No puedes eliminar tu propia cuenta.")
+                elif fila["rol"] == "administrador" and _admins_activos() <= 1:
+                    st.error("Es el último administrador: no puede eliminarse.")
+                else:
+                    try:
+                        db.execute("DELETE FROM usuarios WHERE id_usuario=%s", (uid,))
+                        st.success(f"{fila['nombre']} eliminado.")
+                        time.sleep(0.4)
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"No se pudo eliminar (tiene registros asociados). Detalle: {e}")
+
+
+# ============================================================
+# RESPALDOS DE LA BASE DE DATOS
+# ============================================================
+def _respaldos():
+    st.markdown("<h3 style='color:#fff; text-shadow:0 1px 4px rgba(0,0,0,0.5);'>Respaldos de la Base de Datos</h3>", unsafe_allow_html=True)
+    st.markdown(
+        "<p style='color:var(--text-dark);'>Backups <code>pg_dump -Fc</code> guardados en el volumen "
+        "<code>db_backups</code> del contenedor <code>helpdesk-db</code> (/backups).</p>",
+        unsafe_allow_html=True,
+    )
+
+    if st.button("Crear respaldo ahora", type="primary"):
+        try:
+            with st.spinner("Ejecutando pg_dump..."):
+                nombre = backups.crear_respaldo()
+            st.success(f"Respaldo creado: {nombre}")
+        except Exception as e:
+            st.error(f"Error al crear el respaldo: {e}")
+
+    st.divider()
+    try:
+        respaldos = backups.listar_respaldos()
+    except Exception as e:
+        st.error(f"No se pudieron listar los respaldos: {e}")
+        return
+
+    if not respaldos:
+        st.info("Aún no hay respaldos.")
+        return
+
+    for r in respaldos:
+        c1, c2, c3, c4 = st.columns([4, 1.4, 1, 1])
+        with c1:
+            st.markdown(f"**{r['nombre']}**")
+        with c2:
+            st.caption(f"{r['bytes'] / 1e6:.2f} MB · {r['fecha']}")
+        with c3:
+            st.download_button("Descargar", data=backups.descargar_respaldo(r["nombre"]),
+                               file_name=r["nombre"], mime="application/octet-stream",
+                               key=f"dl_{r['nombre']}")
+        with c4:
+            if st.button("Eliminar", key=f"rm_{r['nombre']}"):
+                backups.eliminar_respaldo(r["nombre"])
+                st.toast(f"Respaldo {r['nombre']} eliminado")
+                time.sleep(0.4)
+                st.rerun()
+
+    st.divider()
+    with st.expander("Restaurar un respaldo (PELIGROSO)"):
+        st.error("pg_restore --clean sobreescribe TODA la BD actual con el contenido del respaldo. "
+                 "Todos los usuarios tendrán que volver a iniciar sesión y se perderán los datos creados después del backup.")
+        elegido = st.selectbox("Respaldo a restaurar", [r["nombre"] for r in respaldos], key="restore_sel")
+        confirmar = st.checkbox("Entiendo que la BD actual será reemplazada", key="restore_confirm")
+        if st.button("Restaurar", type="primary", disabled=not confirmar):
+            try:
+                backups.restaurar_respaldo(elegido)
+                st.success(f"Base de datos restaurada desde {elegido}.")
+            except Exception as e:
+                st.error(f"Error al restaurar: {e}")
+
+    with st.expander("Automatización (recomendado)"):
+        st.markdown(
+            "Para respaldos automáticos programa este comando en el Programador de tareas de Windows "
+            "(o cron en Linux), diario a las 03:00:\n\n"
+            "```\n"
+            "docker exec helpdesk-db sh -c \"pg_dump -U $POSTGRES_USER -Fc $POSTGRES_DB -f /backups/helpdesk_auto_$(date +%Y%m%d).dump\"\n"
+            "```\n\n"
+            "Limpieza de respaldos con más de 30 días:\n\n"
+            "```\n"
+            "docker exec helpdesk-db sh -c \"find /backups -name '*.dump' -mtime +30 -delete\"\n"
+            "```"
+        )
 
 
 # ============================================================
@@ -136,7 +369,7 @@ def _logs():
 
 
 def _log_defaults():
-    return ["helpdesk-backend", "helpdesk-db"]
+    return ["helpdesk-backend", "helpdesk-db", "helpdesk-streamlit", "n8n", "ollama"]
 
 
 # ============================================================
@@ -290,6 +523,53 @@ def _ia():
     nuevo = st.text_input("Descargar un modelo nuevo (ollama pull)", placeholder="ej: llama3.2:1b, qwen2.5:3b, mistral:7b")
     if st.button("Descargar modelo", disabled=not nuevo):
         _ollama_pull(nuevo)
+
+    st.divider()
+    _parametros_ia()
+
+
+def _parametros_ia():
+    """Parámetros de generación del chat — se guardan en configuracion_ia y el
+    backend los inyecta en el payload hacia n8n/Ollama."""
+    st.markdown("<h3 style='color:#fff; text-shadow:0 1px 4px rgba(0,0,0,0.5);'>Parámetros de la IA (chat)</h3>", unsafe_allow_html=True)
+    st.caption("Se guardan en configuracion_ia y el backend los envía a n8n/Ollama en cada mensaje del chat.")
+
+    defs = {
+        "temperatura": ("Temperatura (0-2)", 0.8, "Mayor = respuestas más creativas/variadas; menor = más precisas y repetitivas."),
+        "num_predict": ("Máximo de tokens generados", 512, "Límite de longitud de cada respuesta."),
+        "top_p": ("Top-P (0-1)", 0.9, "Diversidad del vocabulario (nucleus sampling)."),
+    }
+    valores = {r["clave"]: r["valor"] for r in db.query(
+        "SELECT clave, valor FROM configuracion_ia WHERE clave = ANY(%s)", (list(defs.keys()),)
+    )}
+
+    with st.form("form_params_ia"):
+        c1, c2, c3 = st.columns(3)
+        nuevas = {}
+        with c1:
+            nuevas["temperatura"] = st.number_input(
+                defs["temperatura"][0], min_value=0.0, max_value=2.0, step=0.1,
+                value=float(valores.get("temperatura", defs["temperatura"][1])),
+                help=defs["temperatura"][2])
+        with c2:
+            nuevas["num_predict"] = st.number_input(
+                defs["num_predict"][0], min_value=32, max_value=4096, step=32,
+                value=int(float(valores.get("num_predict", defs["num_predict"][1]))),
+                help=defs["num_predict"][2])
+        with c3:
+            nuevas["top_p"] = st.number_input(
+                defs["top_p"][0], min_value=0.0, max_value=1.0, step=0.05,
+                value=float(valores.get("top_p", defs["top_p"][1])),
+                help=defs["top_p"][2])
+        if st.form_submit_button("Guardar parámetros", type="primary"):
+            for clave, valor in nuevas.items():
+                db.execute(
+                    """INSERT INTO configuracion_ia (clave, valor, descripcion)
+                       VALUES (%s, %s, %s)
+                       ON CONFLICT (clave) DO UPDATE SET valor = EXCLUDED.valor, fecha_actualizacion = now()""",
+                    (clave, str(valor), defs[clave][2]),
+                )
+            st.success("Parámetros guardados. Se aplican en el próximo mensaje del chat.")
 
 
 def _modelo_activo() -> str:

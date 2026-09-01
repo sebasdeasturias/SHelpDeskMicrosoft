@@ -10,6 +10,7 @@ from embeddings import generar_embedding, a_vector_sql, indexar_ticket, EMBEDDIN
 from jose import jwt, JWTError
 from datetime import datetime, timedelta, date
 from typing import List, Optional
+import json
 import os
 
 router = APIRouter(prefix="/coordinator", tags=["Coordinador"])
@@ -616,3 +617,433 @@ async def rag_indexar(db: AsyncSession = Depends(get_db), token: str = Depends(o
         "errores": errores,
         "sin_trabajo": len(pendientes) == 0,
     }
+
+# ============================================================
+# PANEL DEL ADMINISTRADOR (rol 'administrador' exclusivo)
+# ============================================================
+ROLES_CANONICOS = ("solicitante", "agente", "coordinador", "administrador")
+CONTENEDORES = ("helpdesk-backend", "helpdesk-db", "helpdesk-streamlit", "n8n", "ollama")
+N8N_API_KEY = os.getenv("N8N_API_KEY", "")
+N8N_URL = os.getenv("N8N_URL", "http://localhost:5678")
+OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")
+
+import docker_admin
+from passlib.context import CryptContext
+_pwd_admin = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+def _require_admin(payload: dict) -> None:
+    if payload.get("role") != "administrador":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Esta operación es exclusiva del administrador"
+        )
+
+
+async def _admins_activos(db: AsyncSession) -> int:
+    r = await db.execute(text(
+        "SELECT count(*) FROM usuarios WHERE rol='administrador' AND estado='activo'"))
+    return int(r.scalar() or 0)
+
+
+@router.get("/usuarios")
+async def listar_usuarios(db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
+    payload = _verify_token(token)
+    _require_admin(payload)
+    r = await db.execute(text("""
+        SELECT id_usuario, nombre, email, rol, area, estado, carga_trabajo,
+               rol_anterior, admin_temporal_hasta, fecha_ultimo_acceso, fecha_registro
+        FROM usuarios ORDER BY id_usuario
+    """))
+    return [
+        {
+            "id_usuario": x[0], "nombre": x[1], "email": x[2], "rol": x[3],
+            "area": x[4], "estado": x[5], "carga_trabajo": x[6],
+            "rol_anterior": x[7],
+            "admin_temporal_hasta": x[8].isoformat() if x[8] else None,
+            "fecha_ultimo_acceso": x[9].isoformat() if x[9] else None,
+            "fecha_registro": x[10].isoformat() if x[10] else None,
+        }
+        for x in r.fetchall()
+    ]
+
+
+@router.post("/usuarios", status_code=status.HTTP_201_CREATED)
+async def crear_usuario(data: dict, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
+    payload = _verify_token(token)
+    _require_admin(payload)
+    nombre = (data.get("nombre") or "").strip()
+    email = (data.get("email") or "").strip().lower()
+    password = data.get("password") or ""
+    rol = data.get("rol") or "solicitante"
+    area = (data.get("area") or "").strip() or None
+
+    if not nombre or not email:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nombre y correo son obligatorios")
+    if rol not in ROLES_CANONICOS:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Rol inválido")
+    if len(password) < 8:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="La contraseña debe tener al menos 8 caracteres")
+    dup = await db.execute(text("SELECT 1 FROM usuarios WHERE email = :e"), {"e": email})
+    if dup.scalar():
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Ese correo ya está registrado")
+
+    await db.execute(text("""
+        INSERT INTO usuarios (nombre, email, contraseña, rol, area, estado,
+                              carga_trabajo, permisos_supervision, permisos_especiales)
+        VALUES (:n, :e, :p, :r, :a, 'activo', 0, FALSE, FALSE)
+    """), {"n": nombre, "e": email, "p": _pwd_admin.hash(password), "r": rol, "a": area})
+    await db.commit()
+    return {"status": "ok", "email": email, "rol": rol}
+
+
+async def _obtener_usuario(db: AsyncSession, uid: int):
+    r = await db.execute(text("""
+        SELECT id_usuario, nombre, email, rol, estado FROM usuarios WHERE id_usuario = :id
+    """), {"id": uid})
+    return r.fetchone()
+
+
+@router.patch("/usuarios/{usuario_id}")
+async def actualizar_usuario(usuario_id: int, data: dict, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
+    payload = _verify_token(token)
+    _require_admin(payload)
+    user = await _obtener_usuario(db, usuario_id)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado")
+
+    cambios, params = [], {"id": usuario_id}
+    if "nombre" in data and (data["nombre"] or "").strip():
+        cambios.append("nombre = :nombre")
+        params["nombre"] = data["nombre"].strip()
+    if "area" in data:
+        cambios.append("area = :area")
+        params["area"] = (data["area"] or "").strip() or None
+    if "estado" in data and data["estado"] in ("activo", "inactivo"):
+        if data["estado"] == "inactivo" and user[3] == "administrador" and user[4] == "activo":
+            if await _admins_activos(db) <= 1:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                    detail="Es el último administrador activo: no puede desactivarse")
+        cambios.append("estado = :estado")
+        params["estado"] = data["estado"]
+    if data.get("password"):
+        if len(data["password"]) < 8:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail="La contraseña debe tener al menos 8 caracteres")
+        cambios.append("contraseña = :pwd")
+        params["pwd"] = _pwd_admin.hash(data["password"])
+
+    if not cambios:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nada que actualizar")
+    await db.execute(text(f"UPDATE usuarios SET {', '.join(cambios)} WHERE id_usuario = :id"), params)
+    await db.commit()
+    return {"status": "ok", "id_usuario": usuario_id}
+
+
+@router.patch("/usuarios/{usuario_id}/rol")
+async def cambiar_rol(usuario_id: int, data: dict, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
+    payload = _verify_token(token)
+    _require_admin(payload)
+    user = await _obtener_usuario(db, usuario_id)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado")
+    nuevo_rol = data.get("rol")
+    temporal_horas = data.get("temporal_horas")
+    if nuevo_rol not in ROLES_CANONICOS:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Rol inválido")
+    if usuario_id == payload.get("user_id"):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="No puedes cambiar tu propio rol (bloqueo anti-encierro)")
+    if user[3] == "administrador" and nuevo_rol != "administrador":
+        if await _admins_activos(db) <= 1:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail="Es el último administrador: crea/promueve otro antes de degradarlo")
+
+    if nuevo_rol == "administrador" and temporal_horas:
+        try:
+            horas = int(temporal_horas)
+        except (TypeError, ValueError):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="temporal_horas debe ser un entero")
+        if horas < 1:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="temporal_horas debe ser >= 1")
+        await db.execute(text("""
+            UPDATE usuarios SET rol='administrador', rol_anterior=:anterior,
+                   admin_temporal_hasta = NOW() + (:h * interval '1 hour')
+            WHERE id_usuario = :id
+        """), {"anterior": user[3], "h": horas, "id": usuario_id})
+        resultado = {"status": "ok", "rol": "administrador", "temporal_horas": horas, "rol_anterior": user[3]}
+    else:
+        await db.execute(text("""
+            UPDATE usuarios SET rol=:r, rol_anterior=NULL, admin_temporal_hasta=NULL WHERE id_usuario=:id
+        """), {"r": nuevo_rol, "id": usuario_id})
+        resultado = {"status": "ok", "rol": nuevo_rol, "temporal": False}
+
+    await db.commit()
+    return resultado
+
+
+@router.delete("/usuarios/{usuario_id}")
+async def eliminar_usuario(usuario_id: int, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
+    payload = _verify_token(token)
+    _require_admin(payload)
+    user = await _obtener_usuario(db, usuario_id)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado")
+    if usuario_id == payload.get("user_id"):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No puedes eliminar tu propia cuenta")
+    if user[3] == "administrador" and await _admins_activos(db) <= 1:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Es el último administrador: no puede eliminarse")
+
+    refs = await db.execute(text("""
+        SELECT (SELECT count(*) FROM solicitud WHERE id_solicitante = :u)
+             + (SELECT count(*) FROM solicitud WHERE id_agente_asignado = :u)
+             + (SELECT count(*) FROM historial WHERE id_usuario = :u)
+             + (SELECT count(*) FROM log_ia WHERE id_usuario = :u) AS total
+    """), {"u": usuario_id})
+    total = int(refs.scalar() or 0)
+    if total > 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"El usuario tiene {total} registro(s) asociados (tickets/historial/logs): desactívalo en lugar de eliminarlo")
+
+    await db.execute(text("DELETE FROM usuarios WHERE id_usuario = :id"), {"id": usuario_id})
+    await db.commit()
+    return {"status": "ok", "eliminado": usuario_id}
+
+
+@router.get("/logs/{contenedor}")
+async def logs_contenedor(contenedor: str, tail: int = Query(200, ge=10, le=1000),
+                          db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
+    payload = _verify_token(token)
+    _require_admin(payload)
+    try:
+        texto = await docker_admin.logs(contenedor, tail)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY,
+                            detail=f"No se pudo leer logs de '{contenedor}': {e}")
+    return {"contenedor": contenedor, "logs": texto}
+
+
+@router.get("/respaldos")
+async def listar_respaldos(db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
+    payload = _verify_token(token)
+    _require_admin(payload)
+    code, out, err = await docker_admin.exec_cmd("helpdesk-db",
+        ["sh", "-c", "ls -la --time-style='+%Y-%m-%d %H:%M' /backups"])
+    if code != 0:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail=err.decode("utf-8", "replace") or "No se pudo listar /backups")
+    respaldos = []
+    for linea in out.decode("utf-8", "replace").splitlines():
+        partes = linea.split()
+        if len(partes) < 8 or not partes[-1].endswith(".dump"):
+            continue
+        respaldos.append({"nombre": partes[-1], "bytes": int(partes[4]), "fecha": f"{partes[5]} {partes[6]}"})
+    return sorted(respaldos, key=lambda r: r["nombre"], reverse=True)
+
+
+@router.post("/respaldos")
+async def crear_respaldo(db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
+    payload = _verify_token(token)
+    _require_admin(payload)
+    nombre = f"helpdesk_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.dump"
+    code, out, err = await docker_admin.exec_cmd("helpdesk-db",
+        ["sh", "-c", f"pg_dump -U $POSTGRES_USER -Fc $POSTGRES_DB -f /backups/{nombre}"], timeout=600.0)
+    if code != 0:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail=f"pg_dump falló (exit {code}): {err.decode('utf-8', 'replace')[:300]}")
+    return {"status": "ok", "archivo": nombre}
+
+
+@router.get("/respaldos/{nombre}/descargar")
+async def descargar_respaldo(nombre: str, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
+    payload = _verify_token(token)
+    _require_admin(payload)
+    if not _nombre_backup_valido(nombre):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nombre de archivo inválido")
+    code, out, _ = await docker_admin.exec_cmd("helpdesk-db", ["sh", "-c", f"cat /backups/{nombre}"])
+    if code != 0:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No se pudo leer el respaldo")
+    from fastapi import Response
+    return Response(content=out, media_type="application/octet-stream",
+                    headers={"Content-Disposition": f'attachment; filename="{nombre}"'})
+
+
+def _nombre_backup_valido(nombre: str) -> bool:
+    import re
+    return bool(re.fullmatch(r"[A-Za-z0-9_.-]+", nombre)) and ".." not in nombre
+
+
+@router.delete("/respaldos/{nombre}")
+async def eliminar_respaldo(nombre: str, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
+    payload = _verify_token(token)
+    _require_admin(payload)
+    if not _nombre_backup_valido(nombre):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nombre de archivo inválido")
+    code, _, err = await docker_admin.exec_cmd("helpdesk-db", ["sh", "-c", f"rm -f /backups/{nombre}"])
+    if code != 0:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="No se pudo eliminar")
+    return {"status": "ok", "eliminado": nombre}
+
+
+@router.post("/respaldos/{nombre}/restaurar")
+async def restaurar_respaldo(nombre: str, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
+    payload = _verify_token(token)
+    _require_admin(payload)
+    if not _nombre_backup_valido(nombre):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nombre de archivo inválido")
+    code, out, err = await docker_admin.exec_cmd("helpdesk-db",
+        ["sh", "-c", f"pg_restore -U $POSTGRES_USER -d $POSTGRES_DB --clean --if-exists /backups/{nombre}"],
+        timeout=600.0)
+    if code != 0:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail=f"pg_restore falló: {err.decode('utf-8', 'replace')[:300]}")
+    return {"status": "ok", "restaurado": nombre}
+
+
+@router.get("/bd/tablas")
+async def tablas_bd(db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
+    payload = _verify_token(token)
+    _require_admin(payload)
+    r = await db.execute(text("""
+        SELECT relname AS tabla, n_live_tup AS filas
+        FROM pg_stat_user_tables ORDER BY n_live_tup DESC, relname
+    """))
+    return [{"tabla": x[0], "filas": x[1]} for x in r.fetchall()]
+
+
+@router.get("/ia")
+async def estado_ia(db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
+    payload = _verify_token(token)
+    _require_admin(payload)
+    r = await db.execute(text("SELECT clave, valor FROM configuracion_ia"))
+    config = {k: v for k, v in r.fetchall()}
+    import httpx
+    modelos = []
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as c:
+            resp = await c.get(f"{OLLAMA_URL}/api/tags")
+            resp.raise_for_status()
+            modelos = [{"name": m.get("name"), "size": m.get("size", 0)}
+                       for m in resp.json().get("models", [])]
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=f"Ollama inaccesible: {e}")
+    return {"modelo_activo": config.get("modelo_chat"), "modelos": modelos, "config": config}
+
+
+@router.post("/ia/modelo")
+async def set_modelo_ia(data: dict, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
+    payload = _verify_token(token)
+    _require_admin(payload)
+    modelo = (data.get("modelo") or "").strip()
+    if not modelo:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="modelo es requerido")
+    await db.execute(text("""
+        INSERT INTO configuracion_ia (clave, valor, descripcion)
+        VALUES ('modelo_chat', :m, 'Modelo activo del chat, cambiado desde el panel del administrador')
+        ON CONFLICT (clave) DO UPDATE SET valor = EXCLUDED.valor, fecha_actualizacion = now()
+    """), {"m": modelo})
+    await db.commit()
+    return {"status": "ok", "modelo": modelo}
+
+
+@router.post("/ia/pull")
+async def pull_modelo_ia(data: dict, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
+    payload = _verify_token(token)
+    _require_admin(payload)
+    modelo = (data.get("modelo") or "").strip()
+    if not modelo:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="modelo es requerido")
+    import httpx
+    try:
+        async with httpx.AsyncClient(timeout=3600.0) as c:
+            resp = await c.post(f"{OLLAMA_URL}/api/pull", json={"name": modelo, "stream": False})
+            resp.raise_for_status()
+            resultado = resp.json()
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=f"Error descargando {modelo}: {e}")
+    if resultado.get("error"):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=resultado["error"])
+    return {"status": "ok", "modelo": modelo, "detalle": resultado.get("status", "descargado")}
+
+
+@router.post("/ia/probar")
+async def probar_modelo_ia(data: dict, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
+    payload = _verify_token(token)
+    _require_admin(payload)
+    modelo = (data.get("modelo") or "").strip()
+    if not modelo:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="modelo es requerido")
+    import httpx
+    try:
+        async with httpx.AsyncClient(timeout=180.0) as c:
+            resp = await c.post(f"{OLLAMA_URL}/api/generate",
+                json={"model": modelo, "prompt": "Responde en una sola frase: ¿estás operativo?", "stream": False})
+            resp.raise_for_status()
+            return {"status": "ok", "respuesta": resp.json().get("response", "(sin respuesta)").strip()}
+    except Exception as e:
+        return {"status": "error", "respuesta": f"Error probando el modelo: {e}"}
+
+
+@router.post("/ia/params")
+async def set_params_ia(data: dict, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
+    payload = _verify_token(token)
+    _require_admin(payload)
+    permitidos = ("temperatura", "num_predict", "top_p")
+    actualizados = {}
+    for clave in permitidos:
+        if clave in data:
+            try:
+                valor = str(float(data[clave])) if clave != "num_predict" else str(int(float(data[clave])))
+            except (TypeError, ValueError):
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{clave} inválido")
+            await db.execute(text("""
+                INSERT INTO configuracion_ia (clave, valor, descripcion)
+                VALUES (:k, :v, 'Parametro de generacion del chat')
+                ON CONFLICT (clave) DO UPDATE SET valor = EXCLUDED.valor, fecha_actualizacion = now()
+            """), {"k": clave, "v": valor})
+            actualizados[clave] = valor
+    if not actualizados:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nada que actualizar")
+    await db.commit()
+    return {"status": "ok", "actualizados": actualizados}
+
+
+@router.get("/n8n/workflows")
+async def listar_workflows(db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
+    payload = _verify_token(token)
+    _require_admin(payload)
+    if not N8N_API_KEY:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="N8N_API_KEY no está configurada en el .env")
+    import httpx
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as c:
+            r = await c.get(f"{N8N_URL}/api/v1/workflows",
+                            headers={"X-N8N-API-KEY": N8N_API_KEY}, params={"limit": 100})
+            r.raise_for_status()
+            data = r.json().get("data", [])
+            return [{"id": w.get("id"), "nombre": w.get("name", "sin nombre"),
+                     "activo": bool(w.get("active"))} for w in data]
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=f"Error consultando n8n: {e}")
+
+
+@router.post("/n8n/workflows/{workflow_id}/toggle")
+async def toggle_workflow(workflow_id: str, data: dict, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
+    payload = _verify_token(token)
+    _require_admin(payload)
+    activo = bool(data.get("activo"))
+    if not N8N_API_KEY:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="N8N_API_KEY no está configurada en el .env")
+    import httpx
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as c:
+            r = await c.patch(f"{N8N_URL}/api/v1/workflows/{workflow_id}",
+                              headers={"X-N8N-API-KEY": N8N_API_KEY, "Content-Type": "application/json"},
+                              content=json.dumps({"active": activo}))
+            r.raise_for_status()
+            return {"status": "ok", "id": workflow_id, "activo": activo}
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=f"Error actualizando workflow: {e}")

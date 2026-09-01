@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HelpDesk IT - Administración</title>
+    <link rel="stylesheet" href="styles/dashboard-admin.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="background"></div>
+    <div class="grid-overlay"></div>
+    <div class="stars-overlay"></div>
+
+    <!-- Topbar -->
+    <header class="topbar">
+        <div class="topbar-left">
+            <h1><span class="logo-icon"><img src="logohelpdesk.png" alt="HelpDesk"></span> Administración HelpDesk</h1>
+        </div>
+        <div class="topbar-center">
+            <nav class="main-nav">
+                <button class="nav-btn active" data-page="resumen" title="Resumen general"><i class="fas fa-gauge-high"></i> <span>Resumen</span></button>
+                <button class="nav-btn" data-page="usuarios" title="Gestión de usuarios y roles"><i class="fas fa-users-gear"></i> <span>Usuarios</span></button>
+                <button class="nav-btn" data-page="bd" title="Base de datos"><i class="fas fa-database"></i> <span>BD</span></button>
+                <button class="nav-btn" data-page="respaldos" title="Respaldos"><i class="fas fa-shield-halved"></i> <span>Respaldos</span></button>
+                <button class="nav-btn" data-page="logs" title="Logs de contenedores"><i class="fas fa-terminal"></i> <span>Logs</span></button>
+                <button class="nav-btn" data-page="n8n" title="Workflows n8n"><i class="fas fa-diagram-project"></i> <span>N8N</span></button>
+                <button class="nav-btn" data-page="ia" title="Modelos y parámetros IA"><i class="fas fa-robot"></i> <span>IA</span></button>
+            </nav>
+        </div>
+        <div class="topbar-right">
+            <div class="user-badge">
+                <span class="user-role">Admin</span>
+                <span class="user-name" id="userName">Cargando...</span>
+            </div>
+            <div class="theme-switch-wrapper">
+                <label class="theme-switch">
+                    <input type="checkbox" id="themeCheck">
+                    <div class="slider round">
+                        <i class="fas fa-sun sun-icon"></i>
+                        <i class="fas fa-moon moon-icon"></i>
+                    </div>
+                </label>
+                <span class="theme-label">Modo Nocturno</span>
+            </div>
+            <button class="logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Salir</button>
+        </div>
+    </header>
+
+    <div class="main-content">
+        <!-- RESUMEN -->
+        <section id="page-resumen" class="page-content active">
+            <div class="coordinator-panel-scroll">
+                <div class="panel-header-banner">
+                    <div class="header-info">
+                        <h2>Centro de Administración</h2>
+                        <p>Potestad total sobre HelpDesk: usuarios, base de datos, respaldos, logs, n8n e IA.</p>
+                    </div>
+                    <div class="header-actions">
+                        <a href="dashboard-coordinador.html" class="action-header-btn primary"><i class="fas fa-columns"></i> Tablero Coordinación</a>
+                        <a href="dashboard-agente.html" class="action-header-btn success"><i class="fas fa-list-check"></i> Tablero Agente</a>
+                        <a href="http://localhost:8501" target="_blank" class="action-header-btn purple"><i class="fas fa-chart-line"></i> Streamlit</a>
+                    </div>
+                </div>
+
+                <div class="kpi-grid" id="kpiResumen"></div>
+
+                <div class="table-glass-container">
+                    <div class="table-header-bar">
+                        <h3>Distribución de roles</h3>
+                        <span class="badge-tag">BD real</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="glass-table">
+                            <thead><tr><th>Rol</th><th>Total</th><th>Activos</th><th>Inactivos</th></tr></thead>
+                            <tbody id="rolesBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- USUARIOS -->
+        <section id="page-usuarios" class="page-content">
+            <div class="coordinator-panel-scroll">
+                <div class="panel-header-banner">
+                    <div class="header-info">
+                        <h2>Usuarios y Roles</h2>
+                        <p>Crear, promover (incluido administrador temporal), desactivar, restablecer contraseñas y eliminar usuarios.</p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="action-header-btn primary" id="btnNuevoUsuario"><i class="fas fa-user-plus"></i> Nuevo usuario</button>
+                        <button class="action-header-btn" id="btnRefrescarUsuarios"><i class="fas fa-rotate"></i> Refrescar</button>
+                    </div>
+                </div>
+
+                <div id="formNuevoUsuario" class="filter-panel-card" style="display:none;">
+                    <h3><i class="fas fa-user-plus"></i> Crear usuario</h3>
+                    <div class="filter-grid">
+                        <div class="filter-group"><label for="nuNombre">Nombre completo</label><input class="glass-input" id="nuNombre" placeholder="Ana Pérez"></div>
+                        <div class="filter-group"><label for="nuEmail">Correo</label><input class="glass-input" id="nuEmail" type="email" placeholder="ana.perez@empresa.com"></div>
+                        <div class="filter-group"><label for="nuArea">Área</label><input class="glass-input" id="nuArea" placeholder="TI, Producción..."></div>
+                        <div class="filter-group"><label for="nuRol">Rol</label>
+                            <select class="glass-select" id="nuRol">
+                                <option value="solicitante">solicitante</option>
+                                <option value="agente">agente</option>
+                                <option value="coordinador">coordinador</option>
+                                <option value="administrador">administrador</option>
+                            </select>
+                        </div>
+                        <div class="filter-group"><label for="nuPass">Contraseña inicial (mín. 8)</label><input class="glass-input" id="nuPass" type="password"></div>
+                    </div>
+                    <div style="margin-top:14px;">
+                        <button class="action-header-btn success" id="btnCrearUsuario"><i class="fas fa-check"></i> Crear</button>
+                    </div>
+                </div>
+
+                <div class="table-glass-container">
+                    <div class="table-header-bar">
+                        <h3>Usuarios registrados</h3>
+                        <span class="badge-tag" id="usuariosCount">0</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="glass-table">
+                            <thead><tr><th>#</th><th>Nombre</th><th>Correo</th><th>Rol</th><th>Área</th><th>Estado</th><th>Admin temporal</th><th>Acciones</th></tr></thead>
+                            <tbody id="usuariosBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- BASE DE DATOS -->
+        <section id="page-bd" class="page-content">
+            <div class="coordinator-panel-scroll">
+                <div class="panel-header-banner">
+                    <div class="header-info">
+                        <h2>Base de Datos</h2>
+                        <p>Tablas y filas en vivo (pg_stat_user_tables). Consola SQL completa disponible en el panel Streamlit.</p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="action-header-btn" id="btnRefrescarBD"><i class="fas fa-rotate"></i> Refrescar</button>
+                    </div>
+                </div>
+                <div class="table-glass-container">
+                    <div class="table-header-bar"><h3>Tablas</h3><span class="badge-tag">PostgreSQL + pgvector</span></div>
+                    <div class="table-responsive">
+                        <table class="glass-table">
+                            <thead><tr><th>Tabla</th><th>Filas (estimado)</th></tr></thead>
+                            <tbody id="bdBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- RESPALDOS -->
+        <section id="page-respaldos" class="page-content">
+            <div class="coordinator-panel-scroll">
+                <div class="panel-header-banner">
+                    <div class="header-info">
+                        <h2>Respaldos de la Base de Datos</h2>
+                        <p>pg_dump -Fc en el volumen db_backups del contenedor helpdesk-db.</p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="action-header-btn success" id="btnCrearRespaldo"><i class="fas fa-database"></i> Crear respaldo ahora</button>
+                    </div>
+                </div>
+                <div class="table-glass-container">
+                    <div class="table-header-bar"><h3>Respaldos disponibles</h3><span class="badge-tag" id="respaldosCount">0</span></div>
+                    <div class="table-responsive">
+                        <table class="glass-table">
+                            <thead><tr><th>Archivo</th><th>Tamaño</th><th>Fecha</th><th>Acciones</th></tr></thead>
+                            <tbody id="respaldosBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LOGS -->
+        <section id="page-logs" class="page-content">
+            <div class="coordinator-panel-scroll">
+                <div class="panel-header-banner">
+                    <div class="header-info">
+                        <h2>Logs de Contenedores</h2>
+                        <p>Backend, base de datos, Streamlit, n8n y Ollama en vivo vía Docker Engine API.</p>
+                    </div>
+                </div>
+                <div class="filter-panel-card">
+                    <div class="filter-grid">
+                        <div class="filter-group"><label for="logContenedor">Contenedor</label>
+                            <select class="glass-select" id="logContenedor">
+                                <option value="helpdesk-backend">helpdesk-backend</option>
+                                <option value="helpdesk-db">helpdesk-db</option>
+                                <option value="helpdesk-streamlit">helpdesk-streamlit</option>
+                                <option value="n8n">n8n</option>
+                                <option value="ollama">ollama</option>
+                            </select>
+                        </div>
+                        <div class="filter-group"><label for="logTail">Líneas</label>
+                            <select class="glass-select" id="logTail">
+                                <option>50</option><option>100</option><option selected>200</option><option>500</option>
+                            </select>
+                        </div>
+                        <div class="filter-group" style="justify-content:flex-end;">
+                            <label>&nbsp;</label>
+                            <button class="action-header-btn primary" id="btnVerLogs"><i class="fas fa-magnifying-glass"></i> Ver logs</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-glass-container">
+                    <div class="table-header-bar"><h3 id="logTitulo">Selecciona un contenedor</h3></div>
+                    <pre class="log-box" id="logSalida">Los logs aparecerán aquí...</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- N8N -->
+        <section id="page-n8n" class="page-content">
+            <div class="coordinator-panel-scroll">
+                <div class="panel-header-banner">
+                    <div class="header-info">
+                        <h2>Workflows n8n</h2>
+                        <p>Activa y desactiva las automatizaciones con la API key del servidor (N8N_API_KEY).</p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="action-header-btn" id="btnRefrescarN8N"><i class="fas fa-rotate"></i> Refrescar</button>
+                        <a href="http://localhost:5678" target="_blank" class="action-header-btn primary"><i class="fas fa-up-right-from-square"></i> Abrir editor</a>
+                    </div>
+                </div>
+                <div id="n8nLista" class="n8n-lista"></div>
+            </div>
+        </section>
+
+        <!-- IA -->
+        <section id="page-ia" class="page-content">
+            <div class="coordinator-panel-scroll">
+                <div class="panel-header-banner">
+                    <div class="header-info">
+                        <h2>Inteligencia Artificial (Ollama)</h2>
+                        <p>Modelo activo del chat, descarga de modelos y parámetros de generación.</p>
+                    </div>
+                </div>
+
+                <div class="filter-panel-card">
+                    <h3><i class="fas fa-robot"></i> Modelos instalados</h3>
+                    <div id="iaModelos" class="n8n-lista"></div>
+                    <div class="filter-grid" style="margin-top:14px;">
+                        <div class="filter-group"><label for="iaPullNombre">Descargar modelo nuevo (ollama pull)</label>
+                            <input class="glass-input" id="iaPullNombre" placeholder="ej: qwen2.5:3b, mistral:7b"></div>
+                        <div class="filter-group" style="justify-content:flex-end;">
+                            <label>&nbsp;</label>
+                            <button class="action-header-btn primary" id="btnIaPull"><i class="fas fa-download"></i> Descargar</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="filter-panel-card">
+                    <h3><i class="fas fa-sliders"></i> Parámetros de generación (chat)</h3>
+                    <div class="filter-grid">
+                        <div class="filter-group"><label for="iaTemp">Temperatura (0-2)</label><input class="glass-input" id="iaTemp" type="number" step="0.1" min="0" max="2"></div>
+                        <div class="filter-group"><label for="iaPredict">Máximo de tokens</label><input class="glass-input" id="iaPredict" type="number" step="32" min="32" max="4096"></div>
+                        <div class="filter-group"><label for="iaTopP">Top-P (0-1)</label><input class="glass-input" id="iaTopP" type="number" step="0.05" min="0" max="1"></div>
+                        <div class="filter-group" style="justify-content:flex-end;">
+                            <label>&nbsp;</label>
+                            <button class="action-header-btn success" id="btnIaParams"><i class="fas fa-check"></i> Guardar parámetros</button>
+                        </div>
+                    </div>
+                    <p class="hint">Se guardan en configuracion_ia y el backend los envía a n8n/Ollama en cada mensaje del chat.</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Modal de confirmación -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-content">
+            <div class="modal-header"><h3 id="modalTitulo">Confirmar</h3></div>
+            <div class="modal-body" id="modalCuerpo"></div>
+            <div class="modal-footer">
+                <button class="btn-cancel" id="modalCancelar">Cancelar</button>
+                <button class="btn-confirm" id="modalAceptar">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="global-footer">Sistema HelpDesk V1.0 · Administración</div>
+
+    <script src="js/dashboard-admin.js"></script>
+    <script src="js/theme-toggle.js"></script>
+</body>
+</html>

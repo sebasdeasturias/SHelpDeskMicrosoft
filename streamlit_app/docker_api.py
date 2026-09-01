@@ -91,6 +91,49 @@ def list_containers() -> list[dict]:
             return []
 
 
+def _demux_bytes(raw: bytes) -> tuple[bytes, bytes]:
+    """Separa el stream multiplexado del Engine API en (stdout, stderr) crudos."""
+    buf = io.BytesIO(raw)
+    stdout, stderr = bytearray(), bytearray()
+    while True:
+        header = buf.read(8)
+        if len(header) < 8:
+            break
+        size = int.from_bytes(header[4:8], "big")
+        payload = buf.read(size)
+        (stdout if header[0] == 1 else stderr).extend(payload)
+    return bytes(stdout), bytes(stderr)
+
+
+def container_exec(nombre: str, cmd: list) -> tuple[int, bytes, bytes]:
+    """Ejecuta un comando dentro de un contenedor vía Docker Engine API.
+    Devuelve (exit_code, stdout_bytes, stderr_bytes). Requiere el socket montado."""
+    if not _engine_available():
+        raise RuntimeError("Docker Engine API no disponible (¿socket no montado?)")
+    with _engine() as conn:
+        body = json.dumps({"Container": nombre, "Cmd": cmd,
+                           "AttachStdout": True, "AttachStderr": True})
+        conn.request("POST", f"{API}/containers/{nombre}/exec",
+                     body=body, headers={"Content-Type": "application/json"})
+        resp = conn.getresponse()
+        if resp.status not in (200, 201):
+            raise RuntimeError(f"exec create falló: HTTP {resp.status} {resp.read()[:200]}")
+        exec_id = json.loads(resp.read())["Id"]
+
+        conn.request("POST", f"{API}/exec/{exec_id}/start",
+                     body=json.dumps({"Detach": False, "Tty": False}),
+                     headers={"Content-Type": "application/json"})
+        resp = conn.getresponse()
+        if resp.status != 200:
+            raise RuntimeError(f"exec start falló: HTTP {resp.status} {resp.read()[:200]}")
+        stdout, stderr = _demux_bytes(resp.read())
+
+        conn.request("GET", f"{API}/exec/{exec_id}/json")
+        resp = conn.getresponse()
+        info = json.loads(resp.read())
+        return int(info.get("ExitCode", 0)), stdout, stderr
+
+
 def container_logs(nombre: str, tail: int = 200) -> str:
     if _engine_available():
         try:

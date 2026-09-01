@@ -74,6 +74,18 @@ async def authenticate_user(db: AsyncSession, email: str, password: str):
 # Endpoint de Login
 @router.post("/login", response_model=Token)
 async def login(credentials: UserLogin, db: AsyncSession = Depends(get_db)):
+    # Expirar promociones temporales a administrador: si admin_temporal_hasta
+    # ya pasó, el usuario recupera su rol anterior automáticamente.
+    await db.execute(text("""
+        UPDATE usuarios
+        SET rol = rol_anterior, rol_anterior = NULL, admin_temporal_hasta = NULL
+        WHERE rol = 'administrador'
+          AND rol_anterior IS NOT NULL
+          AND admin_temporal_hasta IS NOT NULL
+          AND admin_temporal_hasta < NOW()
+    """))
+    await db.commit()
+
     user = await authenticate_user(db, credentials.email, credentials.password)
     
     if not user:
