@@ -1,5 +1,11 @@
 // dashboard-coordinador.js
-const API = 'http://localhost:8000/api';
+const API = window.API_BASE_URL || 'http://localhost:8000/api';
+
+function esc(v) {
+    return String(v == null ? '' : v)
+        .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;').replaceAll("'", '&#39;');
+}
 
 const state = {
     tickets: [],
@@ -333,16 +339,16 @@ function createCardHTML(t) {
             <button class="card-info-btn" data-id="${t.id_solicitud}" title="Ver todos los detalles del ticket">
                 <i class="fas fa-info-circle"></i>
             </button>
-            <div class="card-title">${t.asunto}</div>
+            <div class="card-title">${esc(t.asunto)}</div>
             <div class="card-meta">
                 <span class="card-id">#${t.id_solicitud}</span>
                 <div class="card-tags">
-                    <span class="tag tag-${catMap[t.cat_nombre] || 'network'}">${t.cat_nombre || 'General'}</span>
+                    <span class="tag tag-${catMap[t.cat_nombre] || 'network'}">${esc(t.cat_nombre) || 'General'}</span>
                 </div>
             </div>
             <div class="card-assignee">
                 <div class="assignee-avatar" style="background:hsl(${hue},60%,40%)">${init}</div>
-                <span class="assignee-name">${t.agente || 'Sin asignar'}</span>
+                <span class="assignee-name">${esc(t.agente) || 'Sin asignar'}</span>
             </div>
             <div class="card-date">📅 ${new Date(t.fecha_creacion).toLocaleDateString('es-ES')}</div>
         </div>
@@ -683,10 +689,10 @@ function renderCardSelectorList(tickets) {
 
     list.innerHTML = tickets.map(t => `
         <div class="selector-card-item" data-id="${t.id_solicitud}">
-            <div class="sci-title">#${t.id_solicitud} - ${t.asunto}</div>
+            <div class="sci-title">#${t.id_solicitud} - ${esc(t.asunto)}</div>
             <div class="sci-meta">
-                <span class="sci-priority" style="background:rgba(255,255,255,0.2);color:var(--text-dark);">${t.prio_nivel || 'N/A'}</span>
-                <span>${t.estado || 'N/A'}</span>
+                <span class="sci-priority" style="background:rgba(255,255,255,0.2);color:var(--text-dark);">${esc(t.prio_nivel) || 'N/A'}</span>
+                <span>${esc(t.estado) || 'N/A'}</span>
             </div>
         </div>
     `).join('');
@@ -812,20 +818,6 @@ async function obtenerTicketsFiltrados() {
     return tickets;
 }
 
-function filasReporte(tickets) {
-    return tickets.map(t => `
-        <tr>
-            <td>${t.id_solicitud}</td>
-            <td>${t.asunto || ''}</td>
-            <td>${t.cat_nombre || t.categoria || ''}</td>
-            <td>${t.prio_nivel || t.prioridad || ''}</td>
-            <td>${t.estado || ''}</td>
-            <td>${t.agente || 'Sin asignar'}</td>
-            <td>${formatDate(t.fecha_creacion)}</td>
-        </tr>
-    `).join('');
-}
-
 async function exportarReporteCSV() {
     let tickets;
     try {
@@ -878,11 +870,11 @@ async function exportarReportePDF() {
     const filas = tickets.map(t => `
         <tr>
             <td>${t.id_solicitud}</td>
-            <td>${t.asunto || ''}</td>
-            <td>${t.categoria || t.cat_nombre || ''}</td>
-            <td>${t.prioridad || t.prio_nivel || ''}</td>
-            <td>${t.estado || ''}</td>
-            <td>${t.agente || 'Sin asignar'}</td>
+            <td>${esc(t.asunto) || ''}</td>
+            <td>${esc(t.categoria) || esc(t.cat_nombre) || ''}</td>
+            <td>${esc(t.prioridad) || esc(t.prio_nivel) || ''}</td>
+            <td>${esc(t.estado) || ''}</td>
+            <td>${esc(t.agente) || 'Sin asignar'}</td>
             <td>${t.fecha_creacion ? new Date(t.fecha_creacion).toLocaleDateString('es-ES') : ''}</td>
         </tr>
     `).join('');
@@ -909,7 +901,7 @@ async function exportarReportePDF() {
         </head>
         <body>
             <h1>Reporte de Tickets — HelpDesk IT</h1>
-            <p class="meta">Generado: ${new Date().toLocaleString('es-ES')} • Coordinador: ${coordinador} • Total: ${tickets.length} tickets</p>
+            <p class="meta">Generado: ${new Date().toLocaleString('es-ES')} • Coordinador: ${esc(coordinador)} • Total: ${tickets.length} tickets</p>
             <table>
                 <thead>
                     <tr><th>ID</th><th>Asunto</th><th>Categoría</th><th>Prioridad</th><th>Estado</th><th>Agente</th><th>Fecha</th></tr>
@@ -993,7 +985,7 @@ function renderEstadisticas(d, kpiGrid, catBody, agBody) {
             const colors = ['blue', 'orange', 'cyan', 'red', 'green'];
             catBody.innerHTML = cats.map((c, i) => `
                 <div class="bar-chart-row">
-                    <span class="bar-label">${c.categoria}</span>
+                    <span class="bar-label">${esc(c.categoria)}</span>
                     <div class="bar-track"><div class="bar-fill ${colors[i % colors.length]}" style="width: ${(c.total / max * 100).toFixed(0)}%;"></div></div>
                     <span class="bar-value">${c.total}</span>
                 </div>
@@ -1013,7 +1005,7 @@ function renderEstadisticas(d, kpiGrid, catBody, agBody) {
                 <div class="agent-efficiency-row">
                     <div class="agent-avatar-mini" style="background: hsl(${hueFor(a.nombre)},60%,40%);">${initials(a.nombre)}</div>
                     <div class="agent-eff-info">
-                        <div class="eff-top"><span>${a.nombre} (${a.especialidad})</span> <strong>${a.resueltos} resueltos</strong></div>
+                        <div class="eff-top"><span>${esc(a.nombre)} (${esc(a.especialidad)})</span> <strong>${a.resueltos} resueltos</strong></div>
                         <div class="bar-track"><div class="bar-fill green" style="width: ${pct}%;"></div></div>
                     </div>
                 </div>`;
@@ -1038,11 +1030,11 @@ async function loadReportes() {
                 body.innerHTML = tickets.map(t => `
                     <tr>
                         <td><strong>#${t.id_solicitud}</strong></td>
-                        <td>${t.asunto || ''}</td>
-                        <td><span class="tag tag-${catClass(t.categoria || t.cat_nombre)}">${t.categoria || t.cat_nombre || 'General'}</span></td>
-                        <td><span class="priority-pill ${prioClass(t.prioridad || t.prio_nivel)}">${t.prioridad || t.prio_nivel || 'Baja'}</span></td>
-                        <td><span class="status-pill ${statusClass(t.estado)}">${t.estado}</span></td>
-                        <td>${t.agente || '<em>Sin asignar</em>'}</td>
+                        <td>${esc(t.asunto) || ''}</td>
+                        <td><span class="tag tag-${catClass(t.categoria || t.cat_nombre)}">${esc(t.categoria) || esc(t.cat_nombre) || 'General'}</span></td>
+                        <td><span class="priority-pill ${prioClass(t.prioridad || t.prio_nivel)}">${esc(t.prioridad) || esc(t.prio_nivel) || 'Baja'}</span></td>
+                        <td><span class="status-pill ${statusClass(t.estado)}">${esc(t.estado)}</span></td>
+                        <td>${esc(t.agente) || '<em>Sin asignar</em>'}</td>
                         <td>${formatDate(t.fecha_creacion)}</td>
                     </tr>
                 `).join('');
@@ -1088,8 +1080,8 @@ function renderAsignacion(d, grid, queue) {
                     <div class="agent-card-top">
                         <div class="agent-avatar" style="background: linear-gradient(135deg, hsl(${hueFor(a.nombre)},60%,40%), hsl(${hueFor(a.nombre)},60%,25%));">${initials(a.nombre)}</div>
                         <div class="agent-details">
-                            <h4>${a.nombre}</h4>
-                            <span class="agent-spec"><i class="fas fa-microchip"></i> ${a.especialidad}</span>
+                            <h4>${esc(a.nombre)}</h4>
+                            <span class="agent-spec"><i class="fas fa-microchip"></i> ${esc(a.especialidad)}</span>
                         </div>
                         <span class="agent-status-badge ${estado}">${label}</span>
                     </div>
@@ -1111,16 +1103,16 @@ function renderAsignacion(d, grid, queue) {
             queue.innerHTML = pendientes.map(t => `
                 <tr data-ticket-id="${t.id_solicitud}">
                     <td><strong>#${t.id_solicitud}</strong></td>
-                    <td>${t.asunto}</td>
-                    <td><span class="tag tag-${catClass(t.categoria)}">${t.categoria}</span></td>
-                    <td><span class="priority-pill ${prioClass(t.prioridad)}">${t.prioridad}</span></td>
-                    <td>${t.recomendacion ? `<span class="ai-badge-chip"><i class="fas fa-robot"></i> ${t.recomendacion.nombre} (${t.recomendacion.afinidad}% afinidad)</span>` : '<em>Sin sugerencia</em>'}</td>
+                    <td>${esc(t.asunto)}</td>
+                    <td><span class="tag tag-${catClass(t.categoria)}">${esc(t.categoria)}</span></td>
+                    <td><span class="priority-pill ${prioClass(t.prioridad)}">${esc(t.prioridad)}</span></td>
+                    <td>${t.recomendacion ? `<span class="ai-badge-chip"><i class="fas fa-robot"></i> ${esc(t.recomendacion.nombre)} (${t.recomendacion.afinidad}% afinidad)</span>` : '<em>Sin sugerencia</em>'}</td>
                     <td>
                         <div class="assign-action-wrap">
                             <select class="glass-select-mini">
                                 ${agentes.map(a => {
                                     const lleno = (a.asignados_hoy || 0) >= maxDiario;
-                                    return `<option value="${a.id_usuario}" ${lleno ? 'disabled' : ''}>${a.nombre} (${a.asignados_hoy || 0}/${maxDiario} hoy)</option>`;
+                                    return `<option value="${a.id_usuario}" ${lleno ? 'disabled' : ''}>${esc(a.nombre)} (${a.asignados_hoy || 0}/${maxDiario} hoy)</option>`;
                                 }).join('')}
                             </select>
                             <button class="btn-mini-save" title="Asignar agente"><i class="fas fa-check"></i></button>
@@ -1192,9 +1184,9 @@ async function loadSupervisar() {
             } else {
                 body.innerHTML = agentes.map(a => `
                     <tr data-agente-id="${a.id_usuario}">
-                        <td><strong>${a.nombre}</strong><br><small style="color:var(--text-placeholder);">${a.rol}</small></td>
-                        <td>${a.email}</td>
-                        <td>${a.especialidad}</td>
+                        <td><strong>${esc(a.nombre)}</strong><br><small style="color:var(--text-placeholder);">${esc(a.rol)}</small></td>
+                        <td>${esc(a.email)}</td>
+                        <td>${esc(a.especialidad)}</td>
                         <td>${a.nivel_jerarquia || 'Técnico'}</td>
                         <td>
                             <label class="glass-switch">
@@ -1326,12 +1318,12 @@ function renderRAG(results, list) {
     list.innerHTML = results.map(r => `
         <div class="rag-result-card">
             <div class="rag-result-top">
-                <h4>Solución para: ${r.asunto}</h4>
+                <h4>Solución para: ${esc(r.asunto)}</h4>
                 <span class="similarity-badge">${(r.similitud * 100).toFixed(1)}% Similitud</span>
             </div>
-            <p><strong>Detalle del ticket:</strong> ${r.descripcion}</p>
-            <p><strong>Estado:</strong> ${r.estado} • <strong>Categoría:</strong> ${r.categoria}</p>
-            <span class="rag-meta-tag"><i class="fas fa-check-circle"></i> Ticket fuente: #${r.id_solicitud} • Atención: ${r.agente}</span>
+            <p><strong>Detalle del ticket:</strong> ${esc(r.descripcion)}</p>
+            <p><strong>Estado:</strong> ${esc(r.estado)} • <strong>Categoría:</strong> ${esc(r.categoria)}</p>
+            <span class="rag-meta-tag"><i class="fas fa-check-circle"></i> Ticket fuente: #${r.id_solicitud} • Atención: ${esc(r.agente)}</span>
         </div>
     `).join('');
 }
@@ -1433,11 +1425,11 @@ function buildTicketDetailHTML(d) {
     let html = `
         <div class="detail-section">
             <h4>📄 Información del Ticket</h4>
-            <div class="detail-desc"><strong>${t.asunto}</strong></div>
-            <div class="detail-desc">${t.descripcion}</div>
-            <div class="detail-row"><span class="detail-key">Estado</span><span class="detail-val">${t.estado}</span></div>
-            <div class="detail-row"><span class="detail-key">Categoría</span><span class="detail-val">${t.categoria || 'N/A'}</span></div>
-            <div class="detail-row"><span class="detail-key">Prioridad</span><span class="detail-val">${t.prioridad || 'N/A'}</span></div>
+            <div class="detail-desc"><strong>${esc(t.asunto)}</strong></div>
+            <div class="detail-desc">${esc(t.descripcion)}</div>
+            <div class="detail-row"><span class="detail-key">Estado</span><span class="detail-val">${esc(t.estado)}</span></div>
+            <div class="detail-row"><span class="detail-key">Categoría</span><span class="detail-val">${esc(t.categoria) || 'N/A'}</span></div>
+            <div class="detail-row"><span class="detail-key">Prioridad</span><span class="detail-val">${esc(t.prioridad) || 'N/A'}</span></div>
             <div class="detail-row"><span class="detail-key">Creado</span><span class="detail-val">${fecha(t.fecha_creacion)}</span></div>
             <div class="detail-row"><span class="detail-key">Actualizado</span><span class="detail-val">${fecha(t.fecha_actualizacion)}</span></div>
         </div>
@@ -1445,11 +1437,11 @@ function buildTicketDetailHTML(d) {
         <div class="detail-section">
             <h4>👤 Solicitante</h4>
             ${sol ? `
-            <div class="detail-row"><span class="detail-key">Nombre</span><span class="detail-val">${sol.nombre}</span></div>
-            <div class="detail-row"><span class="detail-key">Email</span><span class="detail-val">${sol.email}</span></div>
-            <div class="detail-row"><span class="detail-key">Área</span><span class="detail-val">${sol.area || 'N/A'}</span></div>
-            <div class="detail-row"><span class="detail-key">Rol</span><span class="detail-val">${sol.rol}</span></div>
-            <div class="detail-row"><span class="detail-key">Estado cuenta</span><span class="detail-val">${sol.estado}</span></div>
+            <div class="detail-row"><span class="detail-key">Nombre</span><span class="detail-val">${esc(sol.nombre)}</span></div>
+            <div class="detail-row"><span class="detail-key">Email</span><span class="detail-val">${esc(sol.email)}</span></div>
+            <div class="detail-row"><span class="detail-key">Área</span><span class="detail-val">${esc(sol.area) || 'N/A'}</span></div>
+            <div class="detail-row"><span class="detail-key">Rol</span><span class="detail-val">${esc(sol.rol)}</span></div>
+            <div class="detail-row"><span class="detail-key">Estado cuenta</span><span class="detail-val">${esc(sol.estado)}</span></div>
             <div class="detail-row"><span class="detail-key">Registrado</span><span class="detail-val">${fecha(sol.fecha_registro)}</span></div>
             <div class="detail-row"><span class="detail-key">Último acceso</span><span class="detail-val">${fecha(sol.fecha_ultimo_acceso)}</span></div>
             ` : '<div class="detail-row"><span class="detail-val">Sin datos del solicitante</span></div>'}
@@ -1458,9 +1450,9 @@ function buildTicketDetailHTML(d) {
         <div class="detail-section">
             <h4>🛠️ Agente Asignado</h4>
             ${ag ? `
-            <div class="detail-row"><span class="detail-key">Nombre</span><span class="detail-val">${ag.nombre}</span></div>
-            <div class="detail-row"><span class="detail-key">Email</span><span class="detail-val">${ag.email}</span></div>
-            <div class="detail-row"><span class="detail-key">Especialidad</span><span class="detail-val">${ag.especialidad || 'N/A'}</span></div>
+            <div class="detail-row"><span class="detail-key">Nombre</span><span class="detail-val">${esc(ag.nombre)}</span></div>
+            <div class="detail-row"><span class="detail-key">Email</span><span class="detail-val">${esc(ag.email)}</span></div>
+            <div class="detail-row"><span class="detail-key">Especialidad</span><span class="detail-val">${esc(ag.especialidad) || 'N/A'}</span></div>
             <div class="detail-row"><span class="detail-key">Carga actual</span><span class="detail-val">${ag.carga_trabajo} ticket(s)</span></div>
             ` : '<div class="detail-row"><span class="detail-val">Sin asignar</span></div>'}
         </div>
@@ -1468,15 +1460,15 @@ function buildTicketDetailHTML(d) {
         <div class="detail-section">
             <h4>🤖 Análisis IA Local (Ollama)</h4>
             ${ia ? `
-            <div class="detail-row"><span class="detail-key">Categoría IA</span><span class="detail-val">${ia.categoria_ia || 'N/A'}</span></div>
-            <div class="detail-row"><span class="detail-key">Prioridad IA</span><span class="detail-val">${ia.prioridad_ia || 'N/A'}</span></div>
+            <div class="detail-row"><span class="detail-key">Categoría IA</span><span class="detail-val">${esc(ia.categoria_ia) || 'N/A'}</span></div>
+            <div class="detail-row"><span class="detail-key">Prioridad IA</span><span class="detail-val">${esc(ia.prioridad_ia) || 'N/A'}</span></div>
             <div class="detail-row"><span class="detail-key">Confianza</span><span class="detail-val">${ia.confianza != null ? (ia.confianza * 100).toFixed(1) + '%' : 'N/A'}</span></div>
-            <div class="detail-row"><span class="detail-key">Modelo</span><span class="detail-val">${ia.modelo_ia || 'N/A'}</span></div>
+            <div class="detail-row"><span class="detail-key">Modelo</span><span class="detail-val">${esc(ia.modelo_ia) || 'N/A'}</span></div>
             <div class="detail-row"><span class="detail-key">Tokens usados</span><span class="detail-val">${ia.tokens_usados != null ? ia.tokens_usados : 'N/A'}</span></div>
             <div class="detail-row"><span class="detail-key">Tiempo ejecución</span><span class="detail-val">${ia.tiempo_ejecucion_ms != null ? ia.tiempo_ejecucion_ms + ' ms' : 'N/A'}</span></div>
             <div class="detail-row"><span class="detail-key">Fecha análisis</span><span class="detail-val">${fecha(ia.fecha_clasificacion)}</span></div>
             <div class="detail-row"><span class="detail-key">Revisión manual</span><span class="detail-val">${ia.revision_manual ? 'Sí' : 'No'}</span></div>
-            ${ia.comentario_revision ? `<div class="detail-row"><span class="detail-key">Comentario revisión</span><span class="detail-val">${ia.comentario_revision}</span></div>` : ''}
+            ${ia.comentario_revision ? `<div class="detail-row"><span class="detail-key">Comentario revisión</span><span class="detail-val">${esc(ia.comentario_revision)}</span></div>` : ''}
             ` : '<div class="detail-row"><span class="detail-val">La IA aún no ha analizado este ticket</span></div>'}
         </div>
     `;
@@ -1487,7 +1479,7 @@ function buildTicketDetailHTML(d) {
             <h4>🕘 Historial de Estados</h4>
             ${d.historial.map(h => `
                 <div class="detail-row">
-                    <span class="detail-key">${h.estado_anterior || '—'} → ${h.estado_nuevo}</span>
+                    <span class="detail-key">${esc(h.estado_anterior) || '—'} → ${esc(h.estado_nuevo)}</span>
                     <span class="detail-val">${fecha(h.fecha)}</span>
                 </div>
             `).join('')}

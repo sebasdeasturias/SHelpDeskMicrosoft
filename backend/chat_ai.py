@@ -12,6 +12,7 @@ from sqlalchemy import text
 
 from database import get_db
 from auth import SECRET_KEY, ALGORITHM, oauth2_scheme
+from ratelimit import chat_limiter
 
 router = APIRouter(prefix="/chat", tags=["Chat IA"])
 
@@ -161,6 +162,22 @@ async def chat_with_ai(
     # 1. Validar token
     payload = verify_token(token)
     user_id = payload.get("user_id")
+    user_role = payload.get("role")
+
+    # Solo personal de soporte usa el chat (evita que un solicitante autenticado
+    # consuma recursos de Ollama a voluntad).
+    if user_role not in ("agente", "coordinador", "administrador"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="El chat con IA está disponible solo para personal de soporte"
+        )
+
+    # 1b. Rate limiting por usuario (protege a Ollama de uso excesivo).
+    if not await chat_limiter.allow(f"chat:user:{user_id}", 30, 60):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Demasiados mensajes por minuto. Espera unos segundos antes de continuar."
+        )
 
     # 2. Si hay ticket adjunto, obtener contexto de la BD
     ticket_contexto = None

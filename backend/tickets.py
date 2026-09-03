@@ -6,6 +6,8 @@ from auth import oauth2_scheme, SECRET_KEY, ALGORITHM
 from embeddings import indexar_ticket
 from jose import jwt, JWTError
 from datetime import datetime
+import asyncio
+import httpx
 import os
 
 router = APIRouter(prefix="/tickets", tags=["Tickets"])
@@ -13,6 +15,30 @@ router = APIRouter(prefix="/tickets", tags=["Tickets"])
 # API key que n8n debe enviar (header X-API-Key) al reportar el análisis de IA.
 # Fail-closed: si no está configurada, el callback siempre se rechaza.
 AI_CALLBACK_KEY = os.getenv("AI_CALLBACK_KEY")
+
+# URL base de n8n (en docker-compose: http://n8n:5678). El backend notifica a
+# n8n la creación de tickets para disparar la clasificación IA en segundo plano.
+N8N_URL = os.getenv("N8N_URL", "http://n8n:5678")
+
+# Mantener referencia a las tareas en segundo plano para evitar que el
+# garbage collector las cancele prematuramente.
+_tareas_n8n = set()
+
+
+async def _notificar_n8n(url: str, payload: dict):
+    """Fire-and-forget: avisa al workflow de n8n (nunca bloquea ni rompe la
+    creación del ticket si n8n no está disponible)."""
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as c:
+            await c.post(url, json=payload)
+    except Exception as e:
+        print(f"[n8n] No se pudo notificar el ticket nuevo: {e}")
+
+
+def _programar_notificacion(url: str, payload: dict) -> None:
+    task = asyncio.create_task(_notificar_n8n(url, payload))
+    _tareas_n8n.add(task)
+    task.add_done_callback(_tareas_n8n.discard)
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
@@ -52,6 +78,39 @@ async def create_ticket(data: dict, db: AsyncSession = Depends(get_db), token: s
     """), {"id_solicitud": ticket_id, "id_usuario": payload.get("user_id")})
     
     await db.commit()
+
+    # Notificación server-side al workflow de IA (n8n). Antes la hacía el
+    # navegador (localhost:5678); ahora el backend avisa internamente para que
+    # funcione aunque el frontend esté en otro origen (p.ej. Vercel).
+    try:
+        fila = (await db.execute(text("""
+            SELECT c.nombre, p.nivel, u.nombre, u.email, u.area
+            FROM categoria c, prioridad p, usuarios u
+            WHERE c.id_categoria = :c AND p.id_prioridad = :p AND u.id_usuario = :u
+        """), {"c": id_categoria, "p": id_prioridad, "u": payload.get("user_id")})).fetchone()
+        if fila:
+            _programar_notificacion(f"{N8N_URL}/webhook/new-ticket", {
+                "event": "new_ticket_created",
+                "timestamp": datetime.utcnow().isoformat() + "Z",
+                "ticket_id": ticket_id,
+                "ticket": {
+                    "asunto": asunto,
+                    "descripcion": descripcion,
+                    "categoria": {"id": id_categoria, "nombre": fila[0]},
+                    "prioridad": {"id": id_prioridad, "nombre": fila[1]},
+                    "estado": "nuevo",
+                    "fecha_creacion": datetime.utcnow().isoformat() + "Z",
+                },
+                "solicitante": {
+                    "id": payload.get("user_id"),
+                    "nombre": fila[2],
+                    "email": fila[3],
+                    "area": fila[4],
+                },
+            })
+    except Exception as e:
+        print(f"[n8n] No se pudo preparar la notificación del ticket {ticket_id}: {e}")
+
     return {"status": "created", "ticket_id": ticket_id, "message": "Ticket creado exitosamente"}
 
 
@@ -71,6 +130,14 @@ async def update_ticket(ticket_id: int, data: dict, db: AsyncSession = Depends(g
     if user_role not in ("agente", "coordinador", "administrador"):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Sin permisos para mover tickets")
 
+    # Estado anterior: se captura ANTES del UPDATE para registrar el historial
+    # con datos correctos (estado_anterior → estado_nuevo).
+    anterior_row = await db.execute(
+        text("SELECT estado FROM solicitud WHERE id_solicitud = :id"), {"id": ticket_id})
+    estado_anterior = anterior_row.scalar()
+    if estado_anterior is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket no encontrado")
+
     if user_role == "agente":
         # Un agente solo trabaja sobre los tickets que el coordinador le asignó
         # y nunca puede devolverlos a 'nuevo' (ese estado es del coordinador).
@@ -84,10 +151,6 @@ async def update_ticket(ticket_id: int, data: dict, db: AsyncSession = Depends(g
             WHERE id_solicitud = :id AND id_agente_asignado = :user_id RETURNING id_solicitud
         """), {"estado": nuevo_estado, "id": ticket_id, "user_id": user_id})
         if not result.scalar():
-            exists = await db.execute(
-                text("SELECT 1 FROM solicitud WHERE id_solicitud = :id"), {"id": ticket_id})
-            if not exists.scalar():
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket no encontrado")
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Solo puedes mover tickets que el coordinador te asignó"
@@ -98,15 +161,17 @@ async def update_ticket(ticket_id: int, data: dict, db: AsyncSession = Depends(g
             UPDATE solicitud SET estado = :estado, fecha_actualizacion = NOW()
             WHERE id_solicitud = :id RETURNING id_solicitud
         """), {"estado": nuevo_estado, "id": ticket_id})
-
         if not result.scalar():
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket no encontrado")
 
-    await db.execute(text("""
-        INSERT INTO historial (estado_anterior, estado_nuevo, comentario, fecha, id_solicitud, id_usuario)
-        SELECT estado, :estado, 'Movido en tablero', NOW(), :id, :user_id
-        FROM solicitud WHERE id_solicitud = :id
-    """), {"estado": nuevo_estado, "id": ticket_id, "user_id": user_id})
+    # El registro en historial lo hace SOLO la aplicación (con usuario y
+    # estados correctos). El trigger automático de la BD que duplicaba estas
+    # filas se elimina en la migración 002 (ver database/migraciones/).
+    if estado_anterior != nuevo_estado:
+        await db.execute(text("""
+            INSERT INTO historial (estado_anterior, estado_nuevo, comentario, fecha, id_solicitud, id_usuario)
+            VALUES (:anterior, :nuevo, 'Movido en tablero', NOW(), :id, :user_id)
+        """), {"anterior": estado_anterior, "nuevo": nuevo_estado, "id": ticket_id, "user_id": user_id})
 
     await db.commit()
 

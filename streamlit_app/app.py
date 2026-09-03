@@ -82,13 +82,16 @@ def app_principal():
 
     with st.sidebar:
         st.image("assets/logohelpdesk.png", use_container_width=True)
+        esc = (lambda v: (str(v or '')
+                          .replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+                          .replace('"', '&quot;').replace("'", '&#39;')))
         st.markdown(
             f"""
 <div style="background: var(--glass-bg-strong); border:2px solid var(--glass-border);
      border-radius:14px; padding:12px 14px; margin-bottom:6px;">
-    <p style="margin:0; font-weight:700; font-size:0.95rem; color:var(--text-dark) !important;">{u['nombre']}</p>
-    <p style="margin:2px 0 0 0; font-size:0.78rem; color:var(--text-placeholder) !important;">{u['email']}</p>
-    <p style="margin:6px 0 0 0; font-size:0.75rem; color:var(--text-dark) !important;"><b>Rol:</b> {u['rol'].capitalize()}</p>
+    <p style="margin:0; font-weight:700; font-size:0.95rem; color:var(--text-dark) !important;">{esc(u['nombre'])}</p>
+    <p style="margin:2px 0 0 0; font-size:0.78rem; color:var(--text-placeholder) !important;">{esc(u['email'])}</p>
+    <p style="margin:6px 0 0 0; font-size:0.75rem; color:var(--text-dark) !important;"><b>Rol:</b> {esc(u['rol'].capitalize())}</p>
 </div>""",
             unsafe_allow_html=True,
         )

@@ -1,5 +1,11 @@
 // dashboard-agente.js
-const API = 'http://localhost:8000/api';
+const API = window.API_BASE_URL || 'http://localhost:8000/api';
+
+function esc(v) {
+    return String(v == null ? '' : v)
+        .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;').replaceAll("'", '&#39;');
+}
 
 const state = {
     tickets: [],
@@ -159,16 +165,16 @@ function createCardHTML(t) {
             <button class="card-info-btn" data-id="${t.id_solicitud}" title="Ver todos los detalles del ticket">
                 <i class="fas fa-info-circle"></i>
             </button>
-            <div class="card-title">${t.asunto}</div>
+            <div class="card-title">${esc(t.asunto)}</div>
             <div class="card-meta">
                 <span class="card-id">#${t.id_solicitud}</span>
                 <div class="card-tags">
-                    <span class="tag tag-${catMap[t.cat_nombre] || 'network'}">${t.cat_nombre || 'General'}</span>
+                    <span class="tag tag-${catMap[t.cat_nombre] || 'network'}">${esc(t.cat_nombre) || 'General'}</span>
                 </div>
             </div>
             <div class="card-assignee">
                 <div class="assignee-avatar" style="background:hsl(${hue},60%,40%)">${init}</div>
-                <span class="assignee-name">${t.agente || 'Sin asignar'}</span>
+                <span class="assignee-name">${esc(t.agente) || 'Sin asignar'}</span>
             </div>
             <div class="card-date">📅 ${new Date(t.fecha_creacion).toLocaleDateString('es-ES')}</div>
         </div>
@@ -529,10 +535,10 @@ function renderCardSelectorList(tickets) {
 
     list.innerHTML = tickets.map(t => `
         <div class="selector-card-item" data-id="${t.id_solicitud}">
-            <div class="sci-title">#${t.id_solicitud} - ${t.asunto}</div>
+            <div class="sci-title">#${t.id_solicitud} - ${esc(t.asunto)}</div>
             <div class="sci-meta">
-                <span class="sci-priority" style="background:rgba(255,255,255,0.2);color:var(--text-dark);">${t.prio_nivel || 'N/A'}</span>
-                <span>${t.estado || 'N/A'}</span>
+                <span class="sci-priority" style="background:rgba(255,255,255,0.2);color:var(--text-dark);">${esc(t.prio_nivel) || 'N/A'}</span>
+                <span>${esc(t.estado) || 'N/A'}</span>
             </div>
         </div>
     `).join('');
@@ -613,11 +619,11 @@ function buildTicketDetailHTML(d) {
     let html = `
         <div class="detail-section">
             <h4>📄 Información del Ticket</h4>
-            <div class="detail-desc"><strong>${t.asunto}</strong></div>
-            <div class="detail-desc">${t.descripcion}</div>
-            <div class="detail-row"><span class="detail-key">Estado</span><span class="detail-val">${t.estado}</span></div>
-            <div class="detail-row"><span class="detail-key">Categoría</span><span class="detail-val">${t.categoria || 'N/A'}</span></div>
-            <div class="detail-row"><span class="detail-key">Prioridad</span><span class="detail-val">${t.prioridad || 'N/A'}</span></div>
+            <div class="detail-desc"><strong>${esc(t.asunto)}</strong></div>
+            <div class="detail-desc">${esc(t.descripcion)}</div>
+            <div class="detail-row"><span class="detail-key">Estado</span><span class="detail-val">${esc(t.estado)}</span></div>
+            <div class="detail-row"><span class="detail-key">Categoría</span><span class="detail-val">${esc(t.categoria) || 'N/A'}</span></div>
+            <div class="detail-row"><span class="detail-key">Prioridad</span><span class="detail-val">${esc(t.prioridad) || 'N/A'}</span></div>
             <div class="detail-row"><span class="detail-key">Creado</span><span class="detail-val">${fecha(t.fecha_creacion)}</span></div>
             <div class="detail-row"><span class="detail-key">Actualizado</span><span class="detail-val">${fecha(t.fecha_actualizacion)}</span></div>
         </div>
@@ -625,11 +631,11 @@ function buildTicketDetailHTML(d) {
         <div class="detail-section">
             <h4>👤 Solicitante</h4>
             ${sol ? `
-            <div class="detail-row"><span class="detail-key">Nombre</span><span class="detail-val">${sol.nombre}</span></div>
-            <div class="detail-row"><span class="detail-key">Email</span><span class="detail-val">${sol.email}</span></div>
-            <div class="detail-row"><span class="detail-key">Área</span><span class="detail-val">${sol.area || 'N/A'}</span></div>
-            <div class="detail-row"><span class="detail-key">Rol</span><span class="detail-val">${sol.rol}</span></div>
-            <div class="detail-row"><span class="detail-key">Estado cuenta</span><span class="detail-val">${sol.estado}</span></div>
+            <div class="detail-row"><span class="detail-key">Nombre</span><span class="detail-val">${esc(sol.nombre)}</span></div>
+            <div class="detail-row"><span class="detail-key">Email</span><span class="detail-val">${esc(sol.email)}</span></div>
+            <div class="detail-row"><span class="detail-key">Área</span><span class="detail-val">${esc(sol.area) || 'N/A'}</span></div>
+            <div class="detail-row"><span class="detail-key">Rol</span><span class="detail-val">${esc(sol.rol)}</span></div>
+            <div class="detail-row"><span class="detail-key">Estado cuenta</span><span class="detail-val">${esc(sol.estado)}</span></div>
             <div class="detail-row"><span class="detail-key">Registrado</span><span class="detail-val">${fecha(sol.fecha_registro)}</span></div>
             <div class="detail-row"><span class="detail-key">Último acceso</span><span class="detail-val">${fecha(sol.fecha_ultimo_acceso)}</span></div>
             ` : '<div class="detail-row"><span class="detail-val">Sin datos del solicitante</span></div>'}
@@ -638,9 +644,9 @@ function buildTicketDetailHTML(d) {
         <div class="detail-section">
             <h4>🛠️ Agente Asignado</h4>
             ${ag ? `
-            <div class="detail-row"><span class="detail-key">Nombre</span><span class="detail-val">${ag.nombre}</span></div>
-            <div class="detail-row"><span class="detail-key">Email</span><span class="detail-val">${ag.email}</span></div>
-            <div class="detail-row"><span class="detail-key">Especialidad</span><span class="detail-val">${ag.especialidad || 'N/A'}</span></div>
+            <div class="detail-row"><span class="detail-key">Nombre</span><span class="detail-val">${esc(ag.nombre)}</span></div>
+            <div class="detail-row"><span class="detail-key">Email</span><span class="detail-val">${esc(ag.email)}</span></div>
+            <div class="detail-row"><span class="detail-key">Especialidad</span><span class="detail-val">${esc(ag.especialidad) || 'N/A'}</span></div>
             <div class="detail-row"><span class="detail-key">Carga actual</span><span class="detail-val">${ag.carga_trabajo} ticket(s)</span></div>
             ` : '<div class="detail-row"><span class="detail-val">Sin asignar</span></div>'}
         </div>
@@ -648,15 +654,15 @@ function buildTicketDetailHTML(d) {
         <div class="detail-section">
             <h4>🤖 Análisis IA Local (Ollama)</h4>
             ${ia ? `
-            <div class="detail-row"><span class="detail-key">Categoría IA</span><span class="detail-val">${ia.categoria_ia || 'N/A'}</span></div>
-            <div class="detail-row"><span class="detail-key">Prioridad IA</span><span class="detail-val">${ia.prioridad_ia || 'N/A'}</span></div>
+            <div class="detail-row"><span class="detail-key">Categoría IA</span><span class="detail-val">${esc(ia.categoria_ia) || 'N/A'}</span></div>
+            <div class="detail-row"><span class="detail-key">Prioridad IA</span><span class="detail-val">${esc(ia.prioridad_ia) || 'N/A'}</span></div>
             <div class="detail-row"><span class="detail-key">Confianza</span><span class="detail-val">${ia.confianza != null ? (ia.confianza * 100).toFixed(1) + '%' : 'N/A'}</span></div>
-            <div class="detail-row"><span class="detail-key">Modelo</span><span class="detail-val">${ia.modelo_ia || 'N/A'}</span></div>
+            <div class="detail-row"><span class="detail-key">Modelo</span><span class="detail-val">${esc(ia.modelo_ia) || 'N/A'}</span></div>
             <div class="detail-row"><span class="detail-key">Tokens usados</span><span class="detail-val">${ia.tokens_usados != null ? ia.tokens_usados : 'N/A'}</span></div>
             <div class="detail-row"><span class="detail-key">Tiempo ejecución</span><span class="detail-val">${ia.tiempo_ejecucion_ms != null ? ia.tiempo_ejecucion_ms + ' ms' : 'N/A'}</span></div>
             <div class="detail-row"><span class="detail-key">Fecha análisis</span><span class="detail-val">${fecha(ia.fecha_clasificacion)}</span></div>
             <div class="detail-row"><span class="detail-key">Revisión manual</span><span class="detail-val">${ia.revision_manual ? 'Sí' : 'No'}</span></div>
-            ${ia.comentario_revision ? `<div class="detail-row"><span class="detail-key">Comentario revisión</span><span class="detail-val">${ia.comentario_revision}</span></div>` : ''}
+            ${ia.comentario_revision ? `<div class="detail-row"><span class="detail-key">Comentario revisión</span><span class="detail-val">${esc(ia.comentario_revision)}</span></div>` : ''}
             ` : '<div class="detail-row"><span class="detail-val">La IA aún no ha analizado este ticket</span></div>'}
         </div>
     `;
@@ -667,7 +673,7 @@ function buildTicketDetailHTML(d) {
             <h4>🕘 Historial de Estados</h4>
             ${d.historial.map(h => `
                 <div class="detail-row">
-                    <span class="detail-key">${h.estado_anterior || '—'} → ${h.estado_nuevo}</span>
+                    <span class="detail-key">${esc(h.estado_anterior) || '—'} → ${esc(h.estado_nuevo)}</span>
                     <span class="detail-val">${fecha(h.fecha)}</span>
                 </div>
             `).join('')}

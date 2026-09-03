@@ -31,7 +31,17 @@ def query(sql: str, params=None) -> list[dict]:
 
 
 def query_df(sql: str, params=None) -> pd.DataFrame:
-    return pd.DataFrame(query(sql, params))
+    # Preservar las columnas aunque el resultado venga vacío: si no hay filas,
+    # pd.DataFrame([]) pierde los nombres de columna y luego rompe
+    # operaciones como df.columns = [...] (ValueError: Length mismatch).
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute(sql, params)
+            cols = [d.name for d in cur.description] if cur.description else []
+            rows = cur.fetchall()
+    if cols:
+        return pd.DataFrame(rows, columns=cols)
+    return pd.DataFrame(rows)
 
 
 def execute(sql: str, params=None) -> tuple[int, str]:

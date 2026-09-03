@@ -1,5 +1,5 @@
 # backend/auth.py
-from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi import APIRouter, HTTPException, Depends, status, Request
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel, EmailStr
 from datetime import datetime, timedelta
@@ -11,6 +11,7 @@ from sqlalchemy import select, text
 import os
 from dotenv import load_dotenv
 from database import get_db
+from ratelimit import login_limiter
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -21,6 +22,15 @@ if not SECRET_KEY:
     raise ValueError("Error crítico: No se encontró JWT_SECRET_KEY. Revisa tu archivo .env")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24
+
+# Rate limiting de autenticación (protección contra fuerza bruta / abuso de registro).
+# Limpia si el backend corre detrás de un proxy de confianza que fija
+# X-Forwarded-For (p.ej. Caddy en docker-compose.prod.yml).
+LOGIN_MAX_POR_IP = int(os.getenv("LOGIN_MAX_POR_IP", "10"))
+LOGIN_MAX_POR_EMAIL = int(os.getenv("LOGIN_MAX_POR_EMAIL", "5"))
+LOGIN_VENTANA_SEG = int(os.getenv("LOGIN_VENTANA_SEG", str(15 * 60)))
+REGISTER_MAX_POR_IP = int(os.getenv("REGISTER_MAX_POR_IP", "5"))
+REGISTER_VENTANA_SEG = int(os.getenv("REGISTER_VENTANA_SEG", str(60 * 60)))
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
@@ -44,6 +54,28 @@ class UserData(BaseModel):
 # Funciones auxiliares
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
+
+def _cliente_ip(request: Request) -> str:
+    """IP real del cliente. Solo confía en X-Forwarded-For si TRUST_PROXY=true
+    (cuando hay un proxy reverso de confianza delante, p.ej. Caddy)."""
+    if os.getenv("TRUST_PROXY", "").lower() in ("1", "true", "yes"):
+        xff = request.headers.get("x-forwarded-for")
+        if xff:
+            return xff.split(",")[0].strip() or "desconocido"
+    return request.client.host if request.client else "desconocido"
+
+async def _revisar_limite_login(request: Request, email: str) -> None:
+    ip = _cliente_ip(request)
+    if not await login_limiter.allow(f"login:ip:{ip}", LOGIN_MAX_POR_IP, LOGIN_VENTANA_SEG):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Demasiados intentos de inicio de sesión desde esta IP. Intenta de nuevo más tarde."
+        )
+    if not await login_limiter.allow(f"login:email:{email.lower()}", LOGIN_MAX_POR_EMAIL, LOGIN_VENTANA_SEG):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Demasiados intentos para esta cuenta. Intenta de nuevo más tarde."
+        )
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
@@ -73,7 +105,9 @@ async def authenticate_user(db: AsyncSession, email: str, password: str):
 
 # Endpoint de Login
 @router.post("/login", response_model=Token)
-async def login(credentials: UserLogin, db: AsyncSession = Depends(get_db)):
+async def login(credentials: UserLogin, request: Request, db: AsyncSession = Depends(get_db)):
+    # Rate limiting anti fuerza bruta (por IP y por cuenta).
+    await _revisar_limite_login(request, credentials.email)
     # Expirar promociones temporales a administrador: si admin_temporal_hasta
     # ya pasó, el usuario recupera su rol anterior automáticamente.
     await db.execute(text("""
@@ -115,10 +149,17 @@ class UserRegister(BaseModel):
     password: str
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
-async def register_user(user_data: UserRegister, db: AsyncSession = Depends(get_db)):
+async def register_user(user_data: UserRegister, request: Request, db: AsyncSession = Depends(get_db)):
     """
     Registro de nuevo usuario solicitante
     """
+    # Rate limiting: evita spam de cuentas desde una misma IP.
+    ip = _cliente_ip(request)
+    if not await login_limiter.allow(f"register:ip:{ip}", REGISTER_MAX_POR_IP, REGISTER_VENTANA_SEG):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Demasiados registros desde esta IP. Intenta de nuevo más tarde."
+        )
     
     query = text("SELECT id_usuario FROM usuarios WHERE email = :email")
     result = await db.execute(query, {"email": user_data.email})

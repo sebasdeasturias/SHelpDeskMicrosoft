@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+import os
 
 from auth import router as auth_router
 from tickets import router as tickets_router
@@ -13,10 +14,19 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# CORS: orígenes permitidos desde el .env (separados por coma).
+# Ejemplo para frontend en Vercel + backend en VPS:
+#   CORS_ORIGINS=https://helpdesk.midominio.com,https://www.midominio.com
+# Si se deja "*", se permite cualquier origen pero sin credenciales
+# (recomendado solo cuando la API es pública y no usa cookies).
+_cors_raw = os.getenv("CORS_ORIGINS", "*").strip()
+_cors_origins = [o.strip() for o in _cors_raw.split(",") if o.strip()] if _cors_raw else ["*"]
+_cors_allow_credentials = _cors_origins != ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=_cors_origins,
+    allow_credentials=_cors_allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )

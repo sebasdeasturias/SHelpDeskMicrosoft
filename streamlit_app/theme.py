@@ -305,6 +305,10 @@ footer {{ visibility: hidden; }}
 
 def banner(title: str, subtitle: str, badge: str = "") -> None:
     """Cabecera tipo panel-header-banner del coordinador."""
+    esc = lambda v: (str(v or '')
+                     .replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+                     .replace('"', '&quot;').replace("'", '&#39;'))
+    title, subtitle, badge = esc(title), esc(subtitle), esc(badge)
     html = f"""
 <div class="panel-banner" style="
     display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap;

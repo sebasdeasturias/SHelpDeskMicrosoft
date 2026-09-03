@@ -1,4 +1,10 @@
-const API_BASE_URL = 'http://localhost:8000/api';
+const API_BASE_URL = window.API_BASE_URL || 'http://localhost:8000/api';
+
+function escHtml(v) {
+    return String(v == null ? '' : v)
+        .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;').replaceAll("'", '&#39;');
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
     initTheme();
@@ -113,12 +119,11 @@ async function loadTickets() {
             item.innerHTML = `
                 <div class="ticket-info">
                     <span class="ticket-id">#TK-${String(ticket.id_solicitud).padStart(4, '0')}</span>
-                    <span class="ticket-subject">${ticket.asunto}</span>
-                    <span class="ticket-date"><i class="far fa-calendar-alt"></i> ${date} • ${ticket.cat_nombre || 'Sin categoría'}</span>
-                </
-div>
+                    <span class="ticket-subject">${escHtml(ticket.asunto)}</span>
+                    <span class="ticket-date"><i class="far fa-calendar-alt"></i> ${date} • ${escHtml(ticket.cat_nombre) || 'Sin categoría'}</span>
+                </div>
                 <div class="ticket-status ${statusClass}">
-                    ${estadoTexto}
+                    ${escHtml(estadoTexto)}
                 </div>
             `;
             listEl.appendChild(item);

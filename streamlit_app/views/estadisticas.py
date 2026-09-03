@@ -250,6 +250,13 @@ def _seccion_ia(ttl):
                                    f"{r['tiempo_prom_ms'] or 0:.0f} ms"),
                     unsafe_allow_html=True)
 
+    # Sin clasificaciones aún: no hay filas que graficar/tabular (evita errores
+    # de pandas con DataFrames vacíos).
+    if not (r["total"] or 0):
+        st.info("Todavía no hay clasificaciones IA registradas. Cuando la IA analice "
+                "tickets aparecerán aquí las métricas por modelo y las últimas clasificaciones.")
+        return
+
     m1, m2 = st.columns(2, gap="small")
     with m1:
         df_m = _cached_ia_modelos(ttl)

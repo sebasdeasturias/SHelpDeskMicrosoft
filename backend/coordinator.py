@@ -407,11 +407,12 @@ async def asignar_ticket(ticket_id: int, data: dict, db: AsyncSession = Depends(
     if not result.scalar():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket no encontrado")
 
+    # Registro en historial con el estado ANTERIOR real (capturado antes del
+    # UPDATE). Sin duplicados: el trigger automático se elimina en migración 002.
     await db.execute(text("""
         INSERT INTO historial (estado_anterior, estado_nuevo, comentario, fecha, id_solicitud, id_usuario)
-        SELECT estado, 'asignado', 'Ticket asignado por coordinador', NOW(), :id, :user
-        FROM solicitud WHERE id_solicitud = :id
-    """), {"id": ticket_id, "user": payload.get("user_id")})
+        VALUES (:anterior, 'asignado', 'Ticket asignado por coordinador', NOW(), :id, :user)
+    """), {"anterior": ticket[0], "id": ticket_id, "user": payload.get("user_id")})
 
     await db.commit()
     return {
@@ -912,6 +913,27 @@ async def tablas_bd(db: AsyncSession = Depends(get_db), token: str = Depends(oau
     return [{"tabla": x[0], "filas": x[1]} for x in r.fetchall()]
 
 
+async def _es_modelo_embeddings_ollama(modelo: str) -> tuple[bool, str]:
+    """Consulta /api/tags y decide si `modelo` es de embeddings (bge-m3,
+    nomic-embed, all-MiniLM...) y NO sirve para chat/generación.
+    Devuelve (es_embeddings, error). error="" si la consulta fue exitosa."""
+    import httpx
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as c:
+            resp = await c.get(f"{OLLAMA_URL}/api/tags")
+            resp.raise_for_status()
+            for m in resp.json().get("models", []):
+                if m.get("name") == modelo:
+                    fam = ((m.get("details") or {}).get("family") or "").lower()
+                    nombre = (modelo or "").lower()
+                    es_emb = fam == "bert" or any(
+                        k in nombre for k in ("bge", "embed", "minilm", "nomic", "mxbai", "gte-"))
+                    return es_emb, ""
+            return False, ""
+    except Exception as e:
+        return False, str(e)
+
+
 @router.get("/ia")
 async def estado_ia(db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
     payload = _verify_token(token)
@@ -924,8 +946,16 @@ async def estado_ia(db: AsyncSession = Depends(get_db), token: str = Depends(oau
         async with httpx.AsyncClient(timeout=10.0) as c:
             resp = await c.get(f"{OLLAMA_URL}/api/tags")
             resp.raise_for_status()
-            modelos = [{"name": m.get("name"), "size": m.get("size", 0)}
-                       for m in resp.json().get("models", [])]
+            for m in resp.json().get("models", []):
+                fam = ((m.get("details") or {}).get("family") or "").lower()
+                nombre = (m.get("name") or "").lower()
+                es_emb = fam == "bert" or any(
+                    k in nombre for k in ("bge", "embed", "minilm", "nomic", "mxbai", "gte-"))
+                modelos.append({
+                    "name": m.get("name"),
+                    "size": m.get("size", 0),
+                    "tipo": "embeddings" if es_emb else "chat",
+                })
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=f"Ollama inaccesible: {e}")
     return {"modelo_activo": config.get("modelo_chat"), "modelos": modelos, "config": config}
@@ -938,6 +968,13 @@ async def set_modelo_ia(data: dict, db: AsyncSession = Depends(get_db), token: s
     modelo = (data.get("modelo") or "").strip()
     if not modelo:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="modelo es requerido")
+    # Evitar fijar como modelo de chat uno que solo sirve para embeddings.
+    es_emb, err = await _es_modelo_embeddings_ollama(modelo)
+    if not err and es_emb:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"'{modelo}' es un modelo de embeddings (no genera chat). Elige un modelo como llama3.2 o qwen2.5."
+        )
     await db.execute(text("""
         INSERT INTO configuracion_ia (clave, valor, descripcion)
         VALUES ('modelo_chat', :m, 'Modelo activo del chat, cambiado desde el panel del administrador')
@@ -975,8 +1012,16 @@ async def probar_modelo_ia(data: dict, db: AsyncSession = Depends(get_db), token
     if not modelo:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="modelo es requerido")
     import httpx
+    es_emb, _ = await _es_modelo_embeddings_ollama(modelo)
     try:
         async with httpx.AsyncClient(timeout=180.0) as c:
+            if es_emb:
+                # Los modelos de embeddings no soportan /api/generate (400).
+                resp = await c.post(f"{OLLAMA_URL}/api/embed",
+                    json={"model": modelo, "input": "prueba de conectividad"})
+                resp.raise_for_status()
+                dims = len(resp.json().get("embeddings", [[]])[0])
+                return {"status": "ok", "respuesta": f"OK · embedding generado ({dims} dimensiones)"}
             resp = await c.post(f"{OLLAMA_URL}/api/generate",
                 json={"model": modelo, "prompt": "Responde en una sola frase: ¿estás operativo?", "stream": False})
             resp.raise_for_status()

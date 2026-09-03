@@ -1,8 +1,5 @@
 // Configuración
-const API_BASE_URL = 'http://localhost:8000/api';
-// IMPORTANTE: El navegador SIEMPRE usa localhost. 
-// Usa 'webhook' si el workflow está ACTIVO en n8n. Usa 'webhook-test' si estás probando manualmente.
-const N8N_WEBHOOK_URL = 'http://localhost:5678/webhook/new-ticket'; 
+const API_BASE_URL = window.API_BASE_URL || 'http://localhost:8000/api';
 
 // Elementos del DOM
 const ticketForm = document.getElementById('ticketForm');
@@ -152,33 +149,11 @@ btnConfirmar.addEventListener('click', async () => {
         const dbResult = await dbResponse.json();
         const ticketId = dbResult.ticket_id;
         console.log('✅ Ticket creado en DB con ID:', ticketId);
-        
-        // 2. Enviar a n8n
-        const n8nPayload = {
-            event: 'new_ticket_created',
-            timestamp: new Date().toISOString(),
-            ticket_id: ticketId,
-            backend_url: API_BASE_URL,
-            ticket: {
-                asunto: pendingTicketData.asunto,
-                descripcion: pendingTicketData.descripcion,
-                categoria: { id: pendingTicketData.id_categoria, nombre: pendingTicketData.categoria_nombre },
-                prioridad: { id: pendingTicketData.id_prioridad, nombre: pendingTicketData.prioridad_nombre },
-                estado: 'nuevo',
-                fecha_creacion: new Date().toISOString()
-            },
-            solicitante: {
-                id: currentUserData.id,
-                nombre: currentUserData.nombre,
-                email: currentUserData.email,
-                area: currentUserData.area
-            }
-        };
-        
-        // Llamada a n8n (sin await para que sea fire-and-forget y no bloquee la UI)
-        sendToN8N(n8nPayload);
-        
-        showSuccess(`¡Ticket creado exitosamente! ID: TK-${String(ticketId).padStart(4, '0')}`);
+
+        // La notificación al workflow de IA (n8n) la hace el backend tras crear
+        // el ticket: el navegador ya no llama a n8n directamente (no es fiable
+        // cuando el frontend está en otro origen, p.ej. Vercel).
+        showSuccess(`¡Ticket creado exitosamente! ID: TK-${String(ticketId).padStart(4, '0')}. El análisis de IA se ejecutará en segundo plano.`);
         ticketForm.reset();
         setTimeout(() => { window.location.href = 'dashboard-solicitante.html'; }, 3000);
         
@@ -192,21 +167,6 @@ btnConfirmar.addEventListener('click', async () => {
         pendingTicketData = null;
     }
 });
-
-async function sendToN8N(payload) {
-    try {
-        console.log('📤 Enviando a n8n:', N8N_WEBHOOK_URL, payload);
-        const response = await fetch(N8N_WEBHOOK_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-        if (response.ok) console.log('✅ n8n recibió los datos');
-        else console.warn('⚠️ n8n respondió:', response.status);
-    } catch (error) {
-        console.error('❌ Error de red con n8n:', error);
-    }
-}
 
 confirmModal.addEventListener('click', (e) => { if (e.target === confirmModal) { confirmModal.style.display = 'none'; pendingTicketData = null; } });
 

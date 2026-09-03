@@ -1,5 +1,5 @@
 // dashboard-admin.js — Panel del Administrador
-const API = 'http://localhost:8000/api';
+const API = window.API_BASE_URL || 'http://localhost:8000/api';
 
 const state = {
     authToken: localStorage.getItem('token') || sessionStorage.getItem('token'),

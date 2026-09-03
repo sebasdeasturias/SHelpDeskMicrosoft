@@ -486,18 +486,22 @@ def _ia():
     for m in modelos:
         col1, col2, col3 = st.columns([3, 1, 1])
         tam_gb = m.get("size", 0) / 1e9
+        es_emb = bool(m.get("es_embeddings"))
         with col1:
             marca = (' <span style="color:#22c55e; font-weight:700;">(activo)</span>'
                      if m["name"] == activo else "")
+            etiqueta_tipo = (' <span style="color:#8b5cf6; font-size:0.72rem;">embeddings</span>' if es_emb else '')
             st.markdown(
                 f"<div style='background:var(--glass-bg); border:2px solid var(--glass-border); border-radius:12px;"
                 f"padding:10px 14px; color:var(--text-dark); font-weight:600;'>"
-                f"{m['name']}{marca} "
+                f"{m['name']}{marca}{etiqueta_tipo} "
                 f"<span style='color:var(--text-placeholder); font-size:0.78rem;'>{tam_gb:.2f} GB</span></div>",
                 unsafe_allow_html=True,
             )
         with col2:
-            if m["name"] != activo and st.button("Usar", key=f"usar_{m['name']}", use_container_width=True):
+            if es_emb:
+                st.caption("solo embeddings")
+            elif m["name"] != activo and st.button("Usar", key=f"usar_{m['name']}", use_container_width=True):
                 db.execute(
                     """
                     INSERT INTO configuracion_ia (clave, valor, descripcion)
@@ -512,7 +516,7 @@ def _ia():
         with col3:
             if st.button("Probar", key=f"test_{m['name']}", use_container_width=True):
                 with st.spinner(f"Consultando a {m['name']}..."):
-                    resp = _ollama_test(m["name"])
+                    resp = _ollama_test(m["name"], es_emb)
                 st.markdown(
                     f"<div style='background:var(--glass-bg-strong); border:2px solid var(--glass-border);"
                     f"border-radius:12px; padding:12px 16px; color:var(--text-dark);'>{resp}</div>",
@@ -582,17 +586,42 @@ def _modelo_activo() -> str:
     return "llama3.2:3b (por defecto del backend)"
 
 
+def _es_modelo_embeddings(m: dict) -> bool:
+    """Heurística para distinguir modelos de embeddings (bge-m3, nomic-embed,
+    all-MiniLM...) de modelos de chat/generación. Los primeros NO responden en
+    /api/generate (Ollama devuelve 400), solo en /api/embed."""
+    fam = ((m.get("details") or {}).get("family") or "").lower()
+    if fam == "bert":
+        return True
+    nombre = (m.get("name") or "").lower()
+    return any(k in nombre for k in ("bge", "embed", "minilm", "nomic", "mxbai", "gte-"))
+
+
 def _ollama_models() -> tuple[list[dict], str]:
     try:
         r = requests.get(f"{OLLAMA_URL}/api/tags", timeout=5)
         r.raise_for_status()
-        return r.json().get("models", []), ""
+        modelos = r.json().get("models", [])
+        for m in modelos:
+            m["es_embeddings"] = _es_modelo_embeddings(m)
+        return modelos, ""
     except Exception as e:
         return [], str(e)
 
 
-def _ollama_test(modelo: str) -> str:
+def _ollama_test(modelo: str, es_embeddings: bool = False) -> str:
     try:
+        if es_embeddings:
+            # Los modelos de embeddings no soportan /api/generate: se prueban
+            # generando un embedding real y reportando la dimensionalidad.
+            r = requests.post(
+                f"{OLLAMA_URL}/api/embed",
+                json={"model": modelo, "input": "prueba de conectividad"},
+                timeout=120,
+            )
+            r.raise_for_status()
+            dims = len(r.json().get("embeddings", [[]])[0])
+            return f"OK · embedding generado ({dims} dimensiones)"
         r = requests.post(
             f"{OLLAMA_URL}/api/generate",
             json={"model": modelo, "prompt": "Responde en una sola frase: ¿estás operativo?", "stream": False},

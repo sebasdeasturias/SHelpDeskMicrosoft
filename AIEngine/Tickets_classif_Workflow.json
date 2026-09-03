@@ -80,7 +80,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=http://host.docker.internal:8000/api/tickets/{{ $json.ticket_id }}/ai-analysis",
+        "url": "=http://backend:8000/api/tickets/{{ $json.ticket_id }}/ai-analysis",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [

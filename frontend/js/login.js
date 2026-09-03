@@ -1,5 +1,5 @@
 // Configuración
-const API_BASE_URL = 'http://localhost:8000/api'; // Ajustar según el backend
+const API_BASE_URL = window.API_BASE_URL || 'http://localhost:8000/api';
 
 // Elementos del DOM
 const loginForm = document.getElementById('loginForm');
@@ -154,11 +154,12 @@ window.addEventListener('load', async () => {
             
             if (response.ok) {
                 const user = await response.json();
-                // Guardar usuario actualizado en localStorage
-                localStorage.setItem('user', JSON.stringify(user));
+                // Guardar usuario actualizado en el mismo almacén que el token
+                const storage = localStorage.getItem('token') ? localStorage : sessionStorage;
+                storage.setItem('user', JSON.stringify(user));
                 
-                // Redirigir según rol
-                const redirectUrl = getRedirectUrl(user.rol);
+                // Redirigir según rol (el endpoint /auth/me devuelve el campo 'role')
+                const redirectUrl = getRedirectUrl(user.role);
                 window.location.href = redirectUrl;
             } else {
                 // Token inválido, limpiar
