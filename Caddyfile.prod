@@ -1,0 +1,33 @@
+# Caddyfile.prod — SHelpDesk Microsoft
+# Proxy HTTPS (Let's Encrypt) para el despliegue de producción.
+#
+#   * https://<API_DOMAIN>/api/*  -> backend FastAPI   (lo usa el frontend de Vercel)
+#   * https://<API_DOMAIN>/        -> panel Streamlit
+#
+# Las variables {$API_DOMAIN} y {$ACME_EMAIL} se inyectan desde docker-compose.prod.yml.
+
+{
+    email {$ACME_EMAIL}
+    # Los logs de acceso van a stdout (docker logs helpdesk-caddy).
+}
+
+{$API_DOMAIN} {
+    encode gzip
+
+    header {
+        # Endurecimiento básico de cabeceras
+        -Server
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy no-referrer
+    }
+
+    handle /api/* {
+        reverse_proxy backend:8000
+    }
+
+    handle {
+        # Todo lo demás -> panel Streamlit (incluye websockets de /_stcore/*)
+        reverse_proxy streamlit:8501
+    }
+}

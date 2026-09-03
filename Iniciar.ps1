@@ -96,8 +96,8 @@ Write-Host "`n📊 Estado de los servicios Docker:" -ForegroundColor Cyan
 docker compose -f $ComposeFile ps --format "table {{.Name}}`t{{.Status}}`t{{.Ports}}"
 
 # Variables de la BD de la aplicación (leídas del .env)
-$SchemaFile = Join-Path $ProjectRoot "db_logic.sql"
-$SeedFile = Join-Path $ProjectRoot "seed_usuarios.sql"
+$SchemaFile = Join-Path $ProjectRoot "database\db_logic.sql"
+$SeedFile = Join-Path $ProjectRoot "database\seed_usuarios.sql"
 $AppUser = "helpdesk_app"
 if ($envContent -match "(?m)^\s*APP_DB_USER\s*=\s*(.+?)\s*$") { $AppUser = $Matches[1] }
 $AppPass = ""

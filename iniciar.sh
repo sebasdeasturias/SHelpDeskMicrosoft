@@ -106,8 +106,8 @@ fi
 ok "✅ PostgreSQL está listo y aceptando conexiones"
 
 # Variables de la BD de la aplicación (leídas del .env)
-SCHEMA_FILE="$PROJECT_ROOT/db_logic.sql"
-SEED_FILE="$PROJECT_ROOT/seed_usuarios.sql"
+SCHEMA_FILE="$PROJECT_ROOT/database/db_logic.sql"
+SEED_FILE="$PROJECT_ROOT/database/seed_usuarios.sql"
 APP_USER="$(grep -E '^APP_DB_USER=' "$ENV_FILE" | head -n1 | cut -d= -f2- | tr -d ' \t\r\"')"
 APP_USER="${APP_USER:-helpdesk_app}"
 APP_PASS="$(grep -E '^APP_DB_PASSWORD=' "$ENV_FILE" | head -n1 | cut -d= -f2- | tr -d ' \t\r\"')"

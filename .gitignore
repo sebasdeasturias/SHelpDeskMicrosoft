@@ -37,4 +37,14 @@ thumbs.db
 *.tmp
 comando
 comando.txt
+
+# ---------------------------------------------------------------------------
+# Excepciones: archivos SIN secretos imprescindibles para desplegar/producir.
+# (docker-compose.yml y backend/database.py no contienen credenciales: leen
+#  las variables del .env, que ese sí sigue ignorado.)
+# ---------------------------------------------------------------------------
+!docker-compose.yml
+!docker-compose.prod.yml
+!docker-compose.cloudflared.yml
+!backend/database.py
 .git
