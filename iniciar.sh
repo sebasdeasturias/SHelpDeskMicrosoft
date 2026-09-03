@@ -148,6 +148,28 @@ else
 fi
 
 # ============================================
+# 2.5.1 MIGRACIONES (database/migraciones/*.sql)
+#     Idempotentes y seguras de repetir. Garantizan que una BD creada con un
+#     esquema anterior quede alineada (p.ej. pgvector 1024, columnas nuevas,
+#     eliminación del trigger duplicador de historial).
+# ============================================
+MIGRACIONES_DIR="$PROJECT_ROOT/database/migraciones"
+if [ -d "$MIGRACIONES_DIR" ] && ls "$MIGRACIONES_DIR"/*.sql >/dev/null 2>&1; then
+    dim "   Aplicando migraciones (idempotentes)..."
+    for f in "$MIGRACIONES_DIR"/*.sql; do
+        nombre="$(basename "$f")"
+        if cat "$f" | docker exec -i helpdesk-db psql -v ON_ERROR_STOP=1 -U "$PG_USER" -d "$PG_DB" >/dev/null 2>&1; then
+            ok "   ✅ $nombre"
+        else
+            err "   ❌ Error aplicando $nombre"
+            exit 1
+        fi
+    done
+else
+    dim "   (no hay migraciones en database/migraciones; se omite)"
+fi
+
+# ============================================
 # 2.6 USUARIO DE BD DE LA APLICACIÓN (mínimo privilegio)
 #     docker-compose solo inyecta APP_DB_USER/APP_DB_PASSWORD al backend;
 #     el rol debe existir dentro de PostgreSQL. Idempotente.

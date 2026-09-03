@@ -26,6 +26,13 @@ if (-not $dockerOk) {
     exit 1
 }
 
+# Plugin docker compose (v2)
+docker compose version *> $null
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "❌ No se encontró el plugin 'docker compose' (v2). Instálalo y vuelve a intentarlo." -ForegroundColor Red
+    exit 1
+}
+
 if (-not (Test-Path $ComposeFile)) {
     Write-Host "❌ No se encontró docker-compose.yml en: $ComposeFile" -ForegroundColor Red
     exit 1
@@ -145,6 +152,36 @@ if (-not $SchemaAplicado) {
     Write-Host "✅ Esquema (db_logic.sql) aplicado" -ForegroundColor Green
 } else {
     Write-Host "✅ El esquema ya existe; no se toca" -ForegroundColor Green
+}
+
+# ============================================
+# 2.5.1 MIGRACIONES (database\migraciones\*.sql)
+#     Idempotentes y seguras de repetir. Alinean BDs creadas con esquemas
+#     anteriores (pgvector 1024, columnas nuevas, trigger duplicador fuera).
+# ============================================
+Write-Host "`n🔧 Aplicando migraciones (idempotentes)..." -ForegroundColor Cyan
+$MigracionesDir = Join-Path $ProjectRoot "database\migraciones"
+$Migraciones = @()
+if (Test-Path $MigracionesDir) {
+    $Migraciones = Get-ChildItem -Path $MigracionesDir -Filter *.sql | Sort-Object Name
+}
+if ($Migraciones.Count -eq 0) {
+    Write-Host "   (no hay migraciones en database\migraciones; se omite)" -ForegroundColor DarkGray
+} else {
+    foreach ($m in $Migraciones) {
+        docker cp $m.FullName "helpdesk-db:/tmp/helpdesk_mig.sql" *> $null
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "❌ No se pudo copiar la migración $($m.Name)" -ForegroundColor Red
+            exit 1
+        }
+        docker exec helpdesk-db psql -v ON_ERROR_STOP=1 -U $PgUser -d $PgDb -f /tmp/helpdesk_mig.sql *> $null
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "❌ Error aplicando la migración $($m.Name)" -ForegroundColor Red
+            exit 1
+        }
+        docker exec helpdesk-db rm -f /tmp/helpdesk_mig.sql
+        Write-Host "   ✅ $($m.Name)" -ForegroundColor Green
+    }
 }
 
 # ============================================
