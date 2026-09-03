@@ -14,6 +14,7 @@
 //
 //   window.APP_API_BASE_URL = 'https://api.tudominio.com/api';
 //
+window.APP_API_BASE_URL = 'https://slope-utilization-drawings-colours.trycloudflare.com/api'; // TEMPORAL (prueba de conexión)
 (function () {
     'use strict';
     var override = (typeof window.APP_API_BASE_URL !== 'undefined') ? window.APP_API_BASE_URL : '';
