@@ -258,6 +258,25 @@ body.night-mode .kanban-column.drag-over { background: rgba(60,60,120,0.4); }
 .column-progress .column-header { background: linear-gradient(135deg, rgba(255,200,40,0.4), rgba(200,160,20,0.2)); }
 .column-review .column-header { background: linear-gradient(135deg, rgba(100,150,255,0.4), rgba(40,80,200,0.2)); }
 .column-done .column-header { background: linear-gradient(135deg, rgba(80,200,80,0.4), rgba(20,160,40,0.2)); }
+.column-archived .column-header { background: linear-gradient(135deg, rgba(148,163,184,0.45), rgba(71,85,105,0.25)); }
+
+/* Columna Archivado: zona de destino (drop zone). No acumula tarjetas: al
+   confirmar el archivo, el ticket sale del tablero (estado terminal). */
+.archive-hint {
+    margin: 18px 12px;
+    padding: 16px 12px;
+    border: 1.5px dashed rgba(148, 163, 184, 0.75);
+    border-radius: 10px;
+    text-align: center;
+    font-size: 12px;
+    line-height: 1.55;
+    color: #64748b;
+    pointer-events: none;
+    user-select: none;
+}
+.archive-hint b { color: #475569; }
+body.night-mode .archive-hint { color: #94a3b8; border-color: rgba(148, 163, 184, 0.35); }
+body.night-mode .archive-hint b { color: #cbd5e1; }
 
 .column-header {
     padding: 16px;

@@ -431,6 +431,17 @@ function initDragDrop() {
 
             const ticketId = dragged.dataset.id;
             const newColKey = body.id.replace('col-', '');
+
+            // Columna 'Archivado': no es un estado más del tablero, dispara el
+            // flujo de archivo (confirmación obligatoria; estado terminal).
+            if (newColKey === 'archived') {
+                dragged.style.opacity = '1';
+                dragged.classList.remove('dragging');
+                dragged = null;
+                await manejarArchivo(ticketId);
+                return;
+            }
+
             // 'Por Hacer' agrupa dos estados: 'nuevo' (sin agente) y 'asignado'
             // (con agente). Se elige según si el ticket tiene agente asignado.
             let newStatus;
@@ -495,6 +506,37 @@ async function updateTicketStatus(id, newStatus) {
         console.error('Update failed', error);
         renderBoard();
     }
+}
+
+// ============================================
+// KANBAN: Archivar (migración 004, modal en js/kanban-archive.js)
+// ============================================
+async function manejarArchivo(ticketId) {
+    if (!window.KanbanArchivo) {
+        console.error('kanban-archive.js no está cargado');
+        renderBoard();
+        return;
+    }
+    const ticket = state.tickets.find(t => t.id_solicitud == ticketId);
+    if (!ticket) return;
+
+    // Solo se archiva un ticket ya completado (lo valida también el backend).
+    if (ticket.estado !== 'resuelto' && ticket.estado !== 'cerrado') {
+        await KanbanArchivo.avisoNoArchivable(ticket.estado);
+        renderBoard(); // la tarjeta vuelve a su columna
+        return;
+    }
+
+    const confirmado = await KanbanArchivo.confirmar(ticket);
+    if (!confirmado) {
+        renderBoard(); // cancelado: la tarjeta vuelve a su columna
+        return;
+    }
+
+    // Al confirmar: el PATCH deja el ticket en 'archivado' (terminal). El
+    // tablero lo oculta (COLUMN_MAP no lo mapea) y el listado del backend
+    // deja de devolverlo en el siguiente refresco.
+    await updateTicketStatus(ticketId, 'archivado');
 }
 
 // ============================================

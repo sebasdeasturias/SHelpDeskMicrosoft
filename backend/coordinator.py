@@ -52,11 +52,13 @@ async def get_estadisticas(db: AsyncSession = Depends(get_db), token: str = Depe
     total_mes = r.scalar() or 0
 
     # --- Cumplimiento SLA (resueltos dentro del tiempo de su prioridad) ---
+    # 'archivado' cuenta como resuelto: archivar es limpieza del tablero,
+    # no revierte el trabajo hecho (migración 004).
     r = await db.execute(text("""
         SELECT
-            count(*) FILTER (WHERE s.estado IN ('resuelto','cerrado')) AS resueltos,
+            count(*) FILTER (WHERE s.estado IN ('resuelto','cerrado','archivado')) AS resueltos,
             count(*) FILTER (
-                WHERE s.estado IN ('resuelto','cerrado')
+                WHERE s.estado IN ('resuelto','cerrado','archivado')
                   AND p.tiempo_solucion_min IS NOT NULL
                   AND EXTRACT(EPOCH FROM (s.fecha_actualizacion - s.fecha_creacion))/60 <= p.tiempo_solucion_min
             ) AS resueltos_en_sla
@@ -72,7 +74,7 @@ async def get_estadisticas(db: AsyncSession = Depends(get_db), token: str = Depe
     r = await db.execute(text("""
         SELECT AVG(EXTRACT(EPOCH FROM (s.fecha_actualizacion - s.fecha_creacion))/60)
         FROM solicitud s
-        WHERE s.estado IN ('resuelto','cerrado')
+        WHERE s.estado IN ('resuelto','cerrado','archivado')
     """))
     tme = r.scalar()
     tiempo_medio = round(float(tme), 1) if tme is not None else None
@@ -90,9 +92,11 @@ async def get_estadisticas(db: AsyncSession = Depends(get_db), token: str = Depe
     agentes_totales = fila[1] or 0
 
     # --- Tickets sin resolver (activos) ---
+    # Un ticket 'archivado' NO está activo: salió del tablero por decisión
+    # del usuario (estado terminal).
     r = await db.execute(text("""
         SELECT count(*) FROM solicitud
-        WHERE estado NOT IN ('cerrado')
+        WHERE estado NOT IN ('cerrado', 'archivado')
     """))
     tickets_activos = r.scalar() or 0
 
@@ -113,7 +117,7 @@ async def get_estadisticas(db: AsyncSession = Depends(get_db), token: str = Depe
         SELECT
             u.id_usuario, u.nombre, u.especialidad, u.carga_trabajo,
             count(s.id_solicitud) AS asignados,
-            count(s.id_solicitud) FILTER (WHERE s.estado IN ('resuelto','cerrado')) AS resueltos,
+            count(s.id_solicitud) FILTER (WHERE s.estado IN ('resuelto','cerrado','archivado')) AS resueltos,
             count(s.id_solicitud) FILTER (WHERE s.estado IN ('en_proceso','escalado')) AS en_proceso
         FROM usuarios u
         LEFT JOIN solicitud s ON s.id_agente_asignado = u.id_usuario
@@ -541,7 +545,8 @@ async def search_rag(query: str = Query(..., min_length=1), db: AsyncSession = D
 
 async def _vector_search(db: AsyncSession, query: str):
     """Búsqueda semántica real: embed de la consulta (bge-m3) -> pgvector (HNSW coseno).
-    Solo recupera soluciones validadas (tickets resueltos/cerrados). Retorna [] si no hay datos."""
+    Solo recupera soluciones validadas (resueltos/cerrados, incluidos los archivados:
+    archivar no elimina el conocimiento). Retorna [] si no hay datos."""
     try:
         vec = await generar_embedding(query)
         qvec = a_vector_sql(vec)
@@ -554,7 +559,9 @@ async def _vector_search(db: AsyncSession, query: str):
             LEFT JOIN categoria c ON s.id_categoria = c.id_categoria
             LEFT JOIN usuarios ag ON s.id_agente_asignado = ag.id_usuario
             WHERE e.modelo_embedding = :modelo
-              AND s.estado IN ('resuelto', 'cerrado')
+              -- 'archivado' sigue siendo conocimiento válido para el RAG:
+              -- archivar limpia el tablero, no borra la solución aprendida.
+              AND s.estado IN ('resuelto', 'cerrado', 'archivado')
             ORDER BY e.embedding <=> CAST(:qvec AS vector)
             LIMIT 5
         """), {"qvec": qvec, "modelo": EMBEDDING_MODEL})
@@ -581,8 +588,9 @@ async def _vector_search(db: AsyncSession, query: str):
 
 @router.post("/rag/indexar")
 async def rag_indexar(db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
-    """Indexa (backfill) todos los tickets resueltos/cerrados que aún no tengan
-    embedding para el modelo actual. Exclusivo de coordinador/administrador."""
+    """Indexa (backfill) todos los tickets resueltos/cerrados (incluidos los
+    archivados) que aún no tengan embedding para el modelo actual.
+    Exclusivo de coordinador/administrador."""
     payload = _verify_token(token)
     if payload.get("role") not in ("coordinador", "administrador"):
         raise HTTPException(
@@ -593,7 +601,7 @@ async def rag_indexar(db: AsyncSession = Depends(get_db), token: str = Depends(o
     rows = await db.execute(text("""
         SELECT s.id_solicitud, s.asunto, s.descripcion
         FROM solicitud s
-        WHERE s.estado IN ('resuelto', 'cerrado')
+        WHERE s.estado IN ('resuelto', 'cerrado', 'archivado')
           AND NOT EXISTS (
               SELECT 1 FROM embedding_vector e
               WHERE e.id_solicitud = s.id_solicitud AND e.modelo_embedding = :modelo

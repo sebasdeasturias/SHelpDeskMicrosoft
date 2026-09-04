@@ -24,6 +24,16 @@ N8N_URL = os.getenv("N8N_URL", "http://n8n:5678")
 # garbage collector las cancele prematuramente.
 _tareas_n8n = set()
 
+# Estados válidos para el tablero Kanban (deben coincidir con el CHECK de
+# solicitud.estado en la BD; ver migración 004). 'archivado' es terminal:
+# sale del tablero y de los listados, pero conserva datos e historial.
+ESTADOS_TICKET = {"nuevo", "asignado", "en_proceso", "escalado",
+                  "resuelto", "cerrado", "archivado"}
+
+# Solo se puede archivar un ticket ya completado (limpieza del tablero);
+# un ticket activo no se archiva, se trabaja o se mueve a su estado correcto.
+ESTADOS_ARCHIVABLES = {"resuelto", "cerrado"}
+
 
 async def _notificar_n8n(url: str, payload: dict):
     """Fire-and-forget: avisa al workflow de n8n (nunca bloquea ni rompe la
@@ -127,6 +137,14 @@ async def update_ticket(ticket_id: int, data: dict, db: AsyncSession = Depends(g
     if not nuevo_estado:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El campo 'estado' es requerido")
 
+    # Whitelist: nunca se acepta un estado fuera del catálogo (defensa contra
+    # clientes desactualizados o peticiones manipuladas).
+    if nuevo_estado not in ESTADOS_TICKET:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Estado '{nuevo_estado}' no es válido. Estados permitidos: {', '.join(sorted(ESTADOS_TICKET))}"
+        )
+
     if user_role not in ("agente", "coordinador", "administrador"):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Sin permisos para mover tickets")
 
@@ -137,6 +155,20 @@ async def update_ticket(ticket_id: int, data: dict, db: AsyncSession = Depends(g
     estado_anterior = anterior_row.scalar()
     if estado_anterior is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket no encontrado")
+
+    # Regla de archivo (requiere estado_anterior): un ticket solo se archiva
+    # ya completado; además es terminal, por lo que un ticket archivado no
+    # puede "desarchivarse" moviéndolo a otro estado desde el tablero.
+    if nuevo_estado == "archivado" and estado_anterior not in ESTADOS_ARCHIVABLES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Solo se pueden archivar tickets en estado 'resuelto' o 'cerrado'"
+        )
+    if estado_anterior == "archivado" and nuevo_estado != "archivado":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Un ticket archivado no se puede mover; es un estado terminal"
+        )
 
     if user_role == "agente":
         # Un agente solo trabaja sobre los tickets que el coordinador le asignó
@@ -168,10 +200,12 @@ async def update_ticket(ticket_id: int, data: dict, db: AsyncSession = Depends(g
     # estados correctos). El trigger automático de la BD que duplicaba estas
     # filas se elimina en la migración 002 (ver database/migraciones/).
     if estado_anterior != nuevo_estado:
+        comentario = "Ticket archivado" if nuevo_estado == "archivado" else "Movido en tablero"
         await db.execute(text("""
             INSERT INTO historial (estado_anterior, estado_nuevo, comentario, fecha, id_solicitud, id_usuario)
-            VALUES (:anterior, :nuevo, 'Movido en tablero', NOW(), :id, :user_id)
-        """), {"anterior": estado_anterior, "nuevo": nuevo_estado, "id": ticket_id, "user_id": user_id})
+            VALUES (:anterior, :nuevo, :comentario, NOW(), :id, :user_id)
+        """), {"anterior": estado_anterior, "nuevo": nuevo_estado, "comentario": comentario,
+               "id": ticket_id, "user_id": user_id})
 
     await db.commit()
 
@@ -408,8 +442,11 @@ async def get_tickets(
     """
     
     # FIX BUG #3: filtrar por solicitante en el servidor
+    # Los tickets 'archivado' (estado terminal, migración 004) NO se listan:
+    # salieron del tablero por decisión del usuario; el detalle por id sigue
+    # disponible y el historial conserva todo.
     params = {}
-    conditions = []
+    conditions = ["s.estado != 'archivado'"]
     if user_role == 'solicitante':
         conditions.append("s.id_solicitante = :user_id")
         params["user_id"] = user_id
