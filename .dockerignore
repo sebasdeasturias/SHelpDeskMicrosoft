@@ -23,7 +23,7 @@ database/
 # Documentación y pruebas (inútiles en la imagen final)
 README.md
 Dockerfile*
-docker-compose*
+docker/
 .vscode/
 .idea/
 *.log

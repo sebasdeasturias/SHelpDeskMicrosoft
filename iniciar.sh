@@ -21,8 +21,12 @@ ok()   { echo -e "${GREEN}${1}${NC}"; }
 dim()  { echo -e "${GRAY}${1}${NC}"; }
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
-COMPOSE_FILE="$PROJECT_ROOT/docker-compose.yml"
+COMPOSE_FILE="$PROJECT_ROOT/docker/docker-compose.yml"
 ENV_FILE="$PROJECT_ROOT/.env"
+
+# docker compose solo auto-carga .env desde el directorio del compose (docker/),
+# pero el .env vive en la raíz: se pasa SIEMPRE con --env-file.
+COMPOSE_ARGS=(-f "$COMPOSE_FILE" --env-file "$ENV_FILE")
 
 echo ""
 say "🚀 Iniciando HelpDesk (Contenedores + Backend)..."
@@ -46,7 +50,7 @@ if ! docker compose version >/dev/null 2>&1; then
 fi
 
 if [ ! -f "$COMPOSE_FILE" ]; then
-    err "❌ No se encontró docker-compose.yml en: $COMPOSE_FILE"
+    err "❌ No se encontró el compose en: $COMPOSE_FILE"
     exit 1
 fi
 
@@ -74,7 +78,7 @@ PG_USER="${PG_USER:-postgres}"
 # ============================================
 say "🐳 Levantando servicios base (postgres, ollama)..."
 # Solo servicios base: n8n/backend/streamlit se levantan DESPUÉS de configurar la BD.
-docker compose -f "$COMPOSE_FILE" up -d postgres ollama
+docker compose "${COMPOSE_ARGS[@]}" up -d postgres ollama
 if [ $? -ne 0 ]; then
     err "❌ Error al iniciar los contenedores base"
     exit 1
@@ -241,14 +245,14 @@ fi
 #     reconstruyen con el código actual del repo.
 # ============================================
 say "🐳 Levantando n8n..."
-docker compose -f "$COMPOSE_FILE" up -d n8n
+docker compose "${COMPOSE_ARGS[@]}" up -d n8n
 if [ $? -ne 0 ]; then
     err "❌ Error al iniciar n8n"
     exit 1
 fi
 
 say "🐳 Construyendo y levantando backend y streamlit..."
-docker compose -f "$COMPOSE_FILE" up -d --build backend streamlit
+docker compose "${COMPOSE_ARGS[@]}" up -d --build backend streamlit
 if [ $? -ne 0 ]; then
     err "❌ Error al iniciar backend/streamlit"
     exit 1
@@ -294,7 +298,7 @@ fi
 # 4. RESUMEN
 # ============================================
 say "📊 Estado de los servicios Docker:"
-docker compose -f "$COMPOSE_FILE" ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}"
+docker compose "${COMPOSE_ARGS[@]}" ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}"
 
 ok "✅ Infraestructura de SHelpDesk levantada"
 dim "   Backend API : http://localhost:8000  (docs: http://localhost:8000/docs)"

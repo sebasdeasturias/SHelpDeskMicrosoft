@@ -6,8 +6,19 @@
 
 $ErrorActionPreference = "Stop"
 $ProjectRoot = $PSScriptRoot
-$ComposeFile = Join-Path $ProjectRoot "docker-compose.yml"
+$ComposeFile = Join-Path $ProjectRoot "docker\docker-compose.yml"
 $EnvFile = Join-Path $ProjectRoot ".env"
+
+function Invoke-DockerQuiet {
+    $prevEap = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+        docker @args *> $null
+        return $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $prevEap
+    }
+}
 
 Write-Host "`n🚀 Iniciando HelpDesk (Contenedores + Backend)..." -ForegroundColor Cyan
 
@@ -19,22 +30,20 @@ if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
     exit 1
 }
 
-$dockerOk = $false
-try { docker info *> $null; $dockerOk = ($LASTEXITCODE -eq 0) } catch { $dockerOk = $false }
+$dockerOk = ((Invoke-DockerQuiet info) -eq 0)
 if (-not $dockerOk) {
     Write-Host "❌ El demonio de Docker no está corriendo. Abre Docker Desktop e inténtalo de nuevo." -ForegroundColor Red
     exit 1
 }
 
 # Plugin docker compose (v2)
-docker compose version *> $null
-if ($LASTEXITCODE -ne 0) {
+if ((Invoke-DockerQuiet compose version) -ne 0) {
     Write-Host "❌ No se encontró el plugin 'docker compose' (v2). Instálalo y vuelve a intentarlo." -ForegroundColor Red
     exit 1
 }
 
 if (-not (Test-Path $ComposeFile)) {
-    Write-Host "❌ No se encontró docker-compose.yml en: $ComposeFile" -ForegroundColor Red
+    Write-Host "❌ No se encontró el compose en: $ComposeFile" -ForegroundColor Red
     exit 1
 }
 
@@ -43,6 +52,9 @@ if (-not (Test-Path $EnvFile)) {
     Write-Host "   Es obligatorio: contiene las credenciales (POSTGRES_*, JWT_SECRET_KEY, N8N_*)." -ForegroundColor Yellow
     exit 1
 }
+
+# docker compose solo auto-carga .env desde el directorio del compose (docker/),
+# pero el .env vive en la raíz: se pasa SIEMPRE con --env-file.
 
 $envContent = Get-Content $EnvFile -Raw
 $requiredVars = @("POSTGRES_USER", "POSTGRES_PASSWORD", "POSTGRES_DB",
@@ -63,7 +75,7 @@ if ($envContent -match "(?m)^\s*POSTGRES_USER\s*=\s*(.+?)\s*$") { $PgUser = $Mat
 # ============================================
 Write-Host "`n🐳 Levantando servicios base (postgres, ollama)..." -ForegroundColor Cyan
 # Solo servicios base: n8n/backend/streamlit se levantan DESPUÉS de configurar la BD.
-docker compose -f $ComposeFile up -d postgres ollama
+docker compose -f $ComposeFile --env-file $EnvFile up -d postgres ollama
 if ($LASTEXITCODE -ne 0) {
     Write-Host "❌ Error al iniciar los contenedores base" -ForegroundColor Red
     exit 1
@@ -81,8 +93,7 @@ while (-not $pgReady -and $attempt -lt $maxAttempts) {
     $attempt++
     Start-Sleep -Seconds 2
 
-    $null = docker exec helpdesk-db pg_isready -U $PgUser 2>&1
-    if ($LASTEXITCODE -eq 0) {
+    if ((Invoke-DockerQuiet exec helpdesk-db pg_isready -U $PgUser) -eq 0) {
         $pgReady = $true
         break
     }
@@ -100,7 +111,7 @@ Write-Host "`n✅ PostgreSQL está listo y aceptando conexiones" -ForegroundColo
 
 # Mostrar estado de contenedores
 Write-Host "`n📊 Estado de los servicios Docker:" -ForegroundColor Cyan
-docker compose -f $ComposeFile ps --format "table {{.Name}}`t{{.Status}}`t{{.Ports}}"
+docker compose -f $ComposeFile --env-file $EnvFile ps --format "table {{.Name}}`t{{.Status}}`t{{.Ports}}"
 
 # Variables de la BD de la aplicación (leídas del .env)
 $SchemaFile = Join-Path $ProjectRoot "database\db_logic.sql"
@@ -141,10 +152,8 @@ if (-not $SchemaAplicado) {
         exit 1
     }
     Write-Host "   Esquema vacío; aplicando db_logic.sql..." -ForegroundColor DarkGray
-    docker cp $SchemaFile "helpdesk-db:/tmp/db_logic.sql"
-    if ($LASTEXITCODE -ne 0) { Write-Host "❌ No se pudo copiar db_logic.sql al contenedor" -ForegroundColor Red; exit 1 }
-    docker exec helpdesk-db psql -v ON_ERROR_STOP=1 -U $PgUser -d $PgDb -f /tmp/db_logic.sql *> $null
-    if ($LASTEXITCODE -ne 0) {
+    if ((Invoke-DockerQuiet cp $SchemaFile "helpdesk-db:/tmp/db_logic.sql") -ne 0) { Write-Host "❌ No se pudo copiar db_logic.sql al contenedor" -ForegroundColor Red; exit 1 }
+    if ((Invoke-DockerQuiet exec helpdesk-db psql -v ON_ERROR_STOP=1 -U $PgUser -d $PgDb -f /tmp/db_logic.sql) -ne 0) {
         Write-Host "❌ Error aplicando db_logic.sql. Revisa: docker exec helpdesk-db psql -U $PgUser -d $PgDb -f /tmp/db_logic.sql" -ForegroundColor Red
         exit 1
     }
@@ -169,13 +178,11 @@ if ($Migraciones.Count -eq 0) {
     Write-Host "   (no hay migraciones en database\migraciones; se omite)" -ForegroundColor DarkGray
 } else {
     foreach ($m in $Migraciones) {
-        docker cp $m.FullName "helpdesk-db:/tmp/helpdesk_mig.sql" *> $null
-        if ($LASTEXITCODE -ne 0) {
+        if ((Invoke-DockerQuiet cp $m.FullName "helpdesk-db:/tmp/helpdesk_mig.sql") -ne 0) {
             Write-Host "❌ No se pudo copiar la migración $($m.Name)" -ForegroundColor Red
             exit 1
         }
-        docker exec helpdesk-db psql -v ON_ERROR_STOP=1 -U $PgUser -d $PgDb -f /tmp/helpdesk_mig.sql *> $null
-        if ($LASTEXITCODE -ne 0) {
+        if ((Invoke-DockerQuiet exec helpdesk-db psql -v ON_ERROR_STOP=1 -U $PgUser -d $PgDb -f /tmp/helpdesk_mig.sql) -ne 0) {
             Write-Host "❌ Error aplicando la migración $($m.Name)" -ForegroundColor Red
             exit 1
         }
@@ -242,10 +249,8 @@ try {
 if (-not (Test-Path $SeedFile)) {
     Write-Host "⚠️ No se encontró seed_usuarios.sql; se omiten los usuarios de prueba" -ForegroundColor Yellow
 } else {
-    docker cp $SeedFile "helpdesk-db:/tmp/seed_usuarios.sql"
-    if ($LASTEXITCODE -ne 0) { Write-Host "❌ No se pudo copiar seed_usuarios.sql al contenedor" -ForegroundColor Red; exit 1 }
-    docker exec helpdesk-db psql -v ON_ERROR_STOP=1 -U $PgUser -d $PgDb -f /tmp/seed_usuarios.sql *> $null
-    if ($LASTEXITCODE -ne 0) {
+    if ((Invoke-DockerQuiet cp $SeedFile "helpdesk-db:/tmp/seed_usuarios.sql") -ne 0) { Write-Host "❌ No se pudo copiar seed_usuarios.sql al contenedor" -ForegroundColor Red; exit 1 }
+    if ((Invoke-DockerQuiet exec helpdesk-db psql -v ON_ERROR_STOP=1 -U $PgUser -d $PgDb -f /tmp/seed_usuarios.sql) -ne 0) {
         Write-Host "❌ Error aplicando seed_usuarios.sql" -ForegroundColor Red
         exit 1
     }
@@ -257,7 +262,7 @@ if (-not (Test-Path $SeedFile)) {
 # 2.8 n8n (requiere PostgreSQL listo; crea sus tablas al primer arranque)
 # ============================================
 Write-Host "`n🐳 Levantando n8n..." -ForegroundColor Cyan
-docker compose -f $ComposeFile up -d n8n
+docker compose -f $ComposeFile --env-file $EnvFile up -d n8n
 if ($LASTEXITCODE -ne 0) {
     Write-Host "❌ Error al iniciar n8n" -ForegroundColor Red
     exit 1
@@ -267,7 +272,7 @@ if ($LASTEXITCODE -ne 0) {
 # 3. BACKEND - Corre dentro de Docker (servicio "backend")
 # ============================================
 Write-Host "`n🐳 Construyendo/actualizando el backend dentro de Docker..." -ForegroundColor Cyan
-docker compose -f $ComposeFile up -d --build backend
+docker compose -f $ComposeFile --env-file $EnvFile up -d --build backend
 if ($LASTEXITCODE -ne 0) {
     Write-Host "❌ Error al iniciar el contenedor del backend" -ForegroundColor Red
     exit 1
@@ -277,7 +282,7 @@ if ($LASTEXITCODE -ne 0) {
 # 4. STREAMLIT - Dashboard de estadísticas y control admin
 # ============================================
 Write-Host "`n🐳 Construyendo/actualizando Streamlit dentro de Docker..." -ForegroundColor Cyan
-docker compose -f $ComposeFile up -d --build streamlit
+docker compose -f $ComposeFile --env-file $EnvFile up -d --build streamlit
 if ($LASTEXITCODE -ne 0) {
     Write-Host "❌ Error al iniciar el contenedor de Streamlit" -ForegroundColor Red
     exit 1

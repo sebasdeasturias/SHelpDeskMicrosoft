@@ -43,8 +43,8 @@ comando.txt
 # (docker-compose.yml y backend/database.py no contienen credenciales: leen
 #  las variables del .env, que ese sí sigue ignorado.)
 # ---------------------------------------------------------------------------
-!docker-compose.yml
-!docker-compose.prod.yml
-!docker-compose.cloudflared.yml
+!docker/docker-compose.yml
+!docker/docker-compose.prod.yml
+!docker/docker-compose.cloudflared.yml
 !backend/database.py
 .git
