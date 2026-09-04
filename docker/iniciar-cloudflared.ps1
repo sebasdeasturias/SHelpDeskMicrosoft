@@ -1,0 +1,373 @@
+﻿# iniciar-cloudflared.ps1 — SHelpDesk Microsoft (PRODUCCIÓN por TÚNEL Cloudflare)
+# Levanta la pila completa definida en docker-compose.cloudflared.yml:
+#   postgres (pgvector) + ollama + n8n + backend FastAPI + streamlit + cloudflared
+#
+# Diferencias con Iniciar.ps1 (dev):
+#   * Usa docker-compose.cloudflared.yml: NINGÚN puerto se publica al host.
+#     Todo el acceso sale por el túnel de Cloudflare (conexión SALIENTE).
+#       - API      -> https://api.tudominio.com/api     (frontend en Vercel)
+#       - Panel    -> https://panel.tudominio.com        (Streamlit)
+#   * backend/streamlit se CONSTRUYEN desde imagen (sin bind mount de código).
+#   * Exige CLOUDFLARE_TUNNEL_TOKEN en .env (Cloudflare Zero Trust -> Tunnels).
+#   * Reutiliza el MISMO proyecto compose (shelpdeskmicrosoft): recicla los
+#     volúmenes/datos del entorno dev, pero al terminar NO habrá localhost:8000
+#     ni localhost:8501, y n8n/postgres/ollama quedan solo en la red interna.
+#
+# Requisitos previos (.env):
+#   CLOUDFLARE_TUNNEL_TOKEN  -> token del túnel creado en Cloudflare Zero Trust
+#   CORS_ORIGINS             -> origen del frontend en Vercel (recomendado)
+#   + las habituales: POSTGRES_*, APP_DB_*, JWT_SECRET_KEY, AI_CALLBACK_KEY.
+
+$ErrorActionPreference = "Stop"
+$ScriptDir = $PSScriptRoot
+$ProjectRoot = Split-Path $ScriptDir -Parent
+$ComposeFile = Join-Path $ScriptDir "docker-compose.cloudflared.yml"
+$EnvFile = Join-Path $ProjectRoot ".env"
+
+# ------------------------------------------------------------------
+# FIX PowerShell 5.1: con $ErrorActionPreference = "Stop", cualquier
+# línea que un comando nativo escriba en stderr (p. ej. los NOTICE de
+# psql que llegan vía docker exec) se convierte en "NativeCommandError"
+# y aborta el script aunque el comando haya terminado bien (exit 0).
+# ------------------------------------------------------------------
+function Invoke-DockerQuiet {
+    # Ejecuta docker silenciado y DEVUELVE el código de salida real.
+    $prevEap = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+        docker @args *> $null
+        return $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $prevEap
+    }
+}
+
+function Invoke-DockerOutput {
+    # Ejecuta docker y devuelve stdout+stderr como texto (sin lanzar
+    # NativeCommandError por el stderr; útil para docker logs/inspect).
+    $prevEap = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+        docker @args 2>&1
+    } finally {
+        $ErrorActionPreference = $prevEap
+    }
+}
+
+Write-Host "`n🚀 Iniciando HelpDesk por TÚNEL CLOUDFLARE (stack producción)..." -ForegroundColor Cyan
+
+# ============================================
+# 0. REQUISITOS PREVIOS (Docker + .env + token)
+# ============================================
+if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
+    Write-Host "❌ Docker no está instalado o no está en el PATH." -ForegroundColor Red
+    exit 1
+}
+
+if ((Invoke-DockerQuiet info) -ne 0) {
+    Write-Host "❌ El demonio de Docker no está corriendo. Abre Docker Desktop e inténtalo de nuevo." -ForegroundColor Red
+    exit 1
+}
+
+if ((Invoke-DockerQuiet compose version) -ne 0) {
+    Write-Host "❌ No se encontró el plugin 'docker compose' (v2). Instálalo y vuelve a intentarlo." -ForegroundColor Red
+    exit 1
+}
+
+if (-not (Test-Path $ComposeFile)) {
+    Write-Host "❌ No se encontró el compose en: $ComposeFile" -ForegroundColor Red
+    exit 1
+}
+
+if (-not (Test-Path $EnvFile)) {
+    Write-Host "❌ No se encontró el archivo .env en: $EnvFile" -ForegroundColor Red
+    Write-Host "   Es obligatorio: contiene las credenciales (POSTGRES_*, JWT_SECRET_KEY, N8N_*)." -ForegroundColor Yellow
+    exit 1
+}
+
+# docker compose solo auto-carga .env desde el directorio del compose;
+# aquí el compose y este script están en docker/ y el .env vive en la raíz:
+# se pasa SIEMPRE con --env-file.
+$envContent = Get-Content $EnvFile -Raw
+$requiredVars = @("POSTGRES_USER", "POSTGRES_PASSWORD", "POSTGRES_DB",
+                  "APP_DB_USER", "APP_DB_PASSWORD", "AI_CALLBACK_KEY",
+                  "JWT_SECRET_KEY", "CLOUDFLARE_TUNNEL_TOKEN")
+$faltan = $requiredVars | Where-Object { $envContent -notmatch "(?m)^\s*$_\s*=" }
+if ($faltan) {
+    Write-Host "❌ Faltan variables obligatorias en .env: $($faltan -join ', ')" -ForegroundColor Red
+    if ($faltan -contains "CLOUDFLARE_TUNNEL_TOKEN") {
+        Write-Host "   Crea el túnel en Cloudflare Zero Trust -> Networks -> Tunnels -> 'Create a tunnel'," -ForegroundColor Yellow
+        Write-Host "   copia el token (eyJhIjoi...) y añádelo al .env como CLOUDFLARE_TUNNEL_TOKEN=..." -ForegroundColor Yellow
+    }
+    exit 1
+}
+
+# Avisos (no fatales) para el frontend de Vercel
+if ($envContent -notmatch "(?m)^\s*CORS_ORIGINS\s*=") {
+    Write-Host "⚠️ CORS_ORIGINS no está en .env (el compose usará '*'). Para Vercel conviene:" -ForegroundColor Yellow
+    Write-Host "   CORS_ORIGINS=https://<tu-app>.vercel.app" -ForegroundColor Yellow
+}
+if ($envContent -notmatch "(?m)^\s*N8N_API_KEY\s*=") {
+    Write-Host "⚠️ N8N_API_KEY no está en .env (sin ella el panel no podrá hablar con la API de n8n)" -ForegroundColor Yellow
+}
+
+# Usuario/base de PostgreSQL leídos del .env (por si no son los por defecto)
+$PgUser = "postgres"
+if ($envContent -match "(?m)^\s*POSTGRES_USER\s*=\s*(.+?)\s*$") { $PgUser = $Matches[1] }
+
+# ============================================
+# 1. DOCKER COMPOSE - Levantar servicios base
+#    (postgres/ollama se recrean SIN puertos publicados: modo túnel)
+# ============================================
+Write-Host "`n🐳 Levantando servicios base (postgres, ollama)..." -ForegroundColor Cyan
+Write-Host "   ℹ️ Este stack reemplaza el dev: localhost:8000/8501/5432/5678 dejan de publicarse." -ForegroundColor DarkGray
+docker compose -f $ComposeFile --env-file $EnvFile up -d postgres ollama
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "❌ Error al iniciar los contenedores base" -ForegroundColor Red
+    exit 1
+}
+
+# ============================================
+# 2. Esperar a que PostgreSQL esté listo
+# ============================================
+Write-Host "`n⏳ Esperando a que PostgreSQL esté disponible..." -ForegroundColor Yellow
+$maxAttempts = 30
+$attempt = 0
+$pgReady = $false
+
+while (-not $pgReady -and $attempt -lt $maxAttempts) {
+    $attempt++
+    Start-Sleep -Seconds 2
+
+    if ((Invoke-DockerQuiet exec helpdesk-db pg_isready -U $PgUser) -eq 0) {
+        $pgReady = $true
+        break
+    }
+
+    Write-Host "   Intento $attempt/$maxAttempts - PostgreSQL aún no está listo..." -ForegroundColor DarkGray
+}
+
+if (-not $pgReady) {
+    Write-Host "`n❌ PostgreSQL no respondió después de $($maxAttempts * 2) segundos" -ForegroundColor Red
+    Write-Host "📋 Revisa los logs con: docker logs helpdesk-db" -ForegroundColor Yellow
+    exit 1
+}
+
+Write-Host "`n✅ PostgreSQL está listo y aceptando conexiones" -ForegroundColor Green
+
+# Variables de la BD de la aplicación (leídas del .env)
+$SchemaFile = Join-Path $ProjectRoot "database\db_logic.sql"
+$SeedFile = Join-Path $ProjectRoot "database\seed_usuarios.sql"
+$AppUser = "helpdesk_app"
+if ($envContent -match "(?m)^\s*APP_DB_USER\s*=\s*(.+?)\s*$") { $AppUser = $Matches[1] }
+$AppPass = ""
+if ($envContent -match "(?m)^\s*APP_DB_PASSWORD\s*=\s*(.+?)\s*$") { $AppPass = $Matches[1] }
+$PgDb = "helpdesk_db"
+if ($envContent -match "(?m)^\s*POSTGRES_DB\s*=\s*(.+?)\s*$") { $PgDb = $Matches[1] }
+
+if ([string]::IsNullOrWhiteSpace($AppPass)) {
+    Write-Host "❌ APP_DB_PASSWORD está vacía en .env" -ForegroundColor Red
+    exit 1
+}
+if ($AppUser -notmatch "^[a-z_][a-z0-9_]*$" -or $PgDb -notmatch "^[a-z_][a-z0-9_]*$") {
+    Write-Host "❌ APP_DB_USER y POSTGRES_DB deben ser solo minúsculas/números/guion bajo" -ForegroundColor Red
+    exit 1
+}
+
+# ============================================
+# 2.5 ESQUEMA DE LA BD (db_logic.sql)
+#     Se aplica solo si la BD está vacía (primera vez / volumen nuevo).
+# ============================================
+Write-Host "`n🗄️ Verificando esquema de la BD..." -ForegroundColor Cyan
+
+$SchemaAplicado = (docker exec helpdesk-db psql -tA -U $PgUser -d $PgDb -c `
+    "SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='usuarios'") -eq "1"
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "❌ No se pudo consultar el esquema de la BD" -ForegroundColor Red
+    exit 1
+}
+
+if (-not $SchemaAplicado) {
+    if (-not (Test-Path $SchemaFile)) {
+        Write-Host "❌ No se encontró db_logic.sql en: $SchemaFile" -ForegroundColor Red
+        exit 1
+    }
+    Write-Host "   Esquema vacío; aplicando db_logic.sql..." -ForegroundColor DarkGray
+    if ((Invoke-DockerQuiet cp $SchemaFile "helpdesk-db:/tmp/db_logic.sql") -ne 0) { Write-Host "❌ No se pudo copiar db_logic.sql al contenedor" -ForegroundColor Red; exit 1 }
+    if ((Invoke-DockerQuiet exec helpdesk-db psql -v ON_ERROR_STOP=1 -U $PgUser -d $PgDb -f /tmp/db_logic.sql) -ne 0) {
+        Write-Host "❌ Error aplicando db_logic.sql. Revisa: docker exec helpdesk-db psql -U $PgUser -d $PgDb -f /tmp/db_logic.sql" -ForegroundColor Red
+        exit 1
+    }
+    Invoke-DockerQuiet exec helpdesk-db rm -f /tmp/db_logic.sql | Out-Null
+    Write-Host "✅ Esquema (db_logic.sql) aplicado" -ForegroundColor Green
+} else {
+    Write-Host "✅ El esquema ya existe; no se toca" -ForegroundColor Green
+}
+
+# ============================================
+# 2.5.1 MIGRACIONES (database\migraciones\*.sql)
+#     Idempotentes y seguras de repetir.
+# ============================================
+Write-Host "`n🔧 Aplicando migraciones (idempotentes)..." -ForegroundColor Cyan
+$MigracionesDir = Join-Path $ProjectRoot "database\migraciones"
+$Migraciones = @()
+if (Test-Path $MigracionesDir) {
+    $Migraciones = Get-ChildItem -Path $MigracionesDir -Filter *.sql | Sort-Object Name
+}
+if ($Migraciones.Count -eq 0) {
+    Write-Host "   (no hay migraciones en database\migraciones; se omite)" -ForegroundColor DarkGray
+} else {
+    foreach ($m in $Migraciones) {
+        if ((Invoke-DockerQuiet cp $m.FullName "helpdesk-db:/tmp/helpdesk_mig.sql") -ne 0) {
+            Write-Host "❌ No se pudo copiar la migración $($m.Name)" -ForegroundColor Red
+            exit 1
+        }
+        if ((Invoke-DockerQuiet exec helpdesk-db psql -v ON_ERROR_STOP=1 -U $PgUser -d $PgDb -f /tmp/helpdesk_mig.sql) -ne 0) {
+            Write-Host "❌ Error aplicando la migración $($m.Name)" -ForegroundColor Red
+            exit 1
+        }
+        Invoke-DockerQuiet exec helpdesk-db rm -f /tmp/helpdesk_mig.sql | Out-Null
+        Write-Host "   ✅ $($m.Name)" -ForegroundColor Green
+    }
+}
+
+# ============================================
+# 2.6 USUARIO DE BD DE LA APLICACIÓN (mínimo privilegio)
+# ============================================
+Write-Host "`n👤 Configurando el usuario de BD de la aplicación..." -ForegroundColor Cyan
+
+$EscPass = $AppPass.Replace("'", "''")
+$Sql = @'
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = '__USER__') THEN
+    CREATE ROLE __USER__ LOGIN PASSWORD '__PASS__';
+  ELSE
+    ALTER ROLE __USER__ WITH LOGIN PASSWORD '__PASS__';
+  END IF;
+END
+$$;
+GRANT CONNECT ON DATABASE __DB__ TO __USER__;
+GRANT USAGE ON SCHEMA public TO __USER__;
+DO $$
+DECLARE
+  t text;
+BEGIN
+  FOREACH t IN ARRAY ARRAY['usuarios','categoria','prioridad','solicitud','adjunto',
+                           'comentario','historial','sla','log','clasificacion_ia',
+                           'embedding_vector','sugerencia_rag','log_ia','configuracion_ia'] LOOP
+    IF EXISTS (SELECT 1 FROM information_schema.tables
+               WHERE table_schema = 'public' AND table_name = t) THEN
+      EXECUTE format('GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE %I TO __USER__', t);
+    END IF;
+  END LOOP;
+END
+$$;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO __USER__;
+'@
+$Sql = $Sql.Replace('__USER__', $AppUser).Replace('__PASS__', $EscPass).Replace('__DB__', $PgDb)
+
+$TmpSql = Join-Path $env:TEMP "helpdesk_app_init_cf.sql"
+[System.IO.File]::WriteAllText($TmpSql, $Sql, (New-Object System.Text.UTF8Encoding($false)))
+try {
+    if ((Invoke-DockerQuiet cp $TmpSql "helpdesk-db:/tmp/helpdesk_app_init.sql") -ne 0) { throw "No se pudo copiar el SQL al contenedor" }
+    if ((Invoke-DockerQuiet exec helpdesk-db psql -v ON_ERROR_STOP=1 -U $PgUser -d $PgDb -f /tmp/helpdesk_app_init.sql) -ne 0) { throw "Error configurando el rol $AppUser en PostgreSQL" }
+    Invoke-DockerQuiet exec helpdesk-db rm -f /tmp/helpdesk_app_init.sql | Out-Null
+    Write-Host "✅ Usuario '$AppUser' listo (rol + permisos sobre las tablas de la app)" -ForegroundColor Green
+} finally {
+    Remove-Item $TmpSql -ErrorAction SilentlyContinue
+}
+
+# ============================================
+# 2.7 DATOS INICIALES (seed_usuarios.sql)
+# ============================================
+if (-not (Test-Path $SeedFile)) {
+    Write-Host "⚠️ No se encontró seed_usuarios.sql; se omiten los usuarios de prueba" -ForegroundColor Yellow
+} else {
+    if ((Invoke-DockerQuiet cp $SeedFile "helpdesk-db:/tmp/seed_usuarios.sql") -ne 0) { Write-Host "❌ No se pudo copiar seed_usuarios.sql al contenedor" -ForegroundColor Red; exit 1 }
+    if ((Invoke-DockerQuiet exec helpdesk-db psql -v ON_ERROR_STOP=1 -U $PgUser -d $PgDb -f /tmp/seed_usuarios.sql) -ne 0) {
+        Write-Host "❌ Error aplicando seed_usuarios.sql" -ForegroundColor Red
+        exit 1
+    }
+    Invoke-DockerQuiet exec helpdesk-db rm -f /tmp/seed_usuarios.sql | Out-Null
+    Write-Host "✅ Usuarios de prueba sincronizados (contraseña: password123)" -ForegroundColor Green
+}
+
+# ============================================
+# 3. STACK COMPLETO + TÚNEL (build incluido)
+#    depends_on con service_healthy garantiza el orden tras postgres.
+# ============================================
+Write-Host "`n🐳 Construyendo y levantando n8n + backend + streamlit + cloudflared..." -ForegroundColor Cyan
+docker compose -f $ComposeFile --env-file $EnvFile up -d --build
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "❌ Error al construir/levantar la pila" -ForegroundColor Red
+    exit 1
+}
+
+# ============================================
+# 4. HEALTH CHECKS (no fatales; vía contenedor, NO por localhost:
+#    en modo túnel ningún puerto está publicado en el host)
+# ============================================
+
+# 4.1 Backend: espera el healthcheck definido en el compose (dentro del contenedor)
+Write-Host "`n⏳ Esperando al backend (healthcheck interno :8000)..." -ForegroundColor Yellow
+$backendOk = $false
+for ($i = 1; $i -le 45; $i++) {
+    $st = (Invoke-DockerOutput inspect -f "{{.State.Health.Status}}" helpdesk-backend | Select-Object -First 1)
+    if ("$st".Trim() -eq "healthy") { $backendOk = $true; break }
+    Write-Host "   Intento $i/45 - backend aún no está healthy ($("$st".Trim()))..." -ForegroundColor DarkGray
+    Start-Sleep -Seconds 2
+}
+if ($backendOk) {
+    Write-Host "✅ Backend healthy (accesible por el túnel en /api/*)" -ForegroundColor Green
+} else {
+    Write-Host "⚠️ El backend no reportó healthy a tiempo; revisa: docker logs helpdesk-backend" -ForegroundColor Yellow
+}
+
+# 4.2 Streamlit: prueba HTTP interna dentro del contenedor (:8501)
+Write-Host "⏳ Esperando a Streamlit (prueba interna :8501)..." -ForegroundColor Yellow
+$streamlitOk = $false
+for ($i = 1; $i -le 30; $i++) {
+    $rc = Invoke-DockerQuiet exec helpdesk-streamlit python -c `
+        "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8501', timeout=3).getcode()==200 else 1)"
+    if ($rc -eq 0) { $streamlitOk = $true; break }
+    Write-Host "   Intento $i/30 - Streamlit aún no responde..." -ForegroundColor DarkGray
+    Start-Sleep -Seconds 2
+}
+if ($streamlitOk) {
+    Write-Host "✅ Streamlit respondiendo (accesible por el túnel en /)" -ForegroundColor Green
+} else {
+    Write-Host "⚠️ Streamlit no respondió a tiempo; revisa: docker logs helpdesk-streamlit" -ForegroundColor Yellow
+}
+
+# 4.3 Cloudflared: busca en los logs la conexión registrada del túnel
+Write-Host "⏳ Esperando registro del túnel Cloudflare..." -ForegroundColor Yellow
+$tunelOk = $false
+for ($i = 1; $i -le 20; $i++) {
+    $logs = (Invoke-DockerOutput logs --tail 100 helpdesk-cloudflared) -join "`n"
+    if ($logs -match "Registered tunnel connection") { $tunelOk = $true; break }
+    Start-Sleep -Seconds 2
+}
+if ($tunelOk) {
+    Write-Host "✅ Túnel Cloudflare registrado y conectado al edge" -ForegroundColor Green
+} else {
+    Write-Host "⚠️ No se vio 'Registered tunnel connection' en los logs." -ForegroundColor Yellow
+    Write-Host "   Revisa: docker logs helpdesk-cloudflared (¿token válido? ¿hostname configurado en Cloudflare?)" -ForegroundColor Yellow
+}
+
+# ============================================
+# 5. RESUMEN
+# ============================================
+Write-Host "`n📊 Estado de los servicios Docker:" -ForegroundColor Cyan
+docker compose -f $ComposeFile --env-file $EnvFile ps --format "table {{.Name}}`t{{.Status}}"
+
+Write-Host "`n✅ Stack de producción por túnel Cloudflare levantado" -ForegroundColor Green
+Write-Host "   API (Vercel) : https://api.tudominio.com/api   <- apunta aquí tu frontend (APP_API_BASE_URL)" -ForegroundColor DarkGray
+Write-Host "   Panel        : https://panel.tudominio.com     (Streamlit vía túnel)" -ForegroundColor DarkGray
+Write-Host "   Hostnames    : configúralos en Cloudflare Zero Trust -> Tunnels -> Public Hostnames" -ForegroundColor DarkGray
+Write-Host "                  api.tudominio.com   -> http://backend:8000" -ForegroundColor DarkGray
+Write-Host "                  panel.tudominio.com -> http://streamlit:8501" -ForegroundColor DarkGray
+Write-Host "`n⚠️  Modo túnel: SIN puertos locales. localhost:8000 / :8501 / :5678 / :5432 / :11434" -ForegroundColor Yellow
+Write-Host "   NO responden en el host; n8n/pg/ollama solo son accesibles desde la red interna." -ForegroundColor Yellow
+Write-Host "   Para volver al entorno dev: .\Iniciar.ps1" -ForegroundColor Yellow
+Write-Host "`n📋 Logs: docker logs -f helpdesk-backend | docker logs -f helpdesk-cloudflared" -ForegroundColor Yellow

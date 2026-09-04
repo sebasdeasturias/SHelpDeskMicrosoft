@@ -1,0 +1,184 @@
+# ============================================================================
+# docker-compose.prod.yml — SHelpDesk Microsoft (PRODUCCIÓN)
+# ----------------------------------------------------------------------------
+# Diferencia con docker-compose.yml (dev):
+#   * Construye imágenes (sin bind-mount del código ni uvicorn --reload).
+#   * Workers=1 (coherente con el rate-limiter en memoria del backend).
+#   * Healthchecks + restart automático.
+#   * Caddy integrado: HTTPS automático (Let's Encrypt) hacia backend y Streamlit.
+#   * Los servicios internos NO publican puertos al host (solo la red interna);
+#     Caddy es la única entrada pública (80/443).
+#
+# ARQUITECTURA OBJETIVO (elegida):
+#   Frontend estático en Vercel  ->  https://<API_DOMAIN>/api/*  (backend)
+#   Backend + n8n + Ollama + Postgres + Streamlit  ->  este compose
+#
+# VARIABLES REQUERIDAS en tu .env (además de las de dev):
+#   API_DOMAIN      -> dominio público (resuelve a tu IP; API en /api/*, panel en /)
+#   ACME_EMAIL      -> correo para Let's Encrypt
+#   CORS_ORIGINS    -> https://<tu-frontend>.vercel.app  (¡clave para Vercel!)
+#   TRUST_PROXY     -> true (Caddy fija X-Forwarded-For; lo usa el rate-limit)
+#
+# Levantar (después de detener el entorno dev para no chocar contenedores):
+#   docker compose -f docker/docker-compose.prod.yml --env-file .env up -d --build
+#   docker compose -f docker/docker-compose.prod.yml --env-file .env ps
+#   docker compose -f docker/docker-compose.prod.yml --env-file .env logs -f backend
+# ============================================================================
+
+# Nombre fijo del proyecto: reutiliza los volúmenes/redes ya existentes
+# (shelpdeskmicrosoft_*) aunque el compose ya no esté en la raíz.
+name: shelpdeskmicrosoft
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: helpdesk-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - db_backups:/backups
+    networks:
+      - helpdesk-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - helpdesk-network
+    restart: unless-stopped
+
+  n8n:
+    image: n8nio/n8n
+    container_name: n8n
+    environment:
+      - WEBHOOK_URL=http://${API_DOMAIN}/
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=${POSTGRES_DB}
+      - DB_POSTGRESDB_USER=${POSTGRES_USER}
+      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - helpdesk-network
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ../backend
+    container_name: helpdesk-backend
+    environment:
+      # Dentro de la red Docker se usa el nombre del servicio, no localhost.
+      DATABASE_URL: postgresql+asyncpg://${APP_DB_USER}:${APP_DB_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      N8N_CHAT_URL: http://n8n:5678/webhook/chat
+      N8N_URL: http://n8n:5678
+      OLLAMA_URL: http://ollama:11434
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-bge-m3}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      AI_CALLBACK_KEY: ${AI_CALLBACK_KEY}
+      N8N_API_KEY: ${N8N_API_KEY}
+      MAX_TICKETS_AGENTE_DIA: ${MAX_TICKETS_AGENTE_DIA:-3}
+      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+      TRUST_PROXY: ${TRUST_PROXY:-true}
+    volumes:
+      # Socket de Docker: logs y respaldos (pg_dump) del panel administrador.
+      # Endurecimiento pendiente (auditoría #3): proxy read-only del socket.
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - helpdesk-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=5).getcode()==200 else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  streamlit:
+    build:
+      context: ..
+      dockerfile: streamlit_app/Dockerfile
+    container_name: helpdesk-streamlit
+    environment:
+      DATABASE_URL: postgresql://${APP_DB_USER}:${APP_DB_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      N8N_URL: http://n8n:5678
+      N8N_API_KEY: ${N8N_API_KEY}
+      OLLAMA_URL: http://ollama:11434
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - helpdesk-network
+    restart: unless-stopped
+
+  # Entrada pública HTTPS (Let's Encrypt). Requiere que API_DOMAIN resuelva a
+  # tu IP pública y que los puertos 80/443 estén abiertos hacia este host.
+  #   * https://<API_DOMAIN>/api/*  -> backend  (lo usa el frontend de Vercel)
+  #   * https://<API_DOMAIN>/        -> panel Streamlit
+  # Si prefieres usar tu propio reverse proxy en el host, comenta este servicio
+  # y publica el backend en 127.0.0.1 (ver nota al final del archivo).
+  caddy:
+    image: caddy:2
+    container_name: helpdesk-caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      API_DOMAIN: ${API_DOMAIN:?API_DOMAIN es obligatorio en produccion}
+      ACME_EMAIL: ${ACME_EMAIL:?ACME_EMAIL es obligatorio para Let's Encrypt}
+    volumes:
+      - ./Caddyfile.prod:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - backend
+      - streamlit
+    networks:
+      - helpdesk-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  ollama_data:
+  n8n_data:
+  db_backups:
+  caddy_data:
+  caddy_config:
+
+networks:
+  helpdesk-network:
+    driver: bridge
+
+# ---------------------------------------------------------------------------
+# NOTA: si usas un reverse proxy instalado en el host (Caddy/nginx del sistema)
+# en lugar del servicio `caddy` de este archivo, comenta el servicio caddy y
+# descomenta estas líneas en `backend` (y opcionalmente en `streamlit`) para
+# publicar SOLO en loopback:
+#
+#   ports:
+#     - "127.0.0.1:8000:8000"
+#
+# El rate-limiter del backend lee TRUST_PROXY para confiar en X-Forwarded-For.
+# ---------------------------------------------------------------------------
