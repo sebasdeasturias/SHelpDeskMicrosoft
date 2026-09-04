@@ -476,6 +476,15 @@ body.night-mode .badge.silver {
     animation: shake 0.4s ease-in-out;
 }
 
+#errorText {
+    color: #ffffff;
+    text-shadow:
+        0 0 2px #ffffff8f,
+        0 0 6px #ffffff8f,
+        0 0 12px #ff3333,
+        0 0 20px #ff0000;
+}
+
 body.night-mode .error-message {
     text-shadow: 0 1px 1px rgba(0,0,0,0.8);
 }
