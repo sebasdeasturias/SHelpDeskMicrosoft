@@ -67,7 +67,7 @@ loginForm.addEventListener('submit', async (e) => {
         }
     } catch (error) {
         console.error('Login error:', error);
-        showError('Connection error. Please check if the server is running.');
+        showError('Error de conexión. Por favor, verifica si el servidor está en funcionamiento.');
     } finally {
         hideLoading();
         btnLogin.disabled = false;
