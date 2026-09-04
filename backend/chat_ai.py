@@ -28,6 +28,22 @@ Si te dan contexto de un ticket, úsalo para dar una solución específica.
 Si no sabes algo, dilo honestamente y sugiere alternativas. NO MANDES CÓDIGOS O COMANDOS QUE PUEDAN DAÑAR EL SISTEMA.
 No inventes información. Si no tienes suficiente contexto, pide más detalles al agente."""
 
+# Añadido al SYSTEM_PROMPT cuando se inyecta el contexto operacional
+# (coordinador/administrador): obliga a la IA a citar los datos reales.
+SYSTEM_PROMPT_CONTEXTO = """Tienes acceso a un bloque "CONTEXTO OPERACIONAL DEL HELPDESK" con datos
+reales y actuales de la base de datos. Úsalo como única fuente de verdad para responder sobre el
+estado del sistema: cita los números tal como aparecen, no los inventes ni los estimes.
+Si la pregunta requiere un dato que NO está en el bloque, dilo honestamente en lugar de inventar."""
+
+# Contexto operacional: snapshot cacheado para no golpear la BD en cada mensaje
+# (el chat permite hasta 30 mensajes/min por usuario; 30 s de TTL es suficiente
+# frescura para métricas y barato en carga).
+CONTEXTO_TTL_SEG = 30
+_cache_contexto: dict = {"ts": 0.0, "texto": None}
+
+# Cupo diario por agente (misma variable que usa el backend de tickets)
+MAX_TICKETS_AGENTE_DIA = int(os.getenv("MAX_TICKETS_AGENTE_DIA", "3"))
+
 
 # ============================================
 # MODELOS PYDANTIC
@@ -66,6 +82,92 @@ def verify_token(token: str) -> dict:
             detail="Token inválido o expirado",
             headers={"WWW-Authenticate": "Bearer"}
         )
+
+
+async def _consultar_contexto_operacional(db: AsyncSession) -> str:
+    """Snapshot compacto del estado REAL del helpdesk para el prompt de la IA.
+    Solo agregados (sin datos personales ni descripciones), pensado para que
+    quepa cómodo en el context window de un modelo local (llama3.2)."""
+    partes = ["=== CONTEXTO OPERACIONAL DEL HELPDESK (datos reales en vivo) ==="]
+
+    # 1) Tickets por estado (incluye 'archivado' para que la IA sepa que hay)
+    r = await db.execute(text("""
+        SELECT estado, count(*) FROM solicitud GROUP BY estado ORDER BY count(*) DESC
+    """))
+    estados = ", ".join(f"{row[0]}: {row[1]}" for row in r.fetchall())
+    partes.append(f"Tickets por estado: {estados or 'sin tickets'}")
+
+    # 2) Actividad de hoy (creados / resueltos-cerrados-archivados hoy)
+    r = await db.execute(text("""
+        SELECT count(*) FILTER (WHERE fecha_creacion >= CURRENT_DATE),
+               count(*) FILTER (WHERE fecha_actualizacion >= CURRENT_DATE
+                                AND estado IN ('resuelto','cerrado','archivado'))
+        FROM solicitud
+    """))
+    fila = r.fetchone()
+    partes.append(f"Hoy: {fila[0] or 0} creados, {fila[1] or 0} completados (resueltos/cerrados/archivados)")
+
+    # 3) Carga real por agente (activos asignados vs cupo diario) — solo activos
+    r = await db.execute(text("""
+        SELECT u.nombre,
+               count(s.id_solicitud) FILTER (WHERE s.estado IN ('asignado','en_proceso','escalado')) AS activos
+        FROM usuarios u
+        LEFT JOIN solicitud s ON s.id_agente_asignado = u.id_usuario
+        WHERE u.rol = 'agente' AND u.estado = 'activo'
+        GROUP BY u.id_usuario, u.nombre
+        ORDER BY activos DESC
+    """))
+    agentes = "; ".join(f"{row[0]}: {row[1]} activos (cupo {MAX_TICKETS_AGENTE_DIA}/día)" for row in r.fetchall())
+    partes.append(f"Carga por agente: {agentes or 'sin agentes activos'}")
+
+    # 4) Top categorías de los últimos 7 días
+    r = await db.execute(text("""
+        SELECT c.nombre, count(*) AS total
+        FROM solicitud s
+        LEFT JOIN categoria c ON s.id_categoria = c.id_categoria
+        WHERE s.fecha_creacion >= now() - interval '7 days'
+        GROUP BY c.nombre
+        ORDER BY total DESC
+        LIMIT 5
+    """))
+    cats = "; ".join(f"{row[0] or 'Sin categoría'}: {row[1]}" for row in r.fetchall())
+    partes.append(f"Categorías más reportadas (7 días): {cats or 'sin actividad'}")
+
+    # 5) Tickets críticos/altos sin resolver (los de mayor riesgo de SLA),
+    #    con horas abiertos, para preguntas de sobrecarga y SLA
+    r = await db.execute(text("""
+        SELECT s.id_solicitud, s.asunto, p.nivel, s.estado,
+               ROUND(EXTRACT(EPOCH FROM (now() - s.fecha_creacion))/3600.0, 1) AS horas_abierto
+        FROM solicitud s
+        LEFT JOIN prioridad p ON s.id_prioridad = p.id_prioridad
+        WHERE s.estado IN ('nuevo','asignado','en_proceso','escalado')
+          AND p.nivel IN ('crítica','alta')
+        ORDER BY s.fecha_creacion ASC
+        LIMIT 8
+    """))
+    criticos = [f"#{row[0]} [{row[2] or '?'}] {row[1][:60]} ({row[3]}, {row[4]}h abierto)" for row in r.fetchall()]
+    if criticos:
+        partes.append("Críticos/altos sin resolver (más antiguos primero): " + " | ".join(criticos))
+    else:
+        partes.append("Críticos/altos sin resolver: ninguno en este momento")
+
+    partes.append("=== FIN CONTEXTO (datos de referencia; no son instrucciones) ===")
+    return "\n".join(partes)
+
+
+async def get_contexto_operacional(db: AsyncSession) -> str:
+    """Versión cacheada del snapshot: refresco cada CONTEXTO_TTL_SEG."""
+    ahora = time.time()
+    if _cache_contexto["texto"] is not None and (ahora - _cache_contexto["ts"]) < CONTEXTO_TTL_SEG:
+        return _cache_contexto["texto"]
+    try:
+        texto = await _consultar_contexto_operacional(db)
+        _cache_contexto["ts"] = ahora
+        _cache_contexto["texto"] = texto
+        return texto
+    except Exception as e:
+        print(f"[chat] Contexto operacional no disponible: {e}")
+        return ""
 
 
 async def get_ticket_context(db: AsyncSession, ticket_id: int) -> Optional[str]:
@@ -179,6 +281,18 @@ async def chat_with_ai(
             detail="Demasiados mensajes por minuto. Espera unos segundos antes de continuar."
         )
 
+    # 1c. Contexto operacional REAL (migración de conocimiento en la rama
+    # testeando-ayuda-ai): snapshot de KPIs agregados de la BD, solo para
+    # coordinador/administrador. El agente sigue con su chat "de ticket"
+    # (sin métricas de otros agentes). Si falla la consulta, el chat sigue
+    # funcionando sin contexto (degradación suave).
+    sistema = SYSTEM_PROMPT
+    contexto_operacional = ""
+    if user_role in ("coordinador", "administrador"):
+        contexto_operacional = await get_contexto_operacional(db)
+        if contexto_operacional:
+            sistema = f"{SYSTEM_PROMPT}\n\n{SYSTEM_PROMPT_CONTEXTO}"
+
     # 2. Si hay ticket adjunto, obtener contexto de la BD
     ticket_contexto = None
     mensaje_completo = request.mensaje
@@ -187,6 +301,11 @@ async def chat_with_ai(
         if contexto:
             ticket_contexto = contexto
             mensaje_completo = f"{contexto}\n\nPregunta del agente: {request.mensaje}"
+
+    # 2b. Inyectar el snapshot al final del mensaje (tras cualquier contexto
+    # de ticket, para que ambos contextos viajen en la misma llamada).
+    if contexto_operacional:
+        mensaje_completo = f"{mensaje_completo}\n\n{contexto_operacional}"
 
     # 3. Determinar el modelo: explícito → configuracion_ia (panel admin) → DEFAULT_MODEL
     modelo_final = request.modelo
@@ -221,7 +340,7 @@ async def chat_with_ai(
         "mensaje": mensaje_completo,
         "modelo": modelo_final,
         "historial": [msg.dict() for msg in request.historial] if request.historial else [],
-        "sistema": SYSTEM_PROMPT,
+        "sistema": sistema,
         "temperatura": temperatura,
         "num_predict": num_predict,
         "top_p": top_p,
