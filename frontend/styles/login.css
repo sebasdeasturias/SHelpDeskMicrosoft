@@ -109,8 +109,8 @@ body.night-mode .stars-overlay {
 
 /* Logo Helpdesk */
 .logoHelpdesk {
-    flex: 0 0 auto;
-    width: clamp(220px, 28vw, 420px);
+    order: 3;
+    width: min(100%, 320px);
     aspect-ratio: 600 / 430;
     border: 2px solid rgba(255, 255, 255, 0.5);
     border-radius: 12px;
@@ -130,19 +130,24 @@ body.night-mode .stars-overlay {
 .ui-container {
     position: relative;
     z-index: 2;
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(170px, 0.8fr) minmax(360px, 2fr) minmax(170px, 0.8fr);
     align-items: center;
     justify-content: center;
-    flex-wrap: wrap;
-    gap: clamp(20px, 3vw, 40px);
+    gap: 20px;
     width: 100%;
-    max-width: 1100px;
+    max-width: 1200px;
+    box-sizing: border-box;
     padding: 60px 20px;
 }
 
 /* Panel central de cristal */
 .login-panel {
-    width: 420px;
+    order: 2;
+    width: 100%;
+    max-width: 484px;
+    box-sizing: border-box;
+    justify-self: center;
     padding: 40px 30px;
     background: linear-gradient(135deg, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.1) 100%);
     border: 2px solid var(--glass-border);
@@ -384,9 +389,11 @@ body.night-mode .forgot-pwd {
 
 /* Badges Flotantes Laterales */
 .badges-col {
+    order: 1;
     display: flex;
     flex-direction: column;
     gap: 20px;
+    justify-self: start;
 }
 
 .badge {
@@ -670,20 +677,22 @@ body.night-mode .register-link a {
    RESPONSIVE
 ========================================== */
 @media (max-width: 1024px) {
-    .ui-container { padding: 40px 16px; }
+    .ui-container { gap: 16px; padding: 40px 16px; }
     .login-panel { width: 380px; }
+    .logoHelpdesk { width: 100%; max-width: 220px; }
 }
 
 @media (max-width: 768px), (max-height: 700px) {
     body, html { overflow-y: auto; }
     .background { height: auto; min-height: 100vh; padding: 60px 0; }
     .ui-container {
+        display: flex;
         flex-direction: column;
         flex-wrap: nowrap;
         gap: 24px;
         padding: 16px;
     }
-    .logoHelpdesk { width: min(280px, 60vw); }
+    .logoHelpdesk { width: min(180px, 20vw); }
     .badges-col {
         flex-direction: row;
         flex-wrap: wrap;
