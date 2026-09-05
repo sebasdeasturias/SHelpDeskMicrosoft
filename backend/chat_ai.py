@@ -19,7 +19,7 @@ router = APIRouter(prefix="/chat", tags=["Chat IA"])
 # Configuración
 N8N_CHAT_URL = os.getenv("N8N_CHAT_URL")
 N8N_URL = os.getenv("N8N_URL", "http://localhost:5678")
-DEFAULT_MODEL = "richardyoung/qwen2.5-3b-instruct-abliterated:Q4_K_M"
+DEFAULT_MODEL = "llama3.2:3b"
 
 SYSTEM_PROMPT = """Eres un asistente técnico experto en soporte IT del sistema HelpDesk realizado por S.Morales.
 Tu trabajo es ayudar a los agentes de soporte a resolver tickets de forma rápida y eficiente.

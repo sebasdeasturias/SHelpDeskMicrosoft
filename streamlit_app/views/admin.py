@@ -583,7 +583,7 @@ def _modelo_activo() -> str:
             return rows[0]["valor"]
     except Exception:
         pass
-    return "richardyoung/qwen2.5-3b-instruct-abliterated:Q4_K_M (por defecto del backend)"
+    return "llama3.2:3b (por defecto del backend)"
 
 
 def _es_modelo_embeddings(m: dict) -> bool:

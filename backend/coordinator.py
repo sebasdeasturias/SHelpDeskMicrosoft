@@ -981,7 +981,7 @@ async def set_modelo_ia(data: dict, db: AsyncSession = Depends(get_db), token: s
     if not err and es_emb:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"'{modelo}' es un modelo de embeddings (no genera chat). Elige un modelo como richardyoung/qwen2.5-3b-instruct-abliterated:Q4_K_M o qwen2.5:14b."
+            detail=f"'{modelo}' es un modelo de embeddings (no genera chat). Elige un modelo como llama3.2:3b o qwen2.5:14b."
         )
     await db.execute(text("""
         INSERT INTO configuracion_ia (clave, valor, descripcion)
