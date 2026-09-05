@@ -14,7 +14,7 @@
 //
 //   window.APP_API_BASE_URL = 'https://api.tudominio.com/api';
 //
-window.APP_API_BASE_URL = 'https://liz-great-consequences-imagination.trycloudflare.com/api'; // TEMPORAL (prueba de conexión; túnel del 2026-09-05 10:45)
+window.APP_API_BASE_URL = 'https://fan-wherever-clusters-gratuit.trycloudflare.com/api'; // TEMPORAL (prueba de conexión; túnel del 2026-09-05 10:45)
 (function () {
     'use strict';
     var override = (typeof window.APP_API_BASE_URL !== 'undefined') ? window.APP_API_BASE_URL : '';
