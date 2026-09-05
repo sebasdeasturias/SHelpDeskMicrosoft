@@ -371,7 +371,8 @@ DECLARE
 BEGIN
   FOREACH t IN ARRAY ARRAY['usuarios','categoria','prioridad','solicitud','adjunto',
                            'comentario','historial','sla','log','clasificacion_ia',
-                           'embedding_vector','sugerencia_rag','log_ia','configuracion_ia'] LOOP
+                           'embedding_vector','sugerencia_rag','log_ia','configuracion_ia',
+                           'mensaje_chat_global'] LOOP
     IF EXISTS (SELECT 1 FROM information_schema.tables
                WHERE table_schema = 'public' AND table_name = t) THEN
       EXECUTE format('GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE %I TO __USER__', t);
