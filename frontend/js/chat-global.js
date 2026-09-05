@@ -21,7 +21,6 @@
     let mensajes = [];          // cache del chat global
     let sinceId = 0;            // último id visto (polling incremental)
     let tabActiva = 'global';   // 'ia' | 'global'
-    let enviando = false;
     let noLeidos = 0;
     let timerPoll = null;
     let historialIA = [];       // solo admin (fallback IA propio)
@@ -181,7 +180,6 @@
 
     async function enviarIA(texto) {
         const msgsIA = $('chatMessages');
-        const sendBtn = $('chatSendBtn');
         const input = $('chatInput');
 
         addMsg(msgsIA, texto, 'user', null, 'Tú');
@@ -189,12 +187,12 @@
         input.value = '';
         input.style.height = 'auto';
 
+        // Typing propio de esta petición: permite enviar la siguiente sin esperar
         const typing = document.createElement('div');
         typing.className = 'typing-indicator';
         typing.innerHTML = '<span></span><span></span><span></span>';
         msgsIA.appendChild(typing);
         scrollAbajo(msgsIA);
-        if (sendBtn) sendBtn.disabled = true;
 
         try {
             const resp = await fetch(`${API_BASE_URL}/chat`, {
@@ -226,8 +224,6 @@
             typing.remove();
             console.error('chat-global: error IA', e);
             addMsg(msgsIA, 'Error de conexión con la IA.', 'system', null, null);
-        } finally {
-            if (sendBtn) sendBtn.disabled = false;
         }
     }
 
@@ -237,7 +233,7 @@
     function enviarDesdeInput() {
         const input = $('chatInput');
         const texto = (input.value || '').trim();
-        if (!texto || enviando) return;
+        if (!texto) return;
 
         if (tabActiva === 'global' || soloGlobal()) {
             enviarGlobal(texto);
@@ -255,10 +251,7 @@
     // ------------------------------------------------------------
     async function enviarGlobal(texto) {
         const input = $('chatInput');
-        const sendBtn = $('chatSendBtn');
         const msgs = $('chatGlobalMessages');
-        enviando = true;
-        if (sendBtn) sendBtn.disabled = true;
 
         try {
             const resp = await fetch(`${API_BASE_URL}/chat-global/mensajes`, {
@@ -289,9 +282,6 @@
         } catch (e) {
             console.error('chat-global: error enviando', e);
             addMsg(msgs, 'Error de conexión. Intenta de nuevo.', 'system', null, null);
-        } finally {
-            enviando = false;
-            if (sendBtn) sendBtn.disabled = false;
         }
     }
 
@@ -302,7 +292,7 @@
     }
 
     async function poll() {
-        if (!token || enviando) return;
+        if (!token) return;
         try {
             const resp = await fetch(
                 `${API_BASE_URL}/chat-global/mensajes?since_id=${sinceId}&limit=50`,

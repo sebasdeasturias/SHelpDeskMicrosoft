@@ -443,7 +443,7 @@ async function sendChatMessage() {
 
     const chatInput = document.getElementById('chatInput');
     const mensaje = chatInput.value.trim();
-    if (!mensaje || state.isChatLoading) return;
+    if (!mensaje) return;
 
     // Agregar mensaje del usuario
     addChatMessage(mensaje, 'user');
@@ -464,10 +464,14 @@ async function sendChatMessage() {
     // Guardar en historial
     state.chatHistory.push({ role: 'user', content: mensaje });
 
-    // Mostrar typing
-    state.isChatLoading = true;
-    document.getElementById('chatSendBtn').disabled = true;
-    showTyping();
+    // Typing propio de esta petición: se puede seguir enviando mensajes
+    // mientras la IA responde la anterior (sin bloquear el input).
+    const typing = document.createElement('div');
+    typing.className = 'typing-indicator';
+    typing.innerHTML = '<span></span><span></span><span></span>';
+    const chatMessages = document.getElementById('chatMessages');
+    chatMessages.appendChild(typing);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
 
     try {
         const response = await fetch(`${API}/chat`, {
@@ -486,7 +490,7 @@ async function sendChatMessage() {
             return;
         }
 
-        hideTyping();
+        typing.remove();
 
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
@@ -515,12 +519,10 @@ async function sendChatMessage() {
         }
 
     } catch (error) {
-        hideTyping();
+        typing.remove();
         addChatMessage(`❌ Error al conectar con la IA: ${error.message}. Verifica que el backend y n8n estén corriendo.`, 'system');
         console.error('Chat error:', error);
     } finally {
-        state.isChatLoading = false;
-        document.getElementById('chatSendBtn').disabled = false;
         chatInput.focus();
     }
 }
