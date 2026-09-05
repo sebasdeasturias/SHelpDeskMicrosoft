@@ -94,9 +94,12 @@
         document.querySelectorAll('.chat-tab').forEach(b =>
             b.classList.toggle('active', b.dataset.chatTab === tab));
 
+        // Se muestra con 'flex' (no con ''): la regla CSS ".chat-global-msgs
+        // { display:none }" ocultaba el panel global al quitar el inline, y la
+        // textbox quedaba arriba sin área de mensajes. 'flex' (inline) la anula.
         if (msgsIA && msgsGlobal) {
-            msgsIA.style.display = tab === 'ia' ? '' : 'none';
-            msgsGlobal.style.display = tab === 'global' ? '' : 'none';
+            msgsIA.style.display = tab === 'ia' ? 'flex' : 'none';
+            msgsGlobal.style.display = tab === 'global' ? 'flex' : 'none';
         }
         // El adjuntar-ticket es exclusivo del chat IA
         if (attachBtn) attachBtn.style.display = tab === 'ia' ? '' : 'none';

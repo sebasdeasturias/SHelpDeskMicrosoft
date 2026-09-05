@@ -1851,8 +1851,6 @@ body.night-mode .chat-tab { background: rgba(60,60,100,0.35); color: #8888aa; }
 body.night-mode .chat-tab:hover { background: rgba(80,80,130,0.5); color: #c0c0e0; }
 body.night-mode .chat-tab.active { background: linear-gradient(to bottom, var(--btn-top), var(--btn-bottom)); color: #e0e0ff; }
 
-.chat-global-msgs { display: none; }
-
 .fab-badge {
     position: absolute;
     top: -4px; right: -4px;
