@@ -18,7 +18,8 @@
 #   * MODO PRUEBA (sin token en .env):
 #       Usa el compose DEV (puertos locales publicados: 8000/8501) y crea DOS
 #       túneles rápidos en el host (trycloudflare, sin cuenta de Cloudflare):
-#         - Backend -> https://<sub>.trycloudflare.com   (actualiza config.js)
+#         - Backend -> https://<sub>.trycloudflare.com   (actualiza config.js
+#                      con .../api una vez que responde HTTP 200)
 #         - Panel   -> https://<sub>.trycloudflare.com
 #
 # Flags:
@@ -427,6 +428,7 @@ fi
 # ============================================
 URL_API=""
 URL_PANEL=""
+API_PUBLICA_OK=0
 
 if [ "$MODO_TOKEN" -eq 1 ]; then
     # 4.1 Backend: healthcheck del compose (dentro del contenedor)
@@ -524,10 +526,13 @@ else
     # -------- TÚNELES RÁPIDOS AUTOMÁTICOS (backend + panel) --------
     URL_API="$(iniciar_tunel_rapido "API/backend" "http://localhost:8000" "tunel-backend" || true)"
     if [ -n "$URL_API" ]; then
-        if test_url_publica "$URL_API/api/health"; then
-            ok "✅ Backend expuesto automáticamente en: $URL_API"
+        say "⏳ Esperando HTTP 200 del backend vía Cloudflare ($URL_API/api/health)..."
+        if wait_http_ok "$URL_API/api/health" "Backend vía Cloudflare" 25; then
+            API_PUBLICA_OK=1
+            ok "✅ Backend expuesto automáticamente en: $URL_API (HTTP 200)"
         else
-            warn "⚠️ La URL del backend aún no responde (reintenta en unos segundos)."
+            warn "⚠️ La URL pública del backend no confirmó HTTP 200 tras varios reintentos."
+            warn "   No se actualizará frontend/js/config.js; revisa: docker logs helpdesk-backend"
         fi
     fi
 
@@ -540,11 +545,16 @@ else
         fi
     fi
 
-    # Mantener el frontend de Vercel apuntando al backend actual
+    # Mantener el frontend de Vercel apuntando al backend actual. Solo se
+    # escribe config.js cuando el túnel ya responde HTTP 200, y la base lleva
+    # el sufijo /api (FastAPI monta todas las rutas bajo /api).
     if [ "$NO_CONFIG" -eq 1 ]; then
         dim "ℹ️  --no-config: frontend/js/config.js sin tocar"
-    elif [ -n "$URL_API" ]; then
-        update_config_js "$URL_API"
+    elif [ "$API_PUBLICA_OK" -eq 1 ] && [ -n "$URL_API" ]; then
+        update_config_js "$URL_API/api"
+    else
+        warn "⚠️  frontend/js/config.js se dejó sin cambios (la URL pública del backend no confirmó HTTP 200)."
+        warn "   Edita window.APP_API_BASE_URL a mano o vuelve a ejecutar el script con el túnel ya estable."
     fi
 fi
 

@@ -16,7 +16,8 @@
 #   * MODO PRUEBA (sin token en .env):
 #       Usa el compose DEV (puertos locales publicados: 8000/8501) y crea DOS
 #       túneles rápidos en el host (trycloudflare, sin cuenta de Cloudflare):
-#         - Backend -> https://<sub>.trycloudflare.com   (actualiza config.js)
+#         - Backend -> https://<sub>.trycloudflare.com   (actualiza config.js
+#                      con .../api una vez que responde HTTP 200)
 #         - Panel   -> https://<sub>.trycloudflare.com
 #       URLs temporales: cambian en cada ejecución (ideales para probar).
 #
@@ -542,12 +543,23 @@ if ($ModoToken) {
     }
 
     # -------- TÚNELES RÁPIDOS AUTOMÁTICOS (backend + panel) --------
+    $ApiPublicaOk = $false
     $UrlApiPublica = Start-TunelRapidoHost -Nombre "API/backend" -UrlLocal "http://localhost:8000" -PrefijoLog "tunel-backend"
     if ($UrlApiPublica) {
-        if (Test-UrlPublica "$UrlApiPublica/api/health") {
-            Write-Host "✅ Backend expuesto automáticamente en: $UrlApiPublica" -ForegroundColor Green
+        Write-Host "⏳ Esperando HTTP 200 del backend vía Cloudflare ($UrlApiPublica/api/health)..." -ForegroundColor Yellow
+        for ($i = 1; $i -le 25; $i++) {
+            try {
+                $r = Invoke-WebRequest -Uri "$UrlApiPublica/api/health" -UseBasicParsing -TimeoutSec 6
+                if ($r.StatusCode -eq 200) { $ApiPublicaOk = $true; break }
+            } catch { }
+            Write-Host "   Intento $i/25 - backend vía Cloudflare aún no responde 200..." -ForegroundColor DarkGray
+            Start-Sleep -Seconds 2
+        }
+        if ($ApiPublicaOk) {
+            Write-Host "✅ Backend expuesto automáticamente en: $UrlApiPublica (HTTP 200)" -ForegroundColor Green
         } else {
-            Write-Host "⚠️ La URL del backend aún no responde (reintenta en unos segundos)." -ForegroundColor Yellow
+            Write-Host "⚠️ La URL pública del backend no confirmó HTTP 200 tras varios reintentos." -ForegroundColor Yellow
+            Write-Host "   No se actualizará frontend/js/config.js; revisa: docker logs helpdesk-backend" -ForegroundColor Yellow
         }
     }
 
@@ -560,11 +572,16 @@ if ($ModoToken) {
         }
     }
 
-    # Mantener el frontend de Vercel apuntando al backend actual
+    # Mantener el frontend de Vercel apuntando al backend actual. Solo se
+    # escribe config.js cuando el túnel ya responde HTTP 200, y la base lleva
+    # el sufijo /api (FastAPI monta todas las rutas bajo /api).
     if ($NoConfigUpdate) {
         Write-Host "ℹ️  -NoConfigUpdate: frontend/js/config.js sin tocar" -ForegroundColor DarkGray
-    } elseif ($UrlApiPublica) {
-        Update-ConfigJs -UrlApi $UrlApiPublica
+    } elseif ($ApiPublicaOk -and $UrlApiPublica) {
+        Update-ConfigJs -UrlApi "$UrlApiPublica/api"
+    } else {
+        Write-Host "⚠️  frontend/js/config.js se dejó sin cambios (la URL pública del backend no confirmó HTTP 200)." -ForegroundColor Yellow
+        Write-Host "   Edita window.APP_API_BASE_URL a mano o vuelve a ejecutar el script con el túnel ya estable." -ForegroundColor Yellow
     }
 }
 
