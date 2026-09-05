@@ -14,7 +14,7 @@
 //
 //   window.APP_API_BASE_URL = 'https://api.tudominio.com/api';
 //
-window.APP_API_BASE_URL = 'https://term-jill-shipment-harder.trycloudflare.com'; // TEMPORAL (prueba de conexión; túnel del 2026-09-04 18:27)
+window.APP_API_BASE_URL = 'https://observation-acting-allied-programming.trycloudflare.com/api'; // TEMPORAL (prueba de conexión; túnel del 2026-09-04 20:14)
 (function () {
     'use strict';
     var override = (typeof window.APP_API_BASE_URL !== 'undefined') ? window.APP_API_BASE_URL : '';
