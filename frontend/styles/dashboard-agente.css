@@ -292,10 +292,12 @@ body.night-mode .archive-hint b { color: #cbd5e1; }
 }
 
 .column-header .count-badge {
-    background: rgba(0,0,0,0.3);
-    color: white; font-size: 0.75rem;
+    background: #e8f4fb;
+    color: #124b8b; font-size: 0.75rem;
     padding: 2px 8px; border-radius: 10px; font-weight: bold;
+    border: 1px solid currentColor;
 }
+body.night-mode .column-header .count-badge { background: #203b5c; color: #cfe3ff; }
 
 .column-body {
     flex: 1; padding: 8px;

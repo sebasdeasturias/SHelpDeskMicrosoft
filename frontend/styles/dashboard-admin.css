@@ -366,11 +366,12 @@ body.night-mode .theme-label {
 .badge-tag {
     font-size: 0.65rem; font-weight: 700;
     padding: 3px 10px; border-radius: 10px;
-    background: rgba(255,255,255,0.18);
-    border: 1px solid rgba(255,255,255,0.3);
-    color: var(--text-dark);
+    background: #e8f4fb;
+    border: 1px solid #124b8b;
+    color: #124b8b;
     text-transform: uppercase; letter-spacing: 0.3px;
 }
+body.night-mode .badge-tag { background: #203b5c; border-color: #cfe3ff; color: #cfe3ff; }
 .table-responsive { overflow-x: auto; }
 .glass-table { width: 100%; border-collapse: collapse; min-width: 640px; }
 .glass-table th {
@@ -395,13 +396,21 @@ body.night-mode .theme-label {
     display: inline-block; padding: 3px 10px;
     border-radius: 10px; font-size: 0.68rem; font-weight: 700;
     text-transform: uppercase; letter-spacing: 0.3px;
+    border: 1px solid currentColor;
 }
-.status-pill.activo { background: rgba(16,185,129,0.25); color: #34d399; border: 1px solid rgba(16,185,129,0.4); }
-.status-pill.inactivo { background: rgba(107,114,128,0.25); color: #9ca3af; border: 1px solid rgba(107,114,128,0.4); }
-.role-pill.administrador { background: rgba(255,200,50,0.25); color: #ffd700; border: 1px solid rgba(255,200,50,0.4); }
-.role-pill.coordinador { background: rgba(139,92,246,0.25); color: #a78bfa; border: 1px solid rgba(139,92,246,0.4); }
-.role-pill.agente { background: rgba(59,130,246,0.25); color: #60a5fa; border: 1px solid rgba(59,130,246,0.4); }
-.role-pill.solicitante { background: rgba(16,185,129,0.25); color: #34d399; border: 1px solid rgba(16,185,129,0.4); }
+.status-pill.activo { background: #b8f2d6; color: #075f3d; }
+.status-pill.inactivo { background: #e5e7eb; color: #374151; }
+.role-pill.administrador { background: #fff0a8; color: #684b00; }
+.role-pill.coordinador { background: #e5d7ff; color: #54208a; }
+.role-pill.agente { background: #cfe3ff; color: #124b8b; }
+.role-pill.solicitante { background: #b8f2d6; color: #075f3d; }
+
+body.night-mode .status-pill.activo { background: #075f3d; color: #b8f2d6; }
+body.night-mode .status-pill.inactivo { background: #374151; color: #e5e7eb; }
+body.night-mode .role-pill.administrador { background: #684b00; color: #fff0a8; }
+body.night-mode .role-pill.coordinador { background: #54208a; color: #e5d7ff; }
+body.night-mode .role-pill.agente { background: #124b8b; color: #cfe3ff; }
+body.night-mode .role-pill.solicitante { background: #075f3d; color: #b8f2d6; }
 
 /* Botones de fila */
 .btn-mini {

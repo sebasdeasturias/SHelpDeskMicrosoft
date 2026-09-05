@@ -139,14 +139,16 @@ body.night-mode .ticket-item { background: rgba(40,40,70,0.3); border-color: rgb
 .ticket-status {
     padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 700;
     text-transform: uppercase; letter-spacing: 0.5px; text-align: center; min-width: 120px;
+    border: 1px solid currentColor;
 }
-.status-nuevo { background: rgba(59, 130, 246, 0.2); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.4); }
-.status-en_proceso { background: rgba(245, 158, 11, 0.2); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.4); }
-.status-resuelto { background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.4); }
-.status-cerrado { background: rgba(107, 114, 128, 0.2); color: #6b7280; border: 1px solid rgba(107, 114, 128, 0.4); }
-body.night-mode .status-nuevo { color: #60a5fa; }
-body.night-mode .status-en_proceso { color: #fbbf24; }
-body.night-mode .status-resuelto { color: #34d399; }
+.status-nuevo { background: #cfe3ff; color: #124b8b; }
+.status-en_proceso { background: #ffe0b2; color: #8a4300; }
+.status-resuelto { background: #b8f2d6; color: #075f3d; }
+.status-cerrado { background: #e5e7eb; color: #374151; }
+body.night-mode .status-nuevo { background: #124b8b; color: #cfe3ff; }
+body.night-mode .status-en_proceso { background: #713800; color: #ffe0b2; }
+body.night-mode .status-resuelto { background: #075f3d; color: #b8f2d6; }
+body.night-mode .status-cerrado { background: #374151; color: #e5e7eb; }
 
 .loading-state, .empty-state { text-align: center; padding: 40px 20px; color: white; }
 .loading-state i { font-size: 24px; margin-bottom: 12px; }
