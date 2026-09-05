@@ -357,7 +357,7 @@ async def receive_ai_analysis(
     id_categoria = data.get("id_categoria")
     id_prioridad = data.get("id_prioridad")
     confianza = float(data.get("confianza", 0.0))
-    modelo_ia = data.get("modelo_ia", "llama3.2:3b")
+    modelo_ia = data.get("modelo_ia", "richardyoung/qwen2.5-3b-instruct-abliterated:Q4_K_M")
     tokens_usados = int(data.get("tokens_usados", 0))
     tiempo_ejecucion_ms = int(data.get("tiempo_ejecucion_ms", 0))
 

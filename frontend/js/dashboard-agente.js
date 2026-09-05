@@ -449,7 +449,7 @@ async function sendChatMessage() {
     const payload = {
         mensaje: mensaje,
         historial: state.chatHistory.slice(-10),
-        modelo: 'llama3.2:3b'
+        modelo: 'richardyoung/qwen2.5-3b-instruct-abliterated:Q4_K_M'
     };
     if (state.attachedTicket) {
         payload.ticket_id = state.attachedTicket.id_solicitud;
