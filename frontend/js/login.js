@@ -35,7 +35,7 @@ loginForm.addEventListener('submit', async (e) => {
     
     // Validar
     if (!email || !password) {
-        showError('Please enter both email and password');
+        showError('Por favor, completa todos los campos.');
         return;
     }
     
@@ -63,7 +63,7 @@ loginForm.addEventListener('submit', async (e) => {
             await handleSuccessfulLogin(data, remember);
         } else {
             // Error del backend
-            showError(data.detail || 'Invalid credentials');
+            showError(data.detail || 'Credenciales inválidas. Por favor, verifica tu email y contraseña.');
         }
     } catch (error) {
         console.error('Login error:', error);
