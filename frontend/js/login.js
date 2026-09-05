@@ -92,7 +92,7 @@ async function handleSuccessfulLogin(data, remember) {
     const redirectUrl = getRedirectUrl(userRole);
     
     // Mostrar mensaje de éxito
-    showSuccessMessage('Login successful! Redirecting...');
+    showSuccessMessage('Inicio exitoso, redirigiendo...');
     
     // Esperar un momento y redirigir
     setTimeout(() => {
