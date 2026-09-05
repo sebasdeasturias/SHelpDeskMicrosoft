@@ -289,8 +289,43 @@
     <!-- Footer -->
     <div class="global-footer">Sistema HelpDesk V1.0 · Administración</div>
 
+    <!-- Chat FAB (admin: Chat IA + Chat Global) -->
+    <button class="chat-fab" id="chatFab" aria-label="Abrir chat de soporte">
+        <span class="fab-icon">
+            <i class="fas fa-robot fab-open-icon" aria-hidden="true"></i>
+            <i class="fas fa-times fab-close-icon" aria-hidden="true"></i>
+        </span>
+    </button>
+
+    <!-- Chat Panel (flotante) -->
+    <div class="chat-panel" id="chatPanel">
+        <div class="chat-header">
+            <h3><i class="fas fa-robot chat-header-icon" aria-hidden="true"></i> Chat Soporte</h3>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <button class="chat-close" id="chatClose">✕</button>
+            </div>
+        </div>
+        <div class="chat-tabs" role="tablist" aria-label="Tipo de chat">
+            <button type="button" class="chat-tab active" data-chat-tab="ia" role="tab" aria-selected="true">Chat IA</button>
+            <button type="button" class="chat-tab" data-chat-tab="global" role="tab" aria-selected="false">Chat Global</button>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+            <div class="chat-msg bot">
+                ¡Hola! Asistente IA del HelpDesk. Puedo darte el estado del sistema con datos reales y ayudarte con consultas técnicas. ¿En qué te ayudo?
+            </div>
+        </div>
+        <div class="chat-messages chat-global-msgs" id="chatGlobalMessages" style="display:none;">
+            <div class="chat-msg system">Canal común de todo el equipo HelpDesk. Los mensajes son visibles para todos los roles.</div>
+        </div>
+        <div class="chat-input-area">
+            <textarea id="chatInput" rows="1" placeholder="Escribe tu mensaje..."></textarea>
+            <button class="chat-send-btn" id="chatSendBtn">➤</button>
+        </div>
+    </div>
+
     <script src="js/config.js"></script>
     <script src="js/dashboard-admin.js"></script>
+    <script src="js/chat-global.js"></script>
     <script src="js/theme-toggle.js"></script>
 </body>
 </html>

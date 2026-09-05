@@ -384,6 +384,9 @@ function initChat() {
         return;
     }
 
+    // Este dashboard maneja su propio chat IA (el widget compartido solo añade Chat Global)
+    window.__chatIaPropia = true;
+
     // ---- FAB: Abrir/Cerrar el panel ----
     if (chatFab && chatPanel) {
         chatFab.addEventListener('click', () => {
@@ -435,6 +438,9 @@ function initChat() {
 }
 
 async function sendChatMessage() {
+    // Si la tab activa es Chat Global, el widget compartido (chat-global.js) maneja el envío
+    if (window.ChatGlobal && window.ChatGlobal.activo()) { window.ChatGlobal.enviarDesdeInput(); return; }
+
     const chatInput = document.getElementById('chatInput');
     const mensaje = chatInput.value.trim();
     if (!mensaje || state.isChatLoading) return;

@@ -7,6 +7,7 @@ from auth import router as auth_router
 from tickets import router as tickets_router
 from chat_ai import router as chat_router
 from coordinator import router as coordinator_router
+from chat_global import router as chat_global_router
 from adjuntos import router as adjuntos_router, UPLOAD_DIR
 
 # Carpeta pública de adjuntos: los archivos se guardan con nombres UUID no
@@ -41,6 +42,7 @@ app.include_router(auth_router, prefix="/api")
 app.include_router(tickets_router, prefix="/api")
 app.include_router(chat_router, prefix="/api")
 app.include_router(coordinator_router, prefix="/api")
+app.include_router(chat_global_router, prefix="/api")
 app.include_router(adjuntos_router, prefix="/api")
 
 # Archivos adjuntos de los tickets (PNG/JPG, nombres UUID no adivinables)

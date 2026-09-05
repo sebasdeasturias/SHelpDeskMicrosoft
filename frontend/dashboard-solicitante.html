@@ -95,8 +95,34 @@
         </div>
     </div>
 
+    <!-- Chat FAB (solicitante: solo Chat Global, sin IA) -->
+    <button class="chat-fab" id="chatFab" aria-label="Abrir chat del equipo">
+        <span class="fab-icon">
+            <i class="fas fa-robot fab-open-icon" aria-hidden="true"></i>
+            <i class="fas fa-times fab-close-icon" aria-hidden="true"></i>
+        </span>
+    </button>
+
+    <!-- Chat Panel (flotante): Chat Global -->
+    <div class="chat-panel" id="chatPanel">
+        <div class="chat-header">
+            <h3><i class="fas fa-users chat-header-icon" aria-hidden="true"></i> Chat Global</h3>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <button class="chat-close" id="chatClose">✕</button>
+            </div>
+        </div>
+        <div class="chat-messages chat-global-msgs" id="chatGlobalMessages">
+            <div class="chat-msg system">Canal común de todo el equipo HelpDesk. Tu mensaje será visible para agentes, coordinadores y administradores.</div>
+        </div>
+        <div class="chat-input-area">
+            <textarea id="chatInput" rows="1" placeholder="Mensaje para el equipo..."></textarea>
+            <button class="chat-send-btn" id="chatSendBtn">➤</button>
+        </div>
+    </div>
+
     <script src="js/config.js"></script>
     <script src="js/dashboard-solicitante.js"></script>
+    <script src="js/chat-global.js"></script>
     <script src="js/theme-toggle.js"></script>
 </body>
 </html>

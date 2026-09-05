@@ -704,16 +704,23 @@
     <!-- Chat Panel -->
     <div class="chat-panel" id="chatPanel">
         <div class="chat-header">
-            <h3><i class="fas fa-headset chat-header-icon" aria-hidden="true"></i> Chat Soporte IA</h3>
+            <h3><i class="fas fa-headset chat-header-icon" aria-hidden="true"></i> Chat Soporte</h3>
             <div style="display:flex; gap:8px; align-items:center;">
                 <button class="chat-action-btn attach-btn" id="attachBtn" title="Adjuntar ticket">📎</button>
                 <button class="chat-close" id="chatClose">✕</button>
             </div>
         </div>
+        <div class="chat-tabs" role="tablist" aria-label="Tipo de chat">
+            <button type="button" class="chat-tab active" data-chat-tab="ia" role="tab" aria-selected="true">Chat IA</button>
+            <button type="button" class="chat-tab" data-chat-tab="global" role="tab" aria-selected="false">Chat Global</button>
+        </div>
         <div class="chat-messages" id="chatMessages">
             <div class="chat-msg bot">
                 ¡Hola! Soy el asistente IA para coordinadores del sistema HelpDesk, creado por S.Morales. Puedo ayudarte a gestionar tickets, analizar métricas o resolver dudas. 🌿
             </div>
+        </div>
+        <div class="chat-messages chat-global-msgs" id="chatGlobalMessages" style="display:none;">
+            <div class="chat-msg system">Canal común de todo el equipo HelpDesk. Los mensajes son visibles para todos los roles.</div>
         </div>
         <div class="chat-input-area">
             <textarea id="chatInput" rows="1" placeholder="Escribe tu mensaje..."></textarea>
@@ -751,7 +758,8 @@
 
 <script src="js/config.js"></script>
 <script src="js/kanban-archive.js"></script>
-<script src="js/dashboard-coordinador.js"></script>
+    <script src="js/dashboard-coordinador.js"></script>
+    <script src="js/chat-global.js"></script>
     <script src="js/theme-toggle.js"></script>
 </body>
 </html>
