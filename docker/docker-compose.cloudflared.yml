@@ -164,6 +164,21 @@ services:
       - helpdesk-network
 
   # --------------------------------------------------------------------------
+  # TÚNEL RÁPIDO extra para el PANEL (Streamlit): genera una URL automática
+  # temporal (trycloudflare.com) sin configurar nada en el panel de Cloudflare.
+  # La URL se imprime en los logs: docker logs helpdesk-cloudflared-panel
+  # (los scripts docker/iniciar-cloudflared.* la extraen y la muestran sola).
+  # NOTA: es una URL pública temporal; la protección real es el login de Streamlit.
+  # --------------------------------------------------------------------------
+  cloudflared-panel:
+    image: cloudflare/cloudflared:latest
+    container_name: helpdesk-cloudflared-panel
+    restart: unless-stopped
+    command: tunnel --no-autoupdate --url http://streamlit:8501
+    networks:
+      - helpdesk-network
+
+  # --------------------------------------------------------------------------
   # VARIANTE OPCIONAL — Túnel gestionado LOCALMENTE (config.yml + credentials).
   # Úsala si prefieres definir los hostnames en un archivo del repo en vez del
   # panel. Pasos: (1) cloudflared tunnel login, (2) cloudflared tunnel create
