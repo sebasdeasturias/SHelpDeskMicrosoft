@@ -73,14 +73,17 @@
     
 
     <!-- Chat FAB -->
-    <button class="chat-fab" id="chatFab">
-        <span class="fab-icon">💬</span>
+    <button class="chat-fab" id="chatFab" aria-label="Abrir chat de soporte IA">
+        <span class="fab-icon">
+            <i class="fas fa-robot fab-open-icon" aria-hidden="true"></i>
+            <i class="fas fa-times fab-close-icon" aria-hidden="true"></i>
+        </span>
     </button>
 
     <!-- Chat Panel (flotante) -->
     <div class="chat-panel" id="chatPanel">
         <div class="chat-header">
-            <h3>💬 Chat Soporte IA</h3>
+            <h3><i class="fas fa-robot chat-header-icon" aria-hidden="true"></i> Chat Soporte IA</h3>
             <div style="display:flex; gap:8px; align-items:center;">
                 <button class="chat-action-btn attach-btn" id="attachBtn" title="Adjuntar ticket">📎</button>
                 <button class="chat-close" id="chatClose">✕</button>
