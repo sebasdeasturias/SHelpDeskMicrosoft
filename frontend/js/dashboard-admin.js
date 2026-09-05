@@ -1,4 +1,4 @@
-// dashboard-admin.js — Panel del Administrador
+﻿// dashboard-admin.js â€” Panel del Administrador
 const API = window.API_BASE_URL || 'http://localhost:8000/api';
 
 const state = {
@@ -44,7 +44,7 @@ async function apiFetch(path, options = {}) {
 }
 
 // ============================================
-// INICIALIZACIÓN
+// INICIALIZACIÃ“N
 // ============================================
 document.addEventListener('DOMContentLoaded', async () => {
     if (!state.authToken) {
@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         document.getElementById('userName').textContent = me.nombre || me.email;
     } catch (e) {
-        console.error('Error de autenticación:', e);
+        console.error('Error de autenticaciÃ³n:', e);
         return;
     }
 
@@ -94,7 +94,7 @@ function initTheme() {
 }
 
 // ============================================
-// NAVEGACIÓN
+// NAVEGACIÃ“N
 // ============================================
 const LOADERS = {
     'resumen': loadResumen,
@@ -186,7 +186,7 @@ async function loadResumen() {
 
         const kpis = [
             ['blue', 'fa-ticket-alt', 'Tickets Totales Mes', k.total_tickets_mes ?? 0],
-            ['green', 'fa-shield-halved', 'Cumplimiento de SLA', k.cumplimiento_sla != null ? `${k.cumplimiento_sla}%` : '—'],
+            ['green', 'fa-shield-halved', 'Cumplimiento de SLA', k.cumplimiento_sla != null ? `${k.cumplimiento_sla}%` : 'â€”'],
             ['yellow', 'fa-users-gear', 'Usuarios Totales', usuarios.length],
             ['purple', 'fa-user-check', 'Usuarios Activos', activos]
         ];
@@ -235,7 +235,7 @@ function renderUsuarios() {
     body.innerHTML = state.usuarios.map(u => {
         const temporal = u.admin_temporal_hasta
             ? `<span class="item-meta">hasta ${new Date(u.admin_temporal_hasta).toLocaleString('es-ES')}${u.rol_anterior ? ` (vuelve a ${escapeHtml(u.rol_anterior)})` : ''}</span>`
-            : '<span class="item-meta">—</span>';
+            : '<span class="item-meta">â€”</span>';
         return `
         <tr data-uid="${u.id_usuario}">
             <td><strong>#${u.id_usuario}</strong></td>
@@ -291,7 +291,7 @@ async function crearUsuario() {
         password: document.getElementById('nuPass').value
     };
     if (!payload.nombre || !payload.email || !payload.password) {
-        mostrarToast('Nombre, correo y contraseña son obligatorios');
+        mostrarToast('Nombre, correo y contraseÃ±a son obligatorios');
         return;
     }
     try {
@@ -307,7 +307,7 @@ async function crearUsuario() {
 
 function modalCambiarRol(u) {
     abrirModal({
-        titulo: `Cambiar rol — ${u.nombre}`,
+        titulo: `Cambiar rol â€” ${u.nombre}`,
         cuerpo: `
             <p>Rol actual: <span class="role-pill ${escapeHtml(u.rol)}">${escapeHtml(u.rol)}</span></p>
             <label class="filter-group" style="margin-top:10px;"><label>Nuevo rol</label>
@@ -320,7 +320,7 @@ function modalCambiarRol(u) {
                     <input type="checkbox" id="modalTemporal"> Temporal (solo al promover a administrador)
                 </label>
                 <input class="glass-input" id="modalHoras" type="number" min="1" max="720" value="24" disabled
-                    style="margin-top:8px;" title="Duración en horas">
+                    style="margin-top:8px;" title="DuraciÃ³n en horas">
             </div>`,
         aceptarTexto: 'Aplicar',
         onAceptar: async () => {
@@ -334,7 +334,7 @@ function modalCambiarRol(u) {
                     body: { rol, temporal_horas: temporal ? horas : null }
                 });
                 mostrarToast(r.temporal_horas
-                    ? `${u.nombre} es administrador por ${r.temporal_horas} h (volverá a ${r.rol_anterior})`
+                    ? `${u.nombre} es administrador por ${r.temporal_horas} h (volverÃ¡ a ${r.rol_anterior})`
                     : `Rol de ${u.nombre}: ${rol}`);
                 loadUsuarios();
             } catch (e) {
@@ -351,13 +351,13 @@ function toggleEstado(u) {
     const nuevo = u.estado === 'activo' ? 'inactivo' : 'activo';
     abrirModal({
         titulo: `${nuevo === 'activo' ? 'Activar' : 'Desactivar'} usuario`,
-        cuerpo: `<p>¿Marcar a <strong>${escapeHtml(u.nombre)}</strong> (${escapeHtml(u.email)}) como <strong>${nuevo}</strong>?</p>`,
-        aceptarTexto: 'Sí, aplicar',
+        cuerpo: `<p>Â¿Marcar a <strong>${escapeHtml(u.nombre)}</strong> (${escapeHtml(u.email)}) como <strong>${nuevo}</strong>?</p>`,
+        aceptarTexto: 'SÃ­, aplicar',
         peligroso: nuevo === 'inactivo',
         onAceptar: async () => {
             try {
                 await apiFetch(`/coordinator/usuarios/${u.id_usuario}`, { method: 'PATCH', body: { estado: nuevo } });
-                mostrarToast(`${u.nombre} ahora está ${nuevo}`);
+                mostrarToast(`${u.nombre} ahora estÃ¡ ${nuevo}`);
                 loadUsuarios();
             } catch (e) {
                 mostrarToast(`Error: ${e.message}`);
@@ -368,15 +368,15 @@ function toggleEstado(u) {
 
 function modalResetPassword(u) {
     abrirModal({
-        titulo: `Restablecer contraseña — ${u.nombre}`,
-        cuerpo: `<p>Nueva contraseña para <strong>${escapeHtml(u.email)}</strong> (mínimo 8 caracteres):</p>
+        titulo: `Restablecer contraseÃ±a â€” ${u.nombre}`,
+        cuerpo: `<p>Nueva contraseÃ±a para <strong>${escapeHtml(u.email)}</strong> (mÃ­nimo 8 caracteres):</p>
                  <input class="glass-input" id="modalPass" type="password">`,
         aceptarTexto: 'Restablecer',
         onAceptar: async () => {
             const pass = document.getElementById('modalPass').value;
             try {
                 await apiFetch(`/coordinator/usuarios/${u.id_usuario}`, { method: 'PATCH', body: { password: pass } });
-                mostrarToast(`Contraseña de ${u.nombre} restablecida`);
+                mostrarToast(`ContraseÃ±a de ${u.nombre} restablecida`);
             } catch (e) {
                 mostrarToast(`Error: ${e.message}`);
             }
@@ -387,8 +387,8 @@ function modalResetPassword(u) {
 function modalEliminar(u) {
     abrirModal({
         titulo: 'Eliminar usuario',
-        cuerpo: `<p>¿Eliminar <strong>${escapeHtml(u.nombre)}</strong> (${escapeHtml(u.email)}) <strong>definitivamente</strong>?</p>
-                 <p class="hint">Si tiene tickets o registros asociados, la BD lo impedirá: desactívalo en su lugar.</p>`,
+        cuerpo: `<p>Â¿Eliminar <strong>${escapeHtml(u.nombre)}</strong> (${escapeHtml(u.email)}) <strong>definitivamente</strong>?</p>
+                 <p class="hint">Si tiene tickets o registros asociados, la BD lo impedirÃ¡: desactÃ­valo en su lugar.</p>`,
         aceptarTexto: 'Eliminar',
         peligroso: true,
         onAceptar: async () => {
@@ -443,7 +443,7 @@ async function loadRespaldos() {
                 else if (accion === 'eliminar') {
                     abrirModal({
                         titulo: 'Eliminar respaldo',
-                        cuerpo: `<p>¿Eliminar <strong>${escapeHtml(nombre)}</strong> permanentemente?</p>`,
+                        cuerpo: `<p>Â¿Eliminar <strong>${escapeHtml(nombre)}</strong> permanentemente?</p>`,
                         aceptarTexto: 'Eliminar', peligroso: true,
                         onAceptar: async () => {
                             try {
@@ -456,8 +456,8 @@ async function loadRespaldos() {
                 } else if (accion === 'restaurar') {
                     abrirModal({
                         titulo: 'Restaurar base de datos',
-                        cuerpo: `<p>Se ejecutará <code>pg_restore --clean</code> con <strong>${escapeHtml(nombre)}</strong>.</p>
-                                 <p><strong>LA BD ACTUAL SERÁ REEMPLAZADA</strong> y todos los usuarios tendrán que volver a iniciar sesión.</p>`,
+                        cuerpo: `<p>Se ejecutarÃ¡ <code>pg_restore --clean</code> con <strong>${escapeHtml(nombre)}</strong>.</p>
+                                 <p><strong>LA BD ACTUAL SERÃ REEMPLAZADA</strong> y todos los usuarios tendrÃ¡n que volver a iniciar sesiÃ³n.</p>`,
                         aceptarTexto: 'Restaurar ahora', peligroso: true,
                         onAceptar: async () => {
                             try {
@@ -511,7 +511,7 @@ async function descargarRespaldo(nombre) {
 async function verLogs() {
     const contenedor = document.getElementById('logContenedor').value;
     const tail = document.getElementById('logTail').value;
-    document.getElementById('logTitulo').textContent = `Logs: ${contenedor} (últimas ${tail} líneas)`;
+    document.getElementById('logTitulo').textContent = `Logs: ${contenedor} (Ãºltimas ${tail} lÃ­neas)`;
     document.getElementById('logSalida').textContent = 'Cargando...';
     try {
         const r = await apiFetch(`/coordinator/logs/${contenedor}?tail=${tail}`);
@@ -537,7 +537,7 @@ async function loadN8N() {
             <div class="item-glass" data-wid="${escapeHtml(String(w.id))}">
                 <div>
                     <span class="item-titulo"><span class="punto" style="background:${w.activo ? '#22c55e' : '#9ca3af'};"></span>${escapeHtml(w.nombre)}</span>
-                    <div class="item-meta">ID: ${escapeHtml(String(w.id))} · ${w.activo ? 'Activo' : 'Inactivo'}</div>
+                    <div class="item-meta">ID: ${escapeHtml(String(w.id))} Â· ${w.activo ? 'Activo' : 'Inactivo'}</div>
                 </div>
                 <button class="btn-mini" data-accion="toggle">${w.activo ? 'Desactivar' : 'Activar'}</button>
             </div>`).join('');
@@ -627,7 +627,7 @@ async function iaPull() {
     }
     const btn = document.getElementById('btnIaPull');
     btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Descargando...';
+    btn.innerHTML = '<span class="spinner-ring"></span> Descargando...';
     try {
         mostrarToast(`Descargando ${modelo} (puede tardar varios minutos)...`);
         const r = await apiFetch('/coordinator/ia/pull', { method: 'POST', body: { modelo } });
@@ -652,7 +652,7 @@ async function guardarIaParams() {
                 top_p: parseFloat(document.getElementById('iaTopP').value)
             }
         });
-        mostrarToast('Parámetros guardados. Se aplican en el próximo mensaje del chat.');
+        mostrarToast('ParÃ¡metros guardados. Se aplican en el prÃ³ximo mensaje del chat.');
     } catch (e) {
         mostrarToast(`Error: ${e.message}`);
     }

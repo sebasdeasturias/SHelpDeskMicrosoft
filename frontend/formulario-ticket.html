@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -35,7 +35,7 @@
                     <i class="fas fa-shield-alt"></i> Datos Protegidos 
                 </div>
                 <div class="badge silver">
-                    <i class="fas fa-clock"></i> Respuesta Rápida 
+                    <i class="fas fa-clock"></i> Respuesta RÃ¡pida 
                 </div>
             </div>
 
@@ -45,7 +45,7 @@
                 <h1>NUEVO TICKET</h1>
                 <h2>Reportar Incidente o Solicitud</h2>
 
-                <!-- Información del usuario -->
+                <!-- InformaciÃ³n del usuario -->
                 <div class="user-info">
                     <i class="fas fa-user-circle"></i>
                     <span id="userName">Cargando...</span>
@@ -60,13 +60,13 @@
                             type="text" 
                             id="asunto" 
                             name="asunto" 
-                            placeholder="Asunto del ticket (máx. 200 caracteres)" 
+                            placeholder="Asunto del ticket (mÃ¡x. 200 caracteres)" 
                             required 
                             maxlength="200"
                         >
                     </div>
 
-                    <!-- Descripción -->
+                    <!-- DescripciÃ³n -->
                     <div class="input-group textarea-group">
                         <i class="fas fa-align-left input-icon"></i>
                         <textarea 
@@ -78,11 +78,11 @@
                         ></textarea>
                     </div>
 
-                    <!-- Categoría -->
+                    <!-- CategorÃ­a -->
                     <div class="input-group">
                         <i class="fas fa-folder input-icon"></i>
                         <select id="categoria" name="categoria" required>
-                            <option value="">Selecciona una categoría...</option>
+                            <option value="">Selecciona una categorÃ­a...</option>
                             <option value="1">Hardware</option>
                             <option value="2">Software</option>
                             <option value="3">Red/Internet</option>
@@ -96,14 +96,14 @@
                         <i class="fas fa-exclamation-triangle input-icon"></i>
                         <select id="prioridad" name="prioridad" required>
                             <option value="">Selecciona prioridad...</option>
-                            <option value="1">Crítica</option>
+                            <option value="1">CrÃ­tica</option>
                             <option value="2">Alta</option>
                             <option value="3">Media</option>
                             <option value="4">Baja</option>
                         </select>
                     </div>
 
-                    <!-- Adjuntos: imágenes del problema (PNG/JPG, máx. 20 MB) -->
+                    <!-- Adjuntos: imÃ¡genes del problema (PNG/JPG, mÃ¡x. 20 MB) -->
                     <div class="attach-section">
                         <input 
                             type="file" 
@@ -112,29 +112,29 @@
                             accept=".png,.jpg,.jpeg"
                             multiple
                             hidden
-                            aria-label="Seleccionar imágenes PNG o JPG para adjuntar al ticket"
+                            aria-label="Seleccionar imÃ¡genes PNG o JPG para adjuntar al ticket"
                         >
                         <button 
                             type="button" 
                             id="btnAdjuntar" 
                             class="attach-btn" 
                             aria-describedby="attachHelp"
-                            aria-label="Adjuntar imágenes: PNG o JPG, máximo 20 megabytes por archivo, hasta 5 imágenes"
+                            aria-label="Adjuntar imÃ¡genes: PNG o JPG, mÃ¡ximo 20 megabytes por archivo, hasta 5 imÃ¡genes"
                         >
                             <i class="fas fa-paperclip attach-btn-icon" aria-hidden="true"></i>
                             <span class="attach-btn-text">
-                                <strong>Adjuntar imágenes</strong>
-                                <small>PNG o JPG &middot; máx. 20 MB por archivo &middot; hasta 5</small>
+                                <strong>Adjuntar imÃ¡genes</strong>
+                                <small>PNG o JPG &middot; mÃ¡x. 20 MB por archivo &middot; hasta 5</small>
                             </span>
                         </button>
                         <p id="attachHelp" class="attach-help">
                             <i class="fas fa-circle-info" aria-hidden="true"></i>
-                            Una captura de pantalla ayuda al agente a entender el problema. También puedes arrastrar las imágenes aquí.
+                            Una captura de pantalla ayuda al agente a entender el problema. TambiÃ©n puedes arrastrar las imÃ¡genes aquÃ­.
                         </p>
-                        <ul id="adjuntosLista" class="adjuntos-lista" aria-live="polite" aria-label="Imágenes seleccionadas"></ul>
+                        <ul id="adjuntosLista" class="adjuntos-lista" aria-live="polite" aria-label="ImÃ¡genes seleccionadas"></ul>
                     </div>
 
-                    <!-- Botón de envío -->
+                    <!-- BotÃ³n de envÃ­o -->
                     <button type="button" class="submit-btn" id="btnEnviar">
                         <i class="fas fa-paper-plane"></i> Enviar Ticket
                     </button>
@@ -157,11 +157,11 @@
                     </div>
 
                     <div id="loadingMessage" class="loading-message" style="display: none;">
-                        <i class="fas fa-spinner fa-spin"></i> Procesando...
+                        <span class="spinner-ring"></span> Procesando...
                     </div>
                 </form>
 
-                <!-- Enlaces de navegación -->
+                <!-- Enlaces de navegaciÃ³n -->
                 <div class="form-footer">
                     <a href="dashboard-solicitante.html" class="back-link">
                         <i class="fas fa-arrow-left"></i> Volver al Dashboard
@@ -175,21 +175,21 @@
         </div>
     </div>
 
-    <!-- Modal de confirmación doble -->
+    <!-- Modal de confirmaciÃ³n doble -->
     <div id="confirmModal" class="modal-overlay" style="display: none;">
         <div class="modal-content">
             <div class="modal-header">
-                <h3><i class="fas fa-question-circle"></i> Confirmar Envío</h3>
+                <h3><i class="fas fa-question-circle"></i> Confirmar EnvÃ­o</h3>
             </div>
             <div class="modal-body">
-                <p>¿Estás seguro de que deseas enviar este ticket?</p>
+                <p>Â¿EstÃ¡s seguro de que deseas enviar este ticket?</p>
                 <div class="ticket-preview">
                     <div class="preview-item">
                         <strong>Asunto:</strong>
                         <span id="previewAsunto"></span>
                     </div>
                     <div class="preview-item">
-                        <strong>Categoría:</strong>
+                        <strong>CategorÃ­a:</strong>
                         <span id="previewCategoria"></span>
                     </div>
                     <div class="preview-item">
@@ -197,7 +197,7 @@
                         <span id="previewPrioridad"></span>
                     </div>
                     <div class="preview-item" id="previewAdjuntosItem" style="display: none;">
-                        <strong>Imágenes adjuntas:</strong>
+                        <strong>ImÃ¡genes adjuntas:</strong>
                         <span id="previewAdjuntos"></span>
                     </div>
                 </div>
@@ -207,7 +207,7 @@
                     <i class="fas fa-times"></i> Cancelar
                 </button>
                 <button class="btn-confirm" id="btnConfirmar">
-                    <i class="fas fa-check"></i> Sí, Enviar
+                    <i class="fas fa-check"></i> SÃ­, Enviar
                 </button>
             </div>
         </div>

@@ -1,10 +1,10 @@
-// formulario-ticket.js — Creación de tickets con adjuntos de imágenes.
-// Reglas de adjuntos: PNG/JPG, máx. 20 MB por archivo, hasta 5 imágenes.
-// Usabilidad (ISO/IEC 25000 / 9241): feedback visible de cada acción,
-// mensajes de error que indican cómo corregir y control total del usuario.
+﻿// formulario-ticket.js â€” CreaciÃ³n de tickets con adjuntos de imÃ¡genes.
+// Reglas de adjuntos: PNG/JPG, mÃ¡x. 20 MB por archivo, hasta 5 imÃ¡genes.
+// Usabilidad (ISO/IEC 25000 / 9241): feedback visible de cada acciÃ³n,
+// mensajes de error que indican cÃ³mo corregir y control total del usuario.
 const API_BASE_URL = window.API_BASE_URL || 'http://localhost:8000/api';
 
-// Límites de adjuntos (deben coincidir con el backend adjuntos.py)
+// LÃ­mites de adjuntos (deben coincidir con el backend adjuntos.py)
 const MAX_TAMANO_ARCHIVO = 20 * 1024 * 1024; // 20 MB
 const MAX_ADJUNTOS = 5;
 const TIPOS_ACEPTADOS = ['image/png', 'image/jpeg'];
@@ -63,7 +63,7 @@ function initTheme() {
 }
 
 /* ============================================================
-   ADJUNTOS: selección, validación y vista previa
+   ADJUNTOS: selecciÃ³n, validaciÃ³n y vista previa
    ============================================================ */
 function initAdjuntos() {
     btnAdjuntar.addEventListener('click', () => adjuntoInput.click());
@@ -99,7 +99,7 @@ function agregarAdjuntos(archivos) {
 
     for (const file of archivos) {
         if (adjuntosSeleccionados.length >= MAX_ADJUNTOS) {
-            avisos.push(`Solo puedes adjuntar hasta ${MAX_ADJUNTOS} imágenes por ticket.`);
+            avisos.push(`Solo puedes adjuntar hasta ${MAX_ADJUNTOS} imÃ¡genes por ticket.`);
             break;
         }
 
@@ -111,13 +111,13 @@ function agregarAdjuntos(archivos) {
         }
 
         if (file.size > MAX_TAMANO_ARCHIVO) {
-            avisos.push(`"${file.name}" pesa ${formatTamano(file.size)} y supera el máximo de 20 MB.`);
+            avisos.push(`"${file.name}" pesa ${formatTamano(file.size)} y supera el mÃ¡ximo de 20 MB.`);
             continue;
         }
 
         const duplicado = adjuntosSeleccionados.some(a => a.nombre === file.name && a.tamano === file.size);
         if (duplicado) {
-            avisos.push(`"${file.name}" ya está seleccionada.`);
+            avisos.push(`"${file.name}" ya estÃ¡ seleccionada.`);
             continue;
         }
 
@@ -231,7 +231,7 @@ async function loadUserInfo() {
 }
 
 /* ============================================================
-   ENVÍO DEL TICKET
+   ENVÃO DEL TICKET
    ============================================================ */
 btnEnviar.addEventListener('click', () => {
     if (!ticketForm.checkValidity()) { ticketForm.reportValidity(); return; }
@@ -313,20 +313,20 @@ btnConfirmar.addEventListener('click', async () => {
 
         const dbResult = await dbResponse.json();
         const ticketId = dbResult.ticket_id;
-        console.log('✅ Ticket creado en DB con ID:', ticketId);
+        console.log('âœ… Ticket creado en DB con ID:', ticketId);
 
-        // 2. Subir imágenes adjuntas (si el usuario seleccionó alguna)
+        // 2. Subir imÃ¡genes adjuntas (si el usuario seleccionÃ³ alguna)
         const fallos = await subirAdjuntos(ticketId, token);
 
-        // La notificación al workflow de IA (n8n) la hace el backend tras crear
+        // La notificaciÃ³n al workflow de IA (n8n) la hace el backend tras crear
         // el ticket: el navegador ya no llama a n8n directamente (no es fiable
-        // cuando el frontend está en otro origen, p.ej. Vercel).
+        // cuando el frontend estÃ¡ en otro origen, p.ej. Vercel).
         const idFormateado = `TK-${String(ticketId).padStart(4, '0')}`;
         if (fallos === 0) {
             const notaIA = adjuntosSeleccionados.length
-                ? ' El análisis de IA se ejecutará en segundo plano.'
-                : ' ¡Ticket creado exitosamente!';
-            showSuccess(`Ticket ${idFormateado} creado con éxito.${adjuntosSeleccionados.length ? ' Tus imágenes fueron adjuntadas.' : ''}${notaIA}`);
+                ? ' El anÃ¡lisis de IA se ejecutarÃ¡ en segundo plano.'
+                : ' Â¡Ticket creado exitosamente!';
+            showSuccess(`Ticket ${idFormateado} creado con Ã©xito.${adjuntosSeleccionados.length ? ' Tus imÃ¡genes fueron adjuntadas.' : ''}${notaIA}`);
         } else {
             showError(`Ticket ${idFormateado} creado, pero ${fallos} imagen(es) no pudieron subirse. Puedes adjuntarlas desde tu ticket.`);
         }
@@ -351,7 +351,6 @@ async function subirAdjuntos(ticketId, token) {
 
     let fallos = 0;
     for (let i = 0; i < total; i++) {
-        loadingMessage.querySelector('i').className = 'fas fa-spinner fa-spin';
         loadingMessage.lastChild.textContent = ` Subiendo imagen ${i + 1} de ${total}...`;
 
         try {
@@ -387,5 +386,5 @@ confirmModal.addEventListener('click', (e) => { if (e.target === confirmModal) {
 
 function showError(msg) { errorText.textContent = msg; errorMessage.style.display = 'flex'; successMessage.style.display = 'none'; setTimeout(() => { errorMessage.style.display = 'none'; }, 5000); }
 function showSuccess(msg) { successText.textContent = msg; successMessage.style.display = 'flex'; errorMessage.style.display = 'none'; }
-function showLoading() { loadingMessage.style.display = 'flex'; errorMessage.style.display = 'none'; successMessage.style.display = 'none'; loadingMessage.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...'; }
+function showLoading() { loadingMessage.style.display = 'flex'; errorMessage.style.display = 'none'; successMessage.style.display = 'none'; loadingMessage.innerHTML = '<span class="spinner-ring"></span> Procesando...'; }
 function hideLoading() { loadingMessage.style.display = 'none'; }

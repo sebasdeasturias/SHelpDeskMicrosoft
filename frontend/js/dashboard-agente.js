@@ -1,4 +1,4 @@
-// dashboard-agente.js
+﻿// dashboard-agente.js
 const API = window.API_BASE_URL || 'http://localhost:8000/api';
 
 function esc(v) {
@@ -27,14 +27,14 @@ const COLUMN_MAP = {
 };
 
 const PRIO_MAP = {
-    'crítica': 'critical',
+    'crÃ­tica': 'critical',
     'alta': 'high',
     'media': 'medium',
     'baja': 'low'
 };
 
 // ============================================
-// INICIALIZACIÓN
+// INICIALIZACIÃ“N
 // ============================================
 document.addEventListener('DOMContentLoaded', async () => {
     if (!state.authToken) {
@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             headers: { 'Authorization': `Bearer ${state.authToken}` }
         });
         if (!response.ok) {
-            throw new Error('Token inválido');
+            throw new Error('Token invÃ¡lido');
         }
 
         const userData = await response.json();
@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
     } catch (error) {
-        console.error('Error de autenticación:', error);
+        console.error('Error de autenticaciÃ³n:', error);
         localStorage.removeItem('token');
         sessionStorage.removeItem('token');
         window.location.href = 'login.html';
@@ -98,11 +98,11 @@ function initTheme() {
 // KANBAN: Fetch y Render
 // ============================================
 function initKanban() {
-    // La lógica de drag & drop se inicializa después del render
+    // La lÃ³gica de drag & drop se inicializa despuÃ©s del render
 }
 
 async function fetchTickets() {
-    // FIX BUG #4: no re-renderizar si el usuario está arrastrando
+    // FIX BUG #4: no re-renderizar si el usuario estÃ¡ arrastrando
     if (isDragging) return;
 
     try {
@@ -115,7 +115,7 @@ async function fetchTickets() {
         let data = await res.json();
 
         // Defensa en cliente: un agente solo trabaja los tickets que el
-        // coordinador le asignó (el backend ya filtra por rol).
+        // coordinador le asignÃ³ (el backend ya filtra por rol).
         if (state.userData && state.userData.role === 'agente') {
             data = data.filter(t => t.id_agente_asignado === state.userData.user_id);
         }
@@ -176,7 +176,7 @@ function createCardHTML(t) {
                 <div class="assignee-avatar" style="background:hsl(${hue},60%,40%)">${init}</div>
                 <span class="assignee-name">${esc(t.agente) || 'Sin asignar'}</span>
             </div>
-            <div class="card-date">📅 ${new Date(t.fecha_creacion).toLocaleDateString('es-ES')}</div>
+            <div class="card-date">ðŸ“… ${new Date(t.fecha_creacion).toLocaleDateString('es-ES')}</div>
         </div>
     `;
 }
@@ -260,8 +260,8 @@ function initDragDrop() {
             const ticketId = dragged.dataset.id;
             const newColKey = body.id.replace('col-', '');
 
-            // Columna 'Archivado': no es un estado más del tablero, dispara el
-            // flujo de archivo (confirmación obligatoria; estado terminal).
+            // Columna 'Archivado': no es un estado mÃ¡s del tablero, dispara el
+            // flujo de archivo (confirmaciÃ³n obligatoria; estado terminal).
             if (newColKey === 'archived') {
                 dragged.style.opacity = '1';
                 dragged.classList.remove('dragging');
@@ -271,7 +271,7 @@ function initDragDrop() {
             }
 
             // 'Por Hacer' agrupa dos estados: 'nuevo' (sin agente, solo coordinador)
-            // y 'asignado' (con agente). Se elige según si el ticket tiene agente.
+            // y 'asignado' (con agente). Se elige segÃºn si el ticket tiene agente.
             let newStatus;
             if (newColKey === 'todo') {
                 const ticket = state.tickets.find(t => t.id_solicitud == ticketId);
@@ -337,18 +337,18 @@ async function updateTicketStatus(id, newStatus) {
 }
 
 // ============================================
-// KANBAN: Archivar (migración 004, modal en js/kanban-archive.js)
+// KANBAN: Archivar (migraciÃ³n 004, modal en js/kanban-archive.js)
 // ============================================
 async function manejarArchivo(ticketId) {
     if (!window.KanbanArchivo) {
-        console.error('kanban-archive.js no está cargado');
+        console.error('kanban-archive.js no estÃ¡ cargado');
         renderBoard();
         return;
     }
     const ticket = state.tickets.find(t => t.id_solicitud == ticketId);
     if (!ticket) return;
 
-    // Solo se archiva un ticket ya completado (lo valida también el backend).
+    // Solo se archiva un ticket ya completado (lo valida tambiÃ©n el backend).
     if (ticket.estado !== 'resuelto' && ticket.estado !== 'cerrado') {
         await KanbanArchivo.avisoNoArchivable(ticket.estado);
         renderBoard(); // la tarjeta vuelve a su columna
@@ -368,7 +368,7 @@ async function manejarArchivo(ticketId) {
 }
 
 // ============================================
-// CHAT IA: Inicialización y Lógica (CORREGIDO)
+// CHAT IA: InicializaciÃ³n y LÃ³gica (CORREGIDO)
 // ============================================
 function initChat() {
     const chatInput = document.getElementById('chatInput');
@@ -380,11 +380,11 @@ function initChat() {
 
     // Verificar que los elementos existan antes de agregar listeners
     if (!chatInput || !chatSendBtn) {
-        console.error('⚠️ Elementos del chat no encontrados en el HTML');
+        console.error('âš ï¸ Elementos del chat no encontrados en el HTML');
         return;
     }
 
-    // Este dashboard maneja su propio chat IA (el widget compartido solo añade Chat Global)
+    // Este dashboard maneja su propio chat IA (el widget compartido solo aÃ±ade Chat Global)
     window.__chatIaPropia = true;
 
     // ---- FAB: Abrir/Cerrar el panel ----
@@ -396,7 +396,7 @@ function initChat() {
         });
     }
 
-    // ---- Botón cerrar (✕) del header ----
+    // ---- BotÃ³n cerrar (âœ•) del header ----
     if (chatClose && chatPanel) {
         chatClose.addEventListener('click', () => {
             chatPanel.classList.remove('open');
@@ -404,7 +404,7 @@ function initChat() {
         });
     }
 
-    // ---- Enviar con botón ----
+    // ---- Enviar con botÃ³n ----
     chatSendBtn.addEventListener('click', sendChatMessage);
 
     // ---- Enviar con Enter (sin Shift) ----
@@ -438,7 +438,7 @@ function initChat() {
 }
 
 async function sendChatMessage() {
-    // Si la tab activa es Chat Global, el widget compartido (chat-global.js) maneja el envío
+    // Si la tab activa es Chat Global, el widget compartido (chat-global.js) maneja el envÃ­o
     if (window.ChatGlobal && window.ChatGlobal.activo()) { window.ChatGlobal.enviarDesdeInput(); return; }
 
     const chatInput = document.getElementById('chatInput');
@@ -450,8 +450,8 @@ async function sendChatMessage() {
     chatInput.value = '';
     chatInput.style.height = 'auto';
 
-    // Si hay ticket adjunto, el backend inyectará el contexto completo
-    // (ticket + solicitante + análisis IA) a partir del ticket_id
+    // Si hay ticket adjunto, el backend inyectarÃ¡ el contexto completo
+    // (ticket + solicitante + anÃ¡lisis IA) a partir del ticket_id
     const payload = {
         mensaje: mensaje,
         historial: state.chatHistory.slice(-10),
@@ -464,7 +464,7 @@ async function sendChatMessage() {
     // Guardar en historial
     state.chatHistory.push({ role: 'user', content: mensaje });
 
-    // Typing propio de esta petición: se puede seguir enviando mensajes
+    // Typing propio de esta peticiÃ³n: se puede seguir enviando mensajes
     // mientras la IA responde la anterior (sin bloquear el input).
     const typing = document.createElement('div');
     typing.className = 'typing-indicator';
@@ -497,7 +497,7 @@ async function sendChatMessage() {
         }
 
         const data = await response.json();
-        const respuesta = data.respuesta || 'No recibí respuesta del modelo.';
+        const respuesta = data.respuesta || 'No recibÃ­ respuesta del modelo.';
 
         // Agregar respuesta del bot
         const botMsg = addChatMessage(respuesta, 'bot');
@@ -506,21 +506,21 @@ async function sendChatMessage() {
         if (data.tokens || data.modelo) {
             const meta = document.createElement('div');
             meta.className = 'msg-meta';
-            meta.textContent = `${data.modelo || 'IA'} • ${data.tokens?.tokens_generados || '?'} tokens • ${data.tokens?.tiempo_total_ms || '?'}ms`;
+            meta.textContent = `${data.modelo || 'IA'} â€¢ ${data.tokens?.tokens_generados || '?'} tokens â€¢ ${data.tokens?.tiempo_total_ms || '?'}ms`;
             botMsg.appendChild(meta);
         }
 
         // Guardar en historial
         state.chatHistory.push({ role: 'assistant', content: respuesta });
 
-        // Limpiar ticket adjunto después de usarlo
+        // Limpiar ticket adjunto despuÃ©s de usarlo
         if (state.attachedTicket) {
             state.attachedTicket = null;
         }
 
     } catch (error) {
         typing.remove();
-        addChatMessage(`❌ Error al conectar con la IA: ${error.message}. Verifica que el backend y n8n estén corriendo.`, 'system');
+        addChatMessage(`âŒ Error al conectar con la IA: ${error.message}. Verifica que el backend y n8n estÃ©n corriendo.`, 'system');
         console.error('Chat error:', error);
     } finally {
         chatInput.focus();
@@ -600,7 +600,7 @@ function renderCardSelectorList(tickets) {
             const ticket = state.tickets.find(t => t.id_solicitud === ticketId);
             if (ticket) {
                 state.attachedTicket = ticket;
-                addChatMessage(`📎 Ticket #${ticket.id_solicitud} adjuntado. La IA recibirá el contexto completo (ticket, solicitante y análisis IA).`, 'system');
+                addChatMessage(`ðŸ“Ž Ticket #${ticket.id_solicitud} adjuntado. La IA recibirÃ¡ el contexto completo (ticket, solicitante y anÃ¡lisis IA).`, 'system');
             }
             closeCardSelector();
         });
@@ -608,7 +608,7 @@ function renderCardSelectorList(tickets) {
 }
 
 // ============================================
-// DETALLE COMPLETO DEL TICKET (Botón "i")
+// DETALLE COMPLETO DEL TICKET (BotÃ³n "i")
 // ============================================
 function initTicketDetail() {
     const overlay = document.getElementById('ticketDetailOverlay');
@@ -636,7 +636,7 @@ async function openTicketDetail(ticketId) {
     const overlay = document.getElementById('ticketDetailOverlay');
     const body = document.getElementById('ticketDetailBody');
     document.getElementById('ticketDetailId').textContent = `#${ticketId}`;
-    body.innerHTML = '<div class="detail-loading"><i class="fas fa-spinner fa-spin"></i> Cargando detalles del ticket...</div>';
+    body.innerHTML = '<div class="detail-loading"><span class="spinner-ring"></span> Cargando detalles del ticket...</div>';
     overlay.classList.add('open');
 
     try {
@@ -654,7 +654,7 @@ async function openTicketDetail(ticketId) {
         body.innerHTML = buildTicketDetailHTML(data);
     } catch (err) {
         console.error('Error cargando detalle:', err);
-        body.innerHTML = `<div class="detail-loading">❌ Error al cargar los detalles: ${err.message}</div>`;
+        body.innerHTML = `<div class="detail-loading">âŒ Error al cargar los detalles: ${err.message}</div>`;
     }
 }
 
@@ -668,31 +668,31 @@ function buildTicketDetailHTML(d) {
 
     let html = `
         <div class="detail-section">
-            <h4>📄 Información del Ticket</h4>
+            <h4>ðŸ“„ InformaciÃ³n del Ticket</h4>
             <div class="detail-desc"><strong>${esc(t.asunto)}</strong></div>
             <div class="detail-desc">${esc(t.descripcion)}</div>
             <div class="detail-row"><span class="detail-key">Estado</span><span class="detail-val">${esc(t.estado)}</span></div>
-            <div class="detail-row"><span class="detail-key">Categoría</span><span class="detail-val">${esc(t.categoria) || 'N/A'}</span></div>
+            <div class="detail-row"><span class="detail-key">CategorÃ­a</span><span class="detail-val">${esc(t.categoria) || 'N/A'}</span></div>
             <div class="detail-row"><span class="detail-key">Prioridad</span><span class="detail-val">${esc(t.prioridad) || 'N/A'}</span></div>
             <div class="detail-row"><span class="detail-key">Creado</span><span class="detail-val">${fecha(t.fecha_creacion)}</span></div>
             <div class="detail-row"><span class="detail-key">Actualizado</span><span class="detail-val">${fecha(t.fecha_actualizacion)}</span></div>
         </div>
 
         <div class="detail-section">
-            <h4>👤 Solicitante</h4>
+            <h4>ðŸ‘¤ Solicitante</h4>
             ${sol ? `
             <div class="detail-row"><span class="detail-key">Nombre</span><span class="detail-val">${esc(sol.nombre)}</span></div>
             <div class="detail-row"><span class="detail-key">Email</span><span class="detail-val">${esc(sol.email)}</span></div>
-            <div class="detail-row"><span class="detail-key">Área</span><span class="detail-val">${esc(sol.area) || 'N/A'}</span></div>
+            <div class="detail-row"><span class="detail-key">Ãrea</span><span class="detail-val">${esc(sol.area) || 'N/A'}</span></div>
             <div class="detail-row"><span class="detail-key">Rol</span><span class="detail-val">${esc(sol.rol)}</span></div>
             <div class="detail-row"><span class="detail-key">Estado cuenta</span><span class="detail-val">${esc(sol.estado)}</span></div>
             <div class="detail-row"><span class="detail-key">Registrado</span><span class="detail-val">${fecha(sol.fecha_registro)}</span></div>
-            <div class="detail-row"><span class="detail-key">Último acceso</span><span class="detail-val">${fecha(sol.fecha_ultimo_acceso)}</span></div>
+            <div class="detail-row"><span class="detail-key">Ãšltimo acceso</span><span class="detail-val">${fecha(sol.fecha_ultimo_acceso)}</span></div>
             ` : '<div class="detail-row"><span class="detail-val">Sin datos del solicitante</span></div>'}
         </div>
 
         <div class="detail-section">
-            <h4>🛠️ Agente Asignado</h4>
+            <h4>ðŸ› ï¸ Agente Asignado</h4>
             ${ag ? `
             <div class="detail-row"><span class="detail-key">Nombre</span><span class="detail-val">${esc(ag.nombre)}</span></div>
             <div class="detail-row"><span class="detail-key">Email</span><span class="detail-val">${esc(ag.email)}</span></div>
@@ -702,28 +702,28 @@ function buildTicketDetailHTML(d) {
         </div>
 
         <div class="detail-section">
-            <h4>🤖 Análisis IA Local (Ollama)</h4>
+            <h4>ðŸ¤– AnÃ¡lisis IA Local (Ollama)</h4>
             ${ia ? `
-            <div class="detail-row"><span class="detail-key">Categoría IA</span><span class="detail-val">${esc(ia.categoria_ia) || 'N/A'}</span></div>
+            <div class="detail-row"><span class="detail-key">CategorÃ­a IA</span><span class="detail-val">${esc(ia.categoria_ia) || 'N/A'}</span></div>
             <div class="detail-row"><span class="detail-key">Prioridad IA</span><span class="detail-val">${esc(ia.prioridad_ia) || 'N/A'}</span></div>
             <div class="detail-row"><span class="detail-key">Confianza</span><span class="detail-val">${ia.confianza != null ? (ia.confianza * 100).toFixed(1) + '%' : 'N/A'}</span></div>
             <div class="detail-row"><span class="detail-key">Modelo</span><span class="detail-val">${esc(ia.modelo_ia) || 'N/A'}</span></div>
             <div class="detail-row"><span class="detail-key">Tokens usados</span><span class="detail-val">${ia.tokens_usados != null ? ia.tokens_usados : 'N/A'}</span></div>
-            <div class="detail-row"><span class="detail-key">Tiempo ejecución</span><span class="detail-val">${ia.tiempo_ejecucion_ms != null ? ia.tiempo_ejecucion_ms + ' ms' : 'N/A'}</span></div>
-            <div class="detail-row"><span class="detail-key">Fecha análisis</span><span class="detail-val">${fecha(ia.fecha_clasificacion)}</span></div>
-            <div class="detail-row"><span class="detail-key">Revisión manual</span><span class="detail-val">${ia.revision_manual ? 'Sí' : 'No'}</span></div>
-            ${ia.comentario_revision ? `<div class="detail-row"><span class="detail-key">Comentario revisión</span><span class="detail-val">${esc(ia.comentario_revision)}</span></div>` : ''}
-            ` : '<div class="detail-row"><span class="detail-val">La IA aún no ha analizado este ticket</span></div>'}
+            <div class="detail-row"><span class="detail-key">Tiempo ejecuciÃ³n</span><span class="detail-val">${ia.tiempo_ejecucion_ms != null ? ia.tiempo_ejecucion_ms + ' ms' : 'N/A'}</span></div>
+            <div class="detail-row"><span class="detail-key">Fecha anÃ¡lisis</span><span class="detail-val">${fecha(ia.fecha_clasificacion)}</span></div>
+            <div class="detail-row"><span class="detail-key">RevisiÃ³n manual</span><span class="detail-val">${ia.revision_manual ? 'SÃ­' : 'No'}</span></div>
+            ${ia.comentario_revision ? `<div class="detail-row"><span class="detail-key">Comentario revisiÃ³n</span><span class="detail-val">${esc(ia.comentario_revision)}</span></div>` : ''}
+            ` : '<div class="detail-row"><span class="detail-val">La IA aÃºn no ha analizado este ticket</span></div>'}
         </div>
     `;
 
     if (d.historial && d.historial.length > 0) {
         html += `
         <div class="detail-section">
-            <h4>🕘 Historial de Estados</h4>
+            <h4>ðŸ•˜ Historial de Estados</h4>
             ${d.historial.map(h => `
                 <div class="detail-row">
-                    <span class="detail-key">${esc(h.estado_anterior) || '—'} → ${esc(h.estado_nuevo)}</span>
+                    <span class="detail-key">${esc(h.estado_anterior) || 'â€”'} â†’ ${esc(h.estado_nuevo)}</span>
                     <span class="detail-val">${fecha(h.fecha)}</span>
                 </div>
             `).join('')}

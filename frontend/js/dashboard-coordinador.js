@@ -1,4 +1,4 @@
-// dashboard-coordinador.js
+﻿// dashboard-coordinador.js
 const API = window.API_BASE_URL || 'http://localhost:8000/api';
 
 function esc(v) {
@@ -30,7 +30,7 @@ const COLUMN_MAP = {
 };
 
 const PRIO_MAP = {
-    'crítica': 'critical',
+    'crÃ­tica': 'critical',
     'alta': 'high',
     'media': 'medium',
     'baja': 'low'
@@ -56,7 +56,7 @@ async function apiFetch(path, options = {}) {
         throw new Error('No autorizado');
     }
     if (!res.ok) {
-        // Extraer el detalle legible que envía el backend (p.ej. límite diario)
+        // Extraer el detalle legible que envÃ­a el backend (p.ej. lÃ­mite diario)
         let msg = `HTTP ${res.status}`;
         try {
             const err = await res.json();
@@ -80,7 +80,7 @@ function catClass(cat) { return CAT_CLASS[cat] || 'network'; }
 
 function prioClass(prio) {
     const p = (prio || '').toLowerCase();
-    if (p === 'crítica' || p === 'critica') return 'critical';
+    if (p === 'crÃ­tica' || p === 'critica') return 'critical';
     if (p === 'alta') return 'high';
     if (p === 'media') return 'medium';
     return 'low';
@@ -109,14 +109,14 @@ function formatDate(iso) {
 }
 
 function fmt(min) {
-    if (min == null || isNaN(min)) return '—';
+    if (min == null || isNaN(min)) return 'â€”';
     if (min < 60) return `${min} min`;
     const h = Math.round(min / 60);
     return `${h} h`;
 }
 
 // ============================================
-// INICIALIZACIÓN
+// INICIALIZACIÃ“N
 // ============================================
 document.addEventListener('DOMContentLoaded', async () => {
     if (!state.authToken) {
@@ -150,7 +150,7 @@ async function loadUserData() {
         
         // Verificar que sea coordinador
         if (state.userData.role !== 'coordinador' && state.userData.role !== 'administrador') {
-            // Redirigir según rol real
+            // Redirigir segÃºn rol real
             const redirectMap = {
                 'solicitante': 'dashboard-solicitante.html',
                 'agente': 'dashboard-agente.html',
@@ -165,7 +165,7 @@ async function loadUserData() {
 }
 
 // ============================================
-// TEMA Y NAVEGACIÓN
+// TEMA Y NAVEGACIÃ“N
 // ============================================
 function initTheme() {
     const toggle = document.getElementById('themeCheck');
@@ -191,18 +191,18 @@ function initNavigation() {
     const navBtns = document.querySelectorAll('.nav-btn:not(.dropdown-toggle)');
     const dropdownItems = document.querySelectorAll('.dropdown-item');
 
-    // Toggle del menú desplegable
+    // Toggle del menÃº desplegable
     menuToggle.addEventListener('click', (e) => {
         e.stopPropagation();
         dropdownMenu.classList.toggle('open');
     });
 
-    // Cerrar menú al hacer clic fuera
+    // Cerrar menÃº al hacer clic fuera
     document.addEventListener('click', () => {
         dropdownMenu.classList.remove('open');
     });
 
-    // Navegación por botones principales (Kanban)
+    // NavegaciÃ³n por botones principales (Kanban)
     navBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             const page = btn.dataset.page;
@@ -211,7 +211,7 @@ function initNavigation() {
         });
     });
 
-    // Navegación por items del dropdown
+    // NavegaciÃ³n por items del dropdown
     dropdownItems.forEach(item => {
         item.addEventListener('click', (e) => {
             e.preventDefault();
@@ -227,23 +227,23 @@ function navigateTo(page) {
     // Actualizar estado
     state.currentPage = page;
 
-    // Ocultar todas las páginas
+    // Ocultar todas las pÃ¡ginas
     document.querySelectorAll('.page-content').forEach(el => {
         el.classList.remove('active');
     });
 
-    // Mostrar la página seleccionada
+    // Mostrar la pÃ¡gina seleccionada
     const targetPage = document.getElementById(`page-${page}`);
     if (targetPage) {
         targetPage.classList.add('active');
     }
 
-    // Actualizar botón activo
+    // Actualizar botÃ³n activo
     document.querySelectorAll('.nav-btn:not(.dropdown-toggle)').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.page === page);
     });
 
-    // Resaltar el dropdown "Gestión Agentes" si la página pertenece a su grupo
+    // Resaltar el dropdown "GestiÃ³n Agentes" si la pÃ¡gina pertenece a su grupo
     const paginasAgentes = ['asignar', 'supervisar', 'chat-ia', 'rag', 'mi-perfil'];
     const dropdownToggle = document.getElementById('menuToggle');
     if (dropdownToggle) {
@@ -260,7 +260,7 @@ function navigateTo(page) {
         renderPerfil();
     }
 
-    // Cargar datos reales de la BD para cada módulo de coordinación
+    // Cargar datos reales de la BD para cada mÃ³dulo de coordinaciÃ³n
     const loaders = {
         'streamlit': loadEstadisticas,
         'reportes': loadReportes,
@@ -270,7 +270,7 @@ function navigateTo(page) {
     };
     if (loaders[page]) loaders[page]();
 
-    console.log(`📄 Navegando a: ${page}`);
+    console.log(`ðŸ“„ Navegando a: ${page}`);
 }
 
 // ============================================
@@ -279,7 +279,7 @@ function navigateTo(page) {
 let isDragging = false;
 
 function initKanban() {
-    // Se inicializa después del render
+    // Se inicializa despuÃ©s del render
 }
 
 async function fetchTickets() {
@@ -350,7 +350,7 @@ function createCardHTML(t) {
                 <div class="assignee-avatar" style="background:hsl(${hue},60%,40%)">${init}</div>
                 <span class="assignee-name">${esc(t.agente) || 'Sin asignar'}</span>
             </div>
-            <div class="card-date">📅 ${new Date(t.fecha_creacion).toLocaleDateString('es-ES')}</div>
+            <div class="card-date">ðŸ“… ${new Date(t.fecha_creacion).toLocaleDateString('es-ES')}</div>
         </div>
     `;
 }
@@ -432,8 +432,8 @@ function initDragDrop() {
             const ticketId = dragged.dataset.id;
             const newColKey = body.id.replace('col-', '');
 
-            // Columna 'Archivado': no es un estado más del tablero, dispara el
-            // flujo de archivo (confirmación obligatoria; estado terminal).
+            // Columna 'Archivado': no es un estado mÃ¡s del tablero, dispara el
+            // flujo de archivo (confirmaciÃ³n obligatoria; estado terminal).
             if (newColKey === 'archived') {
                 dragged.style.opacity = '1';
                 dragged.classList.remove('dragging');
@@ -443,7 +443,7 @@ function initDragDrop() {
             }
 
             // 'Por Hacer' agrupa dos estados: 'nuevo' (sin agente) y 'asignado'
-            // (con agente). Se elige según si el ticket tiene agente asignado.
+            // (con agente). Se elige segÃºn si el ticket tiene agente asignado.
             let newStatus;
             if (newColKey === 'todo') {
                 const ticket = state.tickets.find(t => t.id_solicitud == ticketId);
@@ -509,18 +509,18 @@ async function updateTicketStatus(id, newStatus) {
 }
 
 // ============================================
-// KANBAN: Archivar (migración 004, modal en js/kanban-archive.js)
+// KANBAN: Archivar (migraciÃ³n 004, modal en js/kanban-archive.js)
 // ============================================
 async function manejarArchivo(ticketId) {
     if (!window.KanbanArchivo) {
-        console.error('kanban-archive.js no está cargado');
+        console.error('kanban-archive.js no estÃ¡ cargado');
         renderBoard();
         return;
     }
     const ticket = state.tickets.find(t => t.id_solicitud == ticketId);
     if (!ticket) return;
 
-    // Solo se archiva un ticket ya completado (lo valida también el backend).
+    // Solo se archiva un ticket ya completado (lo valida tambiÃ©n el backend).
     if (ticket.estado !== 'resuelto' && ticket.estado !== 'cerrado') {
         await KanbanArchivo.avisoNoArchivable(ticket.estado);
         renderBoard(); // la tarjeta vuelve a su columna
@@ -540,7 +540,7 @@ async function manejarArchivo(ticketId) {
 }
 
 // ============================================
-// CHAT IA: Inicialización y Lógica
+// CHAT IA: InicializaciÃ³n y LÃ³gica
 // ============================================
 function initChat() {
     const chatInput = document.getElementById('chatInput');
@@ -551,11 +551,11 @@ function initChat() {
     const chatClose = document.getElementById('chatClose');
 
     if (!chatInput || !chatSendBtn) {
-        console.error('⚠️ Elementos del chat no encontrados');
+        console.error('âš ï¸ Elementos del chat no encontrados');
         return;
     }
 
-    // Este dashboard maneja su propio chat IA (el widget compartido solo añade Chat Global)
+    // Este dashboard maneja su propio chat IA (el widget compartido solo aÃ±ade Chat Global)
     window.__chatIaPropia = true;
 
     chatFab.addEventListener('click', () => {
@@ -598,7 +598,7 @@ function initChat() {
 }
 
 async function sendChatMessage() {
-    // Si la tab activa es Chat Global, el widget compartido (chat-global.js) maneja el envío
+    // Si la tab activa es Chat Global, el widget compartido (chat-global.js) maneja el envÃ­o
     if (window.ChatGlobal && window.ChatGlobal.activo()) { window.ChatGlobal.enviarDesdeInput(); return; }
 
     const chatInput = document.getElementById('chatInput');
@@ -609,8 +609,8 @@ async function sendChatMessage() {
     chatInput.value = '';
     chatInput.style.height = 'auto';
 
-    // Si hay ticket adjunto, el backend inyectará el contexto completo
-    // (ticket + solicitante + análisis IA) a partir del ticket_id
+    // Si hay ticket adjunto, el backend inyectarÃ¡ el contexto completo
+    // (ticket + solicitante + anÃ¡lisis IA) a partir del ticket_id
     const payload = {
         mensaje: mensaje,
         historial: state.chatHistory.slice(-10),
@@ -622,7 +622,7 @@ async function sendChatMessage() {
 
     state.chatHistory.push({ role: 'user', content: mensaje });
 
-    // Typing propio de esta petición: se puede seguir enviando mensajes
+    // Typing propio de esta peticiÃ³n: se puede seguir enviando mensajes
     // mientras la IA responde la anterior (sin bloquear el input).
     const typing = document.createElement('div');
     typing.className = 'typing-indicator';
@@ -656,14 +656,14 @@ async function sendChatMessage() {
         }
 
         const data = await response.json();
-        const respuesta = data.respuesta || 'No recibí respuesta del modelo.';
+        const respuesta = data.respuesta || 'No recibÃ­ respuesta del modelo.';
 
         const botMsg = addChatMessage(respuesta, 'bot');
 
         if (data.tokens || data.modelo) {
             const meta = document.createElement('div');
             meta.className = 'msg-meta';
-            meta.textContent = `${data.modelo || 'IA'} • ${data.tokens?.tokens_generados || '?'} tokens • ${data.tokens?.tiempo_total_ms || '?'}ms`;
+            meta.textContent = `${data.modelo || 'IA'} â€¢ ${data.tokens?.tokens_generados || '?'} tokens â€¢ ${data.tokens?.tiempo_total_ms || '?'}ms`;
             botMsg.appendChild(meta);
         }
 
@@ -675,7 +675,7 @@ async function sendChatMessage() {
 
     } catch (error) {
         typing.remove();
-        addChatMessage(`❌ Error al conectar con la IA: ${error.message}`, 'system');
+        addChatMessage(`âŒ Error al conectar con la IA: ${error.message}`, 'system');
         console.error('Chat error:', error);
     } finally {
         chatInput.focus();
@@ -754,7 +754,7 @@ function renderCardSelectorList(tickets) {
             const ticket = state.tickets.find(t => t.id_solicitud === ticketId);
             if (ticket) {
                 state.attachedTicket = ticket;
-                addChatMessage(`📎 Ticket #${ticket.id_solicitud} adjuntado. La IA recibirá el contexto completo (ticket, solicitante y análisis IA).`, 'system');
+                addChatMessage(`ðŸ“Ž Ticket #${ticket.id_solicitud} adjuntado. La IA recibirÃ¡ el contexto completo (ticket, solicitante y anÃ¡lisis IA).`, 'system');
             }
             closeCardSelector();
         });
@@ -762,8 +762,8 @@ function renderCardSelectorList(tickets) {
 }
 
 // ============================================
-// MÓDULOS DE COORDINACIÓN
-// (Reportes, Asignación, Permisos, SLA, RAG)
+// MÃ“DULOS DE COORDINACIÃ“N
+// (Reportes, AsignaciÃ³n, Permisos, SLA, RAG)
 // ============================================
 function initCoordinatorModules() {
     // --- Reportes ---
@@ -772,7 +772,7 @@ function initCoordinatorModules() {
     if (btnPDF) btnPDF.addEventListener('click', exportarReportePDF);
     if (btnCSV) btnCSV.addEventListener('click', exportarReporteCSV);
 
-    // Fechas por defecto: últimos 30 días (dinámicas, sin valores estáticos)
+    // Fechas por defecto: Ãºltimos 30 dÃ­as (dinÃ¡micas, sin valores estÃ¡ticos)
     const fd = document.getElementById('repFechaDesde');
     const fh = document.getElementById('repFechaHasta');
     if (fd && fh) {
@@ -786,11 +786,11 @@ function initCoordinatorModules() {
         if (el) el.addEventListener('change', loadReportes);
     });
 
-    // --- Asignación ---
+    // --- AsignaciÃ³n ---
     const btnAuto = document.getElementById('btnAutoAsignarIA');
     if (btnAuto) btnAuto.addEventListener('click', autoAsignarIA);
 
-    // Delegación para asignar tickets desde la cola
+    // DelegaciÃ³n para asignar tickets desde la cola
     const asigQueue = document.getElementById('asigQueueBody');
     if (asigQueue) {
         asigQueue.addEventListener('click', async (e) => {
@@ -801,7 +801,7 @@ function initCoordinatorModules() {
             const select = row.querySelector('.glass-select-mini');
             const agenteId = select ? select.value : null;
             if (!ticketId || !agenteId) {
-                mostrarToast('⚠️ Selecciona un agente para asignar el ticket');
+                mostrarToast('âš ï¸ Selecciona un agente para asignar el ticket');
                 return;
             }
             await asignarTicket(ticketId, agenteId);
@@ -833,15 +833,15 @@ async function indexarTicketsRAG() {
     const btn = document.getElementById('btnIndexarRAG');
     if (btn) {
         btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Indexando...';
+        btn.innerHTML = '<span class="spinner-ring"></span> Indexando...';
     }
     try {
         const r = await apiFetch('/coordinator/rag/indexar', { method: 'POST' });
         if (r.sin_trabajo) {
-            mostrarToast('Todos los tickets resueltos ya están indexados');
+            mostrarToast('Todos los tickets resueltos ya estÃ¡n indexados');
         } else {
             mostrarToast(`Indexados ${r.indexados} ticket(s) con ${r.modelo}` +
-                (r.errores ? ` · ${r.errores} error(es)` : ''));
+                (r.errores ? ` Â· ${r.errores} error(es)` : ''));
         }
     } catch (e) {
         mostrarToast(`Error al indexar: ${e.message}`);
@@ -874,11 +874,11 @@ async function exportarReporteCSV() {
     try {
         tickets = await obtenerTicketsFiltrados();
     } catch (e) {
-        mostrarToast(`⚠️ Error al obtener reporte: ${e.message}`);
+        mostrarToast(`âš ï¸ Error al obtener reporte: ${e.message}`);
         return;
     }
     if (tickets.length === 0) {
-        mostrarToast('⚠️ No hay tickets que coincidan con los filtros');
+        mostrarToast('âš ï¸ No hay tickets que coincidan con los filtros');
         return;
     }
 
@@ -902,7 +902,7 @@ async function exportarReporteCSV() {
     a.click();
     URL.revokeObjectURL(url);
 
-    mostrarToast(`📊 Reporte CSV exportado (${tickets.length} tickets)`);
+    mostrarToast(`ðŸ“Š Reporte CSV exportado (${tickets.length} tickets)`);
 }
 
 async function exportarReportePDF() {
@@ -910,11 +910,11 @@ async function exportarReportePDF() {
     try {
         tickets = await obtenerTicketsFiltrados();
     } catch (e) {
-        mostrarToast(`⚠️ Error al obtener reporte: ${e.message}`);
+        mostrarToast(`âš ï¸ Error al obtener reporte: ${e.message}`);
         return;
     }
     if (tickets.length === 0) {
-        mostrarToast('⚠️ No hay tickets que coincidan con los filtros');
+        mostrarToast('âš ï¸ No hay tickets que coincidan con los filtros');
         return;
     }
 
@@ -933,7 +933,7 @@ async function exportarReportePDF() {
     const coordinador = state.userData?.nombre || 'Coordinador';
     const w = window.open('', '_blank');
     if (!w) {
-        mostrarToast('⚠️ El navegador bloqueó la ventana de impresión');
+        mostrarToast('âš ï¸ El navegador bloqueÃ³ la ventana de impresiÃ³n');
         return;
     }
 
@@ -951,11 +951,11 @@ async function exportarReportePDF() {
             </style>
         </head>
         <body>
-            <h1>Reporte de Tickets — HelpDesk IT</h1>
-            <p class="meta">Generado: ${new Date().toLocaleString('es-ES')} • Coordinador: ${esc(coordinador)} • Total: ${tickets.length} tickets</p>
+            <h1>Reporte de Tickets â€” HelpDesk IT</h1>
+            <p class="meta">Generado: ${new Date().toLocaleString('es-ES')} â€¢ Coordinador: ${esc(coordinador)} â€¢ Total: ${tickets.length} tickets</p>
             <table>
                 <thead>
-                    <tr><th>ID</th><th>Asunto</th><th>Categoría</th><th>Prioridad</th><th>Estado</th><th>Agente</th><th>Fecha</th></tr>
+                    <tr><th>ID</th><th>Asunto</th><th>CategorÃ­a</th><th>Prioridad</th><th>Estado</th><th>Agente</th><th>Fecha</th></tr>
                 </thead>
                 <tbody>${filas}</tbody>
             </table>
@@ -965,11 +965,11 @@ async function exportarReportePDF() {
     `);
     w.document.close();
 
-    mostrarToast(`📄 Generando PDF (${tickets.length} tickets)...`);
+    mostrarToast(`ðŸ“„ Generando PDF (${tickets.length} tickets)...`);
 }
 
 // ============================================
-// ESTADÍSTICAS / KPIs (Streamlit)
+// ESTADÃSTICAS / KPIs (Streamlit)
 // ============================================
 async function loadEstadisticas() {
     const kpiGrid = document.querySelector('#page-streamlit .kpi-grid');
@@ -979,15 +979,15 @@ async function loadEstadisticas() {
         const data = await apiFetch('/coordinator/estadisticas');
         renderEstadisticas(data, kpiGrid, catBody, agBody);
     } catch (e) {
-        console.error('Error cargando estadísticas:', e);
+        console.error('Error cargando estadÃ­sticas:', e);
         if (kpiGrid) kpiGrid.innerHTML = `<div style="color:var(--text-placeholder);text-align:center;padding:20px;">Error: ${e.message}</div>`;
     }
 }
 
 function renderEstadisticas(d, kpiGrid, catBody, agBody) {
     const k = d.kpis || {};
-    const sla = k.cumplimiento_sla != null ? `${k.cumplimiento_sla}%` : '—';
-    const tme = k.tiempo_medio_solucion_min != null ? fmt(k.tiempo_medio_solucion_min) : '—';
+    const sla = k.cumplimiento_sla != null ? `${k.cumplimiento_sla}%` : 'â€”';
+    const tme = k.tiempo_medio_solucion_min != null ? fmt(k.tiempo_medio_solucion_min) : 'â€”';
     const agentes = `${k.agentes_activos} / ${k.agentes_totales}`;
 
     if (kpiGrid) {
@@ -1011,7 +1011,7 @@ function renderEstadisticas(d, kpiGrid, catBody, agBody) {
             <div class="kpi-card">
                 <div class="kpi-icon yellow"><i class="fas fa-stopwatch"></i></div>
                 <div class="kpi-content">
-                    <span class="kpi-label">Tiempo Medio Solución</span>
+                    <span class="kpi-label">Tiempo Medio SoluciÃ³n</span>
                     <span class="kpi-value">${tme}</span>
                     <span class="kpi-trend neutral"><i class="fas fa-clock"></i> Tickets resueltos</span>
                 </div>
@@ -1030,7 +1030,7 @@ function renderEstadisticas(d, kpiGrid, catBody, agBody) {
     if (catBody) {
         const cats = d.categorias || [];
         if (cats.length === 0) {
-            catBody.innerHTML = '<div style="color:var(--text-placeholder);text-align:center;padding:20px;">Sin tickets en el último mes</div>';
+            catBody.innerHTML = '<div style="color:var(--text-placeholder);text-align:center;padding:20px;">Sin tickets en el Ãºltimo mes</div>';
         } else {
             const max = Math.max(...cats.map(c => c.total), 1);
             const colors = ['blue', 'orange', 'cyan', 'red', 'green'];
@@ -1098,7 +1098,7 @@ async function loadReportes() {
 }
 
 // ============================================
-// ASIGNACIÓN DE TICKETS
+// ASIGNACIÃ“N DE TICKETS
 // ============================================
 async function loadAsignacion() {
     const grid = document.querySelector('#page-asignar .agent-workload-grid');
@@ -1107,7 +1107,7 @@ async function loadAsignacion() {
         const data = await apiFetch('/coordinator/asignacion');
         renderAsignacion(data, grid, queue);
     } catch (e) {
-        console.error('Error cargando asignación:', e);
+        console.error('Error cargando asignaciÃ³n:', e);
         if (queue) queue.innerHTML = `<tr><td colspan="6" style="color:var(--text-placeholder);text-align:center;padding:16px;">Error: ${e.message}</td></tr>`;
     }
 }
@@ -1139,7 +1139,7 @@ function renderAsignacion(d, grid, queue) {
                     <div class="workload-bar-wrap">
                         <div class="workload-info"><span>Carga de Trabajo:</span> <strong>${a.carga_trabajo} ticket(s)</strong></div>
                         <div class="bar-track"><div class="bar-fill ${fill}" style="width: ${pct}%;"></div></div>
-                        <div class="workload-info"><span>Asignados hoy:</span> <strong>${a.asignados_hoy || 0} / ${maxDiario}${alCupo ? ' — cupo diario completo' : ''}</strong></div>
+                        <div class="workload-info"><span>Asignados hoy:</span> <strong>${a.asignados_hoy || 0} / ${maxDiario}${alCupo ? ' â€” cupo diario completo' : ''}</strong></div>
                     </div>
                 </div>`;
             }).join('');
@@ -1149,7 +1149,7 @@ function renderAsignacion(d, grid, queue) {
     if (queue) {
         const pendientes = d.sin_asignar || [];
         if (pendientes.length === 0) {
-            queue.innerHTML = '<tr><td colspan="6" style="color:var(--text-placeholder);text-align:center;padding:16px;">No hay tickets pendientes de asignación</td></tr>';
+            queue.innerHTML = '<tr><td colspan="6" style="color:var(--text-placeholder);text-align:center;padding:16px;">No hay tickets pendientes de asignaciÃ³n</td></tr>';
         } else {
             queue.innerHTML = pendientes.map(t => `
                 <tr data-ticket-id="${t.id_solicitud}">
@@ -1212,18 +1212,18 @@ async function autoAsignarIA() {
             }
         }
         if (asignados > 0) {
-            mostrarToast(`La IA asignó ${asignados} ticket(s) automáticamente` +
-                (omitidos ? ` · ${omitidos} omitido(s): ${ultimoError}` : ''));
+            mostrarToast(`La IA asignÃ³ ${asignados} ticket(s) automÃ¡ticamente` +
+                (omitidos ? ` Â· ${omitidos} omitido(s): ${ultimoError}` : ''));
         } else if (omitidos > 0) {
-            mostrarToast(`Ningún ticket asignado (${omitidos} omitido(s)): ${ultimoError}`);
+            mostrarToast(`NingÃºn ticket asignado (${omitidos} omitido(s)): ${ultimoError}`);
         }
     } catch (e) {
-        mostrarToast(`Error en balanceo automático: ${e.message}`);
+        mostrarToast(`Error en balanceo automÃ¡tico: ${e.message}`);
     }
 }
 
 // ============================================
-// SUPERVISIÓN / PERMISOS
+// SUPERVISIÃ“N / PERMISOS
 // ============================================
 async function loadSupervisar() {
     const body = document.getElementById('supervisarBody');
@@ -1238,7 +1238,7 @@ async function loadSupervisar() {
                         <td><strong>${esc(a.nombre)}</strong><br><small style="color:var(--text-placeholder);">${esc(a.rol)}</small></td>
                         <td>${esc(a.email)}</td>
                         <td>${esc(a.especialidad)}</td>
-                        <td>${a.nivel_jerarquia || 'Técnico'}</td>
+                        <td>${a.nivel_jerarquia || 'TÃ©cnico'}</td>
                         <td>
                             <label class="glass-switch">
                                 <input type="checkbox" data-permiso="supervision" ${a.permisos_supervision ? 'checked' : ''}>
@@ -1265,7 +1265,7 @@ async function loadSupervisar() {
 async function guardarPermisos() {
     const rows = document.querySelectorAll('#supervisarBody tr[data-agente-id]');
     if (rows.length === 0) {
-        mostrarToast('⚠️ No hay agentes para guardar');
+        mostrarToast('âš ï¸ No hay agentes para guardar');
         return;
     }
     let guardados = 0;
@@ -1280,9 +1280,9 @@ async function guardarPermisos() {
             });
             guardados++;
         }
-        mostrarToast(`✅ Permisos de ${guardados} agente(s) guardados correctamente`);
+        mostrarToast(`âœ… Permisos de ${guardados} agente(s) guardados correctamente`);
     } catch (e) {
-        mostrarToast(`❌ Error al guardar permisos: ${e.message}`);
+        mostrarToast(`âŒ Error al guardar permisos: ${e.message}`);
     }
 }
 
@@ -1305,7 +1305,7 @@ async function loadSLA() {
         });
     } catch (e) {
         console.error('Error cargando SLA:', e);
-        mostrarToast(`⚠️ Error al cargar SLA: ${e.message}`);
+        mostrarToast(`âš ï¸ Error al cargar SLA: ${e.message}`);
     }
 }
 
@@ -1325,7 +1325,7 @@ async function guardarSLA() {
         });
     });
     if (items.length === 0) {
-        mostrarToast('⚠️ No hay políticas SLA para guardar');
+        mostrarToast('âš ï¸ No hay polÃ­ticas SLA para guardar');
         return;
     }
     try {
@@ -1333,9 +1333,9 @@ async function guardarSLA() {
             method: 'POST',
             body: { sla: items }
         });
-        mostrarToast('⏱️ Políticas SLA guardadas correctamente');
+        mostrarToast('â±ï¸ PolÃ­ticas SLA guardadas correctamente');
     } catch (e) {
-        mostrarToast(`❌ Error al guardar SLA: ${e.message}`);
+        mostrarToast(`âŒ Error al guardar SLA: ${e.message}`);
     }
 }
 
@@ -1346,17 +1346,17 @@ async function buscarRAG() {
     const q = document.getElementById('ragSearchInput')?.value.trim();
     const list = document.getElementById('ragResultsList');
     if (!q) {
-        mostrarToast('⚠️ Escribe una consulta para buscar en RAG');
+        mostrarToast('âš ï¸ Escribe una consulta para buscar en RAG');
         return;
     }
-    if (list) list.innerHTML = '<div style="color:var(--text-placeholder);text-align:center;padding:20px;"><i class="fas fa-spinner fa-spin"></i> Buscando...</div>';
+    if (list) list.innerHTML = '<div style="color:var(--text-placeholder);text-align:center;padding:20px;"><span class="spinner-ring"></span> Buscando...</div>';
     try {
         const results = await apiFetch(`/coordinator/rag?query=${encodeURIComponent(q)}`);
         renderRAG(results, list);
     } catch (e) {
         console.error('Error buscando RAG:', e);
-        if (list) list.innerHTML = `<div style="color:var(--text-placeholder);text-align:center;padding:20px;">❌ Error: ${e.message}</div>`;
-        mostrarToast(`❌ Error en RAG: ${e.message}`);
+        if (list) list.innerHTML = `<div style="color:var(--text-placeholder);text-align:center;padding:20px;">âŒ Error: ${e.message}</div>`;
+        mostrarToast(`âŒ Error en RAG: ${e.message}`);
     }
 }
 
@@ -1369,12 +1369,12 @@ function renderRAG(results, list) {
     list.innerHTML = results.map(r => `
         <div class="rag-result-card">
             <div class="rag-result-top">
-                <h4>Solución para: ${esc(r.asunto)}</h4>
+                <h4>SoluciÃ³n para: ${esc(r.asunto)}</h4>
                 <span class="similarity-badge">${(r.similitud * 100).toFixed(1)}% Similitud</span>
             </div>
             <p><strong>Detalle del ticket:</strong> ${esc(r.descripcion)}</p>
-            <p><strong>Estado:</strong> ${esc(r.estado)} • <strong>Categoría:</strong> ${esc(r.categoria)}</p>
-            <span class="rag-meta-tag"><i class="fas fa-check-circle"></i> Ticket fuente: #${r.id_solicitud} • Atención: ${esc(r.agente)}</span>
+            <p><strong>Estado:</strong> ${esc(r.estado)} â€¢ <strong>CategorÃ­a:</strong> ${esc(r.categoria)}</p>
+            <span class="rag-meta-tag"><i class="fas fa-check-circle"></i> Ticket fuente: #${r.id_solicitud} â€¢ AtenciÃ³n: ${esc(r.agente)}</span>
         </div>
     `).join('');
 }
@@ -1415,7 +1415,7 @@ function mostrarToast(msg) {
 }
 
 // ============================================
-// DETALLE COMPLETO DEL TICKET (Botón "i")
+// DETALLE COMPLETO DEL TICKET (BotÃ³n "i")
 // ============================================
 function initTicketDetail() {
     const overlay = document.getElementById('ticketDetailOverlay');
@@ -1443,7 +1443,7 @@ async function openTicketDetail(ticketId) {
     const overlay = document.getElementById('ticketDetailOverlay');
     const body = document.getElementById('ticketDetailBody');
     document.getElementById('ticketDetailId').textContent = `#${ticketId}`;
-    body.innerHTML = '<div class="detail-loading"><i class="fas fa-spinner fa-spin"></i> Cargando detalles del ticket...</div>';
+    body.innerHTML = '<div class="detail-loading"><span class="spinner-ring"></span> Cargando detalles del ticket...</div>';
     overlay.classList.add('open');
 
     try {
@@ -1461,7 +1461,7 @@ async function openTicketDetail(ticketId) {
         body.innerHTML = buildTicketDetailHTML(data);
     } catch (err) {
         console.error('Error cargando detalle:', err);
-        body.innerHTML = `<div class="detail-loading">❌ Error al cargar los detalles: ${err.message}</div>`;
+        body.innerHTML = `<div class="detail-loading">âŒ Error al cargar los detalles: ${err.message}</div>`;
     }
 }
 
@@ -1475,31 +1475,31 @@ function buildTicketDetailHTML(d) {
 
     let html = `
         <div class="detail-section">
-            <h4>📄 Información del Ticket</h4>
+            <h4>ðŸ“„ InformaciÃ³n del Ticket</h4>
             <div class="detail-desc"><strong>${esc(t.asunto)}</strong></div>
             <div class="detail-desc">${esc(t.descripcion)}</div>
             <div class="detail-row"><span class="detail-key">Estado</span><span class="detail-val">${esc(t.estado)}</span></div>
-            <div class="detail-row"><span class="detail-key">Categoría</span><span class="detail-val">${esc(t.categoria) || 'N/A'}</span></div>
+            <div class="detail-row"><span class="detail-key">CategorÃ­a</span><span class="detail-val">${esc(t.categoria) || 'N/A'}</span></div>
             <div class="detail-row"><span class="detail-key">Prioridad</span><span class="detail-val">${esc(t.prioridad) || 'N/A'}</span></div>
             <div class="detail-row"><span class="detail-key">Creado</span><span class="detail-val">${fecha(t.fecha_creacion)}</span></div>
             <div class="detail-row"><span class="detail-key">Actualizado</span><span class="detail-val">${fecha(t.fecha_actualizacion)}</span></div>
         </div>
 
         <div class="detail-section">
-            <h4>👤 Solicitante</h4>
+            <h4>ðŸ‘¤ Solicitante</h4>
             ${sol ? `
             <div class="detail-row"><span class="detail-key">Nombre</span><span class="detail-val">${esc(sol.nombre)}</span></div>
             <div class="detail-row"><span class="detail-key">Email</span><span class="detail-val">${esc(sol.email)}</span></div>
-            <div class="detail-row"><span class="detail-key">Área</span><span class="detail-val">${esc(sol.area) || 'N/A'}</span></div>
+            <div class="detail-row"><span class="detail-key">Ãrea</span><span class="detail-val">${esc(sol.area) || 'N/A'}</span></div>
             <div class="detail-row"><span class="detail-key">Rol</span><span class="detail-val">${esc(sol.rol)}</span></div>
             <div class="detail-row"><span class="detail-key">Estado cuenta</span><span class="detail-val">${esc(sol.estado)}</span></div>
             <div class="detail-row"><span class="detail-key">Registrado</span><span class="detail-val">${fecha(sol.fecha_registro)}</span></div>
-            <div class="detail-row"><span class="detail-key">Último acceso</span><span class="detail-val">${fecha(sol.fecha_ultimo_acceso)}</span></div>
+            <div class="detail-row"><span class="detail-key">Ãšltimo acceso</span><span class="detail-val">${fecha(sol.fecha_ultimo_acceso)}</span></div>
             ` : '<div class="detail-row"><span class="detail-val">Sin datos del solicitante</span></div>'}
         </div>
 
         <div class="detail-section">
-            <h4>🛠️ Agente Asignado</h4>
+            <h4>ðŸ› ï¸ Agente Asignado</h4>
             ${ag ? `
             <div class="detail-row"><span class="detail-key">Nombre</span><span class="detail-val">${esc(ag.nombre)}</span></div>
             <div class="detail-row"><span class="detail-key">Email</span><span class="detail-val">${esc(ag.email)}</span></div>
@@ -1509,28 +1509,28 @@ function buildTicketDetailHTML(d) {
         </div>
 
         <div class="detail-section">
-            <h4>🤖 Análisis IA Local (Ollama)</h4>
+            <h4>ðŸ¤– AnÃ¡lisis IA Local (Ollama)</h4>
             ${ia ? `
-            <div class="detail-row"><span class="detail-key">Categoría IA</span><span class="detail-val">${esc(ia.categoria_ia) || 'N/A'}</span></div>
+            <div class="detail-row"><span class="detail-key">CategorÃ­a IA</span><span class="detail-val">${esc(ia.categoria_ia) || 'N/A'}</span></div>
             <div class="detail-row"><span class="detail-key">Prioridad IA</span><span class="detail-val">${esc(ia.prioridad_ia) || 'N/A'}</span></div>
             <div class="detail-row"><span class="detail-key">Confianza</span><span class="detail-val">${ia.confianza != null ? (ia.confianza * 100).toFixed(1) + '%' : 'N/A'}</span></div>
             <div class="detail-row"><span class="detail-key">Modelo</span><span class="detail-val">${esc(ia.modelo_ia) || 'N/A'}</span></div>
             <div class="detail-row"><span class="detail-key">Tokens usados</span><span class="detail-val">${ia.tokens_usados != null ? ia.tokens_usados : 'N/A'}</span></div>
-            <div class="detail-row"><span class="detail-key">Tiempo ejecución</span><span class="detail-val">${ia.tiempo_ejecucion_ms != null ? ia.tiempo_ejecucion_ms + ' ms' : 'N/A'}</span></div>
-            <div class="detail-row"><span class="detail-key">Fecha análisis</span><span class="detail-val">${fecha(ia.fecha_clasificacion)}</span></div>
-            <div class="detail-row"><span class="detail-key">Revisión manual</span><span class="detail-val">${ia.revision_manual ? 'Sí' : 'No'}</span></div>
-            ${ia.comentario_revision ? `<div class="detail-row"><span class="detail-key">Comentario revisión</span><span class="detail-val">${esc(ia.comentario_revision)}</span></div>` : ''}
-            ` : '<div class="detail-row"><span class="detail-val">La IA aún no ha analizado este ticket</span></div>'}
+            <div class="detail-row"><span class="detail-key">Tiempo ejecuciÃ³n</span><span class="detail-val">${ia.tiempo_ejecucion_ms != null ? ia.tiempo_ejecucion_ms + ' ms' : 'N/A'}</span></div>
+            <div class="detail-row"><span class="detail-key">Fecha anÃ¡lisis</span><span class="detail-val">${fecha(ia.fecha_clasificacion)}</span></div>
+            <div class="detail-row"><span class="detail-key">RevisiÃ³n manual</span><span class="detail-val">${ia.revision_manual ? 'SÃ­' : 'No'}</span></div>
+            ${ia.comentario_revision ? `<div class="detail-row"><span class="detail-key">Comentario revisiÃ³n</span><span class="detail-val">${esc(ia.comentario_revision)}</span></div>` : ''}
+            ` : '<div class="detail-row"><span class="detail-val">La IA aÃºn no ha analizado este ticket</span></div>'}
         </div>
     `;
 
     if (d.historial && d.historial.length > 0) {
         html += `
         <div class="detail-section">
-            <h4>🕘 Historial de Estados</h4>
+            <h4>ðŸ•˜ Historial de Estados</h4>
             ${d.historial.map(h => `
                 <div class="detail-row">
-                    <span class="detail-key">${esc(h.estado_anterior) || '—'} → ${esc(h.estado_nuevo)}</span>
+                    <span class="detail-key">${esc(h.estado_anterior) || 'â€”'} â†’ ${esc(h.estado_nuevo)}</span>
                     <span class="detail-val">${fecha(h.fecha)}</span>
                 </div>
             `).join('')}

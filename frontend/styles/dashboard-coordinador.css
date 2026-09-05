@@ -1873,3 +1873,30 @@ body.night-mode .chat-tab.active { background: linear-gradient(to bottom, var(--
     .chat-tabs { padding: 6px 10px 0 10px; }
     .chat-tab { font-size: 0.75rem; padding: 7px 8px; }
 }
+
+/* ============================================
+   SPINNER DE CARGA PROPIO
+   No depende de fa-spin: Font Awesome congela sus animaciones
+   cuando el SO tiene "movimiento reducido" activado, y el usuario
+   no percibe que algo está cargando (ISO/IEC 25000: visibilidad
+   del estado del sistema).
+============================================ */
+.spinner-ring {
+    display: inline-block;
+    width: 1em; height: 1em;
+    border: 0.18em solid rgba(11, 74, 107, 0.25);
+    border-top-color: #0b6a94;
+    border-radius: 50%;
+    animation: spinner-rotar 0.9s linear infinite;
+    vertical-align: -0.125em;
+    flex-shrink: 0;
+}
+body.night-mode .spinner-ring {
+    border-color: rgba(255, 255, 255, 0.2);
+    border-top-color: #cfe4ff;
+}
+@keyframes spinner-rotar { to { transform: rotate(360deg); } }
+
+/* Tamaños contextuales del spinner */
+.loading-message .spinner-ring,
+.detail-loading .spinner-ring { width: 1.25em; height: 1.25em; }
