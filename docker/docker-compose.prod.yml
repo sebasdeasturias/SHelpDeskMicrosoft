@@ -97,6 +97,8 @@ services:
       CORS_ORIGINS: ${CORS_ORIGINS:-*}
       TRUST_PROXY: ${TRUST_PROXY:-true}
     volumes:
+      # Adjuntos de tickets (PNG/JPG): persisten aunque se recree el contenedor
+      - adjuntos_data:/app/uploads
       # Socket de Docker: logs y respaldos (pg_dump) del panel administrador.
       # Endurecimiento pendiente (auditoría #3): proxy read-only del socket.
       - /var/run/docker.sock:/var/run/docker.sock
@@ -164,6 +166,7 @@ volumes:
   ollama_data:
   n8n_data:
   db_backups:
+  adjuntos_data:
   caddy_data:
   caddy_config:
 

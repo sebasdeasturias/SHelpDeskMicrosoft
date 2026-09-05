@@ -63,6 +63,8 @@ services:
     volumes:
       # Bind mount: los cambios hechos en ../backend (host) se reflejan en vivo dentro del contenedor
       - ../backend:/app
+      # Adjuntos de tickets (PNG/JPG): persisten aunque se recree el contenedor
+      - adjuntos_data:/app/uploads
       # Socket de Docker: logs y respaldos (pg_dump) desde el panel del administrador.
       # PENDIENTE (auditoria #3): proxy read-only del socket como endurecimiento.
       - /var/run/docker.sock:/var/run/docker.sock
@@ -119,6 +121,7 @@ volumes:
   ollama_data:
   n8n_data:
   db_backups:
+  adjuntos_data:
 
 networks:
   helpdesk-network:

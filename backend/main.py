@@ -7,6 +7,12 @@ from auth import router as auth_router
 from tickets import router as tickets_router
 from chat_ai import router as chat_router
 from coordinator import router as coordinator_router
+from adjuntos import router as adjuntos_router, UPLOAD_DIR
+
+# Carpeta pública de adjuntos: los archivos se guardan con nombres UUID no
+# adivinables y se sirven estáticos para que <img>/<a> del frontend funcionen
+# sin enviar cabeceras de autenticación.
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 app = FastAPI(
     title="HelpDesk API",
@@ -16,7 +22,7 @@ app = FastAPI(
 
 # CORS: orígenes permitidos desde el .env (separados por coma).
 # Ejemplo para frontend en Vercel + backend en VPS:
-#   CORS_ORIGINS=https://helpdesk.midominio.com,https://www.midominio.com
+#   CORS_ORIGINS=https://midominio.com,https://www.midominio.com
 # Si se deja "*", se permite cualquier origen pero sin credenciales
 # (recomendado solo cuando la API es pública y no usa cookies).
 _cors_raw = os.getenv("CORS_ORIGINS", "*").strip()
@@ -35,6 +41,10 @@ app.include_router(auth_router, prefix="/api")
 app.include_router(tickets_router, prefix="/api")
 app.include_router(chat_router, prefix="/api")
 app.include_router(coordinator_router, prefix="/api")
+app.include_router(adjuntos_router, prefix="/api")
+
+# Archivos adjuntos de los tickets (PNG/JPG, nombres UUID no adivinables)
+app.mount("/api/adjuntos-archivos", StaticFiles(directory=UPLOAD_DIR), name="adjuntos")
 
 @app.get("/")
 async def root():

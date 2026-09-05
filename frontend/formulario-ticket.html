@@ -103,6 +103,37 @@
                         </select>
                     </div>
 
+                    <!-- Adjuntos: imágenes del problema (PNG/JPG, máx. 20 MB) -->
+                    <div class="attach-section">
+                        <input 
+                            type="file" 
+                            id="adjuntoInput" 
+                            name="adjuntos" 
+                            accept=".png,.jpg,.jpeg"
+                            multiple
+                            hidden
+                            aria-label="Seleccionar imágenes PNG o JPG para adjuntar al ticket"
+                        >
+                        <button 
+                            type="button" 
+                            id="btnAdjuntar" 
+                            class="attach-btn" 
+                            aria-describedby="attachHelp"
+                            aria-label="Adjuntar imágenes: PNG o JPG, máximo 20 megabytes por archivo, hasta 5 imágenes"
+                        >
+                            <i class="fas fa-paperclip attach-btn-icon" aria-hidden="true"></i>
+                            <span class="attach-btn-text">
+                                <strong>Adjuntar imágenes</strong>
+                                <small>PNG o JPG &middot; máx. 20 MB por archivo &middot; hasta 5</small>
+                            </span>
+                        </button>
+                        <p id="attachHelp" class="attach-help">
+                            <i class="fas fa-circle-info" aria-hidden="true"></i>
+                            Una captura de pantalla ayuda al agente a entender el problema. También puedes arrastrar las imágenes aquí.
+                        </p>
+                        <ul id="adjuntosLista" class="adjuntos-lista" aria-live="polite" aria-label="Imágenes seleccionadas"></ul>
+                    </div>
+
                     <!-- Botón de envío -->
                     <button type="button" class="submit-btn" id="btnEnviar">
                         <i class="fas fa-paper-plane"></i> Enviar Ticket
@@ -164,6 +195,10 @@
                     <div class="preview-item">
                         <strong>Prioridad:</strong>
                         <span id="previewPrioridad"></span>
+                    </div>
+                    <div class="preview-item" id="previewAdjuntosItem" style="display: none;">
+                        <strong>Imágenes adjuntas:</strong>
+                        <span id="previewAdjuntos"></span>
                     </div>
                 </div>
             </div>
