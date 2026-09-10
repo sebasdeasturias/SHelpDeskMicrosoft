@@ -25,9 +25,15 @@ app = FastAPI(
 #   CORS_ORIGINS=https://midominio.com,https://www.midominio.com
 # Si se deja "*", se permite cualquier origen pero sin credenciales
 # (recomendado solo cuando la API es pública y no usa cookies).
-_cors_raw = os.getenv("CORS_ORIGINS", "*").strip()
-_cors_origins = [o.strip() for o in _cors_raw.split(",") if o.strip()] if _cors_raw else ["*"]
-_cors_allow_credentials = _cors_origins != ["*"]
+_cors_raw = os.getenv("CORS_ORIGINS", "").strip()
+_cors_origins = [o.strip() for o in _cors_raw.split(",") if o.strip()]
+if not _cors_origins:
+    _cors_origins = ["*"]
+# Nunca combinar comodín con credenciales (configuración inválida y permisiva):
+# si aparece "*", se fuerza a solo comodín y sin credenciales.
+_cors_allow_credentials = "*" not in _cors_origins
+if not _cors_allow_credentials:
+    _cors_origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,

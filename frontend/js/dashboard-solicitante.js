@@ -12,6 +12,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     document.getElementById('refreshBtn').addEventListener('click', loadTickets);
     document.getElementById('logoutBtn').addEventListener('click', logout);
+    const cardHist = document.getElementById('cardVerHistorial');
+    if (cardHist) cardHist.addEventListener('click', () => {
+        document.getElementById('historySection').scrollIntoView({ behavior: 'smooth' });
+    });
 });
 
 function initTheme() {
@@ -111,7 +115,7 @@ async function loadTickets() {
                 year: 'numeric', month: 'short', day: 'numeric'
             });
             
-            const statusClass = `status-${ticket.estado.toLowerCase().replace(' ', '_')}`;
+            const statusClass = 'status-' + String(ticket.estado || '').toLowerCase().replace(/[^a-z_]/g, '');
             const estadoTexto = ticket.estado.replace('_', ' ').charAt(0).toUpperCase() + ticket.estado.replace('_', ' ').slice(1);
             
             const item = document.createElement('div');

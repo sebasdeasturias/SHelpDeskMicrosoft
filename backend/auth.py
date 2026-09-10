@@ -11,6 +11,7 @@ from sqlalchemy import select, text
 import os
 import io
 import base64
+import ipaddress
 import pyotp
 import segno
 from dotenv import load_dotenv
@@ -70,14 +71,51 @@ class MfaCode(BaseModel):
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
 
+# --- IP real del cliente / proxies de confianza (anti-spoof de X-Forwarded-For) ---
+_TRUST_PROXY = os.getenv("TRUST_PROXY", "").lower() in ("1", "true", "yes")
+_DEF_TRUSTED_CIDRS = ("127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,"
+                      "100.64.0.0/10,::1/128,fc00::/7")
+
+
+def _parse_cidrs(raw: str):
+    redes = []
+    for c in raw.split(","):
+        c = c.strip()
+        if c:
+            try:
+                redes.append(ipaddress.ip_network(c, strict=False))
+            except ValueError:
+                continue
+    return redes
+
+
+_REDES_CONFIABLES = _parse_cidrs(os.getenv("TRUSTED_PROXY_CIDRS", _DEF_TRUSTED_CIDRS))
+
+
+def _ip_confiable(ip: str) -> bool:
+    try:
+        addr = ipaddress.ip_address(ip)
+    except ValueError:
+        return False
+    return any(addr in red for red in _REDES_CONFIABLES)
+
 def _cliente_ip(request: Request) -> str:
-    """IP real del cliente. Solo confía en X-Forwarded-For si TRUST_PROXY=true
-    (cuando hay un proxy reverso de confianza delante, p.ej. Caddy)."""
-    if os.getenv("TRUST_PROXY", "").lower() in ("1", "true", "yes"):
-        xff = request.headers.get("x-forwarded-for")
-        if xff:
-            return xff.split(",")[0].strip() or "desconocido"
-    return request.client.host if request.client else "desconocido"
+    """IP real del cliente.
+
+    Solo confía en X-Forwarded-For con TRUST_PROXY=true. Recorre la cabecera por
+    la DERECHA y devuelve la primera IP que NO pertenezca a un proxy de
+    confianza (patrón ProxyFix): así un cliente no puede falsear la IP
+    inyectando un valor al principio de la cabecera.
+    """
+    host = request.client.host if request.client else "desconocido"
+    if not _TRUST_PROXY:
+        return host
+    xff = request.headers.get("x-forwarded-for", "")
+    partes = [p.strip() for p in xff.split(",") if p.strip()]
+    for ip in reversed(partes):
+        if not _ip_confiable(ip):
+            return ip
+    return partes[0] if partes else host
 
 async def _revisar_limite_login(request: Request, email: str) -> None:
     ip = _cliente_ip(request)

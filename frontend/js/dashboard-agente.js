@@ -654,7 +654,7 @@ async function openTicketDetail(ticketId) {
         body.innerHTML = buildTicketDetailHTML(data);
     } catch (err) {
         console.error('Error cargando detalle:', err);
-        body.innerHTML = `<div class="detail-loading">❌ Error al cargar los detalles: ${err.message}</div>`;
+        body.innerHTML = `<div class="detail-loading">❌ Error al cargar los detalles: ${esc(err.message)}</div>`;
     }
 }
 

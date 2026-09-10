@@ -131,6 +131,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     initChat();
     initCoordinatorModules();
     initTicketDetail();
+    // Listeners de los botones que antes usaban onclick inline (CSP estricta).
+    const btnChatIA = document.getElementById('btnAbrirChatIA');
+    if (btnChatIA) btnChatIA.addEventListener('click', () => document.getElementById('chatFab').click());
+    document.querySelectorAll('.ai-prompt-card[data-prompt]').forEach(card => {
+        card.addEventListener('click', () => enviarPromptSugerido(card.dataset.prompt));
+    });
     await fetchTickets();
     setInterval(fetchTickets, 5000);
 });
@@ -844,7 +850,7 @@ async function indexarTicketsRAG() {
                 (r.errores ? ` · ${r.errores} error(es)` : ''));
         }
     } catch (e) {
-        mostrarToast(`Error al indexar: ${e.message}`);
+        mostrarToast(`Error al indexar: ${esc(e.message)}`);
     } finally {
         if (btn) {
             btn.disabled = false;
@@ -874,7 +880,7 @@ async function exportarReporteCSV() {
     try {
         tickets = await obtenerTicketsFiltrados();
     } catch (e) {
-        mostrarToast(`⚠️ Error al obtener reporte: ${e.message}`);
+        mostrarToast(`⚠️ Error al obtener reporte: ${esc(e.message)}`);
         return;
     }
     if (tickets.length === 0) {
@@ -910,7 +916,7 @@ async function exportarReportePDF() {
     try {
         tickets = await obtenerTicketsFiltrados();
     } catch (e) {
-        mostrarToast(`⚠️ Error al obtener reporte: ${e.message}`);
+        mostrarToast(`⚠️ Error al obtener reporte: ${esc(e.message)}`);
         return;
     }
     if (tickets.length === 0) {
@@ -959,11 +965,13 @@ async function exportarReportePDF() {
                 </thead>
                 <tbody>${filas}</tbody>
             </table>
-            <script>window.onload = function () { window.print(); }<\/script>
         </body>
         </html>
     `);
     w.document.close();
+    w.focus();
+    // Se imprime desde el opener (script externo 'self') para no necesitar script inline.
+    setTimeout(() => { try { w.print(); } catch (e) {} }, 300);
 
     mostrarToast(`📄 Generando PDF (${tickets.length} tickets)...`);
 }
@@ -980,7 +988,7 @@ async function loadEstadisticas() {
         renderEstadisticas(data, kpiGrid, catBody, agBody);
     } catch (e) {
         console.error('Error cargando estadísticas:', e);
-        if (kpiGrid) kpiGrid.innerHTML = `<div style="color:var(--text-placeholder);text-align:center;padding:20px;">Error: ${e.message}</div>`;
+        if (kpiGrid) kpiGrid.innerHTML = `<div style="color:var(--text-placeholder);text-align:center;padding:20px;">Error: ${esc(e.message)}</div>`;
     }
 }
 
@@ -1108,7 +1116,7 @@ async function loadAsignacion() {
         renderAsignacion(data, grid, queue);
     } catch (e) {
         console.error('Error cargando asignación:', e);
-        if (queue) queue.innerHTML = `<tr><td colspan="6" style="color:var(--text-placeholder);text-align:center;padding:16px;">Error: ${e.message}</td></tr>`;
+        if (queue) queue.innerHTML = `<tr><td colspan="6" style="color:var(--text-placeholder);text-align:center;padding:16px;">Error: ${esc(e.message)}</td></tr>`;
     }
 }
 
@@ -1186,7 +1194,7 @@ async function asignarTicket(ticketId, agenteId, silencioso = false) {
         fetchTickets();
         return res;
     } catch (e) {
-        if (!silencioso) mostrarToast(`Error al asignar: ${e.message}`);
+        if (!silencioso) mostrarToast(`Error al asignar: ${esc(e.message)}`);
         throw e;
     }
 }
@@ -1218,7 +1226,7 @@ async function autoAsignarIA() {
             mostrarToast(`Ningún ticket asignado (${omitidos} omitido(s)): ${ultimoError}`);
         }
     } catch (e) {
-        mostrarToast(`Error en balanceo automático: ${e.message}`);
+        mostrarToast(`Error en balanceo automático: ${esc(e.message)}`);
     }
 }
 
@@ -1238,7 +1246,7 @@ async function loadSupervisar() {
                         <td><strong>${esc(a.nombre)}</strong><br><small style="color:var(--text-placeholder);">${esc(a.rol)}</small></td>
                         <td>${esc(a.email)}</td>
                         <td>${esc(a.especialidad)}</td>
-                        <td>${a.nivel_jerarquia || 'Técnico'}</td>
+                        <td>${esc(a.nivel_jerarquia) || 'Técnico'}</td>
                         <td>
                             <label class="glass-switch">
                                 <input type="checkbox" data-permiso="supervision" ${a.permisos_supervision ? 'checked' : ''}>
@@ -1251,14 +1259,14 @@ async function loadSupervisar() {
                                 <span class="slider-switch"></span>
                             </label>
                         </td>
-                        <td><span class="status-pill resuelto">${a.estado}</span></td>
+                        <td><span class="status-pill resuelto">${esc(a.estado)}</span></td>
                     </tr>
                 `).join('');
             }
         }
     } catch (e) {
         console.error('Error cargando agentes:', e);
-        if (body) body.innerHTML = `<tr><td colspan="7" style="color:var(--text-placeholder);text-align:center;padding:16px;">Error: ${e.message}</td></tr>`;
+        if (body) body.innerHTML = `<tr><td colspan="7" style="color:var(--text-placeholder);text-align:center;padding:16px;">Error: ${esc(e.message)}</td></tr>`;
     }
 }
 
@@ -1282,7 +1290,7 @@ async function guardarPermisos() {
         }
         mostrarToast(`✅ Permisos de ${guardados} agente(s) guardados correctamente`);
     } catch (e) {
-        mostrarToast(`❌ Error al guardar permisos: ${e.message}`);
+        mostrarToast(`❌ Error al guardar permisos: ${esc(e.message)}`);
     }
 }
 
@@ -1305,7 +1313,7 @@ async function loadSLA() {
         });
     } catch (e) {
         console.error('Error cargando SLA:', e);
-        mostrarToast(`⚠️ Error al cargar SLA: ${e.message}`);
+        mostrarToast(`⚠️ Error al cargar SLA: ${esc(e.message)}`);
     }
 }
 
@@ -1335,7 +1343,7 @@ async function guardarSLA() {
         });
         mostrarToast('⏱️ Políticas SLA guardadas correctamente');
     } catch (e) {
-        mostrarToast(`❌ Error al guardar SLA: ${e.message}`);
+        mostrarToast(`❌ Error al guardar SLA: ${esc(e.message)}`);
     }
 }
 
@@ -1355,8 +1363,8 @@ async function buscarRAG() {
         renderRAG(results, list);
     } catch (e) {
         console.error('Error buscando RAG:', e);
-        if (list) list.innerHTML = `<div style="color:var(--text-placeholder);text-align:center;padding:20px;">❌ Error: ${e.message}</div>`;
-        mostrarToast(`❌ Error en RAG: ${e.message}`);
+        if (list) list.innerHTML = `<div style="color:var(--text-placeholder);text-align:center;padding:20px;">❌ Error: ${esc(e.message)}</div>`;
+        mostrarToast(`❌ Error en RAG: ${esc(e.message)}`);
     }
 }
 
@@ -1461,7 +1469,7 @@ async function openTicketDetail(ticketId) {
         body.innerHTML = buildTicketDetailHTML(data);
     } catch (err) {
         console.error('Error cargando detalle:', err);
-        body.innerHTML = `<div class="detail-loading">❌ Error al cargar los detalles: ${err.message}</div>`;
+        body.innerHTML = `<div class="detail-loading">❌ Error al cargar los detalles: ${esc(err.message)}</div>`;
     }
 }
 

@@ -493,28 +493,28 @@
                         <p>Consulta análisis automáticos de métricas, distribución de agentes y detección de cuellos de botella mediante LLM local.</p>
                     </div>
                     <div class="header-actions">
-                        <button class="action-header-btn primary" onclick="document.getElementById('chatFab').click();">
+                        <button class="action-header-btn primary" id="btnAbrirChatIA">
                             <i class="fas fa-comments"></i> Abrir Chat Flotante
                         </button>
                     </div>
                 </div>
 
                 <div class="ai-prompts-grid">
-                    <div class="ai-prompt-card" onclick="enviarPromptSugerido('¿Qué agentes tienen mayor sobrecarga de tickets hoy y cómo puedo rebalancear?')">
+                    <div class="ai-prompt-card" data-prompt="¿Qué agentes tienen mayor sobrecarga de tickets hoy y cómo puedo rebalancear?">
                         <div class="prompt-icon"><i class="fas fa-balance-scale"></i></div>
                         <h4>Análisis de Carga de Agentes</h4>
                         <p>Detecta agentes con sobrecupo y sugiere redistribución óptima.</p>
                         <span class="prompt-btn-run"><i class="fas fa-arrow-right"></i> Preguntar a la IA</span>
                     </div>
 
-                    <div class="ai-prompt-card" onclick="enviarPromptSugerido('Genera un resumen ejecutivo de los tickets críticos y con riesgo de incumplir SLA.')">
+                    <div class="ai-prompt-card" data-prompt="Genera un resumen ejecutivo de los tickets críticos y con riesgo de incumplir SLA.">
                         <div class="prompt-icon"><i class="fas fa-exclamation-circle"></i></div>
                         <h4>Resumen de Tickets Críticos</h4>
                         <p>Identifica tickets urgentes sin resolver o próximos a vencer su SLA.</p>
                         <span class="prompt-btn-run"><i class="fas fa-arrow-right"></i> Preguntar a la IA</span>
                     </div>
 
-                    <div class="ai-prompt-card" onclick="enviarPromptSugerido('¿Cuáles son las categorías más reportadas esta semana y sus posibles causas raíz?')">
+                    <div class="ai-prompt-card" data-prompt="¿Cuáles son las categorías más reportadas esta semana y sus posibles causas raíz?">
                         <div class="prompt-icon"><i class="fas fa-chart-line"></i></div>
                         <h4>Detección de Cuellos de Botella</h4>
                         <p>Analiza patrones recurrentes de incidentes en redes, hardware o software.</p>

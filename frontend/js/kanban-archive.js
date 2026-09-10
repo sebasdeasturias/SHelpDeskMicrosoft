@@ -154,7 +154,7 @@
                 titulo: 'No se puede archivar',
                 ref: null,
                 textoHtml: 'Solo se pueden archivar tickets en estado <b>resuelto</b> o <b>cerrado</b>. ' +
-                           'Este ticket está en estado <b>' + String(estado || 'desconocido').replace(/</g, '&lt;') + '</b>.',
+                           'Este ticket está en estado <b>' + String(estado || 'desconocido').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</b>.',
                 notaHtml: 'Muévelo a un estado completado y luego arrástralo aquí para archivarlo.',
                 primario: 'Entendido',
                 ocultarSecundario: true

@@ -9,6 +9,7 @@ from datetime import datetime
 import asyncio
 import httpx
 import os
+import secrets
 
 router = APIRouter(prefix="/tickets", tags=["Tickets"])
 
@@ -352,18 +353,45 @@ async def receive_ai_analysis(
     x_api_key: str = Header(None),
 ):
     """Callback exclusivo de n8n (análisis IA). Protegido con API key compartida."""
-    if not AI_CALLBACK_KEY or x_api_key != AI_CALLBACK_KEY:
+    # Comparación en tiempo constante (evita filtrado por timing).
+    if not AI_CALLBACK_KEY or not secrets.compare_digest(x_api_key or "", AI_CALLBACK_KEY):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Callback no autorizado: falta o es inválido el header X-API-Key"
         )
 
-    id_categoria = data.get("id_categoria")
-    id_prioridad = data.get("id_prioridad")
-    confianza = float(data.get("confianza", 0.0))
-    modelo_ia = data.get("modelo_ia", "llama3.2:3b")
-    tokens_usados = int(data.get("tokens_usados", 0))
-    tiempo_ejecucion_ms = int(data.get("tiempo_ejecucion_ms", 0))
+    # Validación estricta de la entrada (evita 500 por tipos/rangos y FKs inexistentes).
+    try:
+        id_categoria = int(data.get("id_categoria"))
+        id_prioridad = int(data.get("id_prioridad"))
+        confianza = float(data.get("confianza", 0.0))
+        tokens_usados = int(data.get("tokens_usados", 0) or 0)
+        tiempo_ejecucion_ms = int(data.get("tiempo_ejecucion_ms", 0) or 0)
+    except (TypeError, ValueError):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="id_categoria, id_prioridad, confianza y métricas deben ser numéricos"
+        )
+    if not (0.0 <= confianza <= 1.0):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="confianza debe estar entre 0 y 1")
+    modelo_ia = str(data.get("modelo_ia", "llama3.2:3b"))[:50]
+
+    # El ticket debe existir (no crear clasificaciones huérfanas).
+    existe = await db.execute(
+        text("SELECT 1 FROM solicitud WHERE id_solicitud = :id"), {"id": ticket_id})
+    if not existe.scalar():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket no encontrado")
+
+    # Categoría y prioridad deben existir (evita violaciones de FK y valores "Desconocida").
+    cat_nombre = (await db.execute(
+        text("SELECT nombre FROM categoria WHERE id_categoria = :id"), {"id": id_categoria})).scalar()
+    if cat_nombre is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="id_categoria no existe")
+    prio_nombre = (await db.execute(
+        text("SELECT nivel FROM prioridad WHERE id_prioridad = :id"), {"id": id_prioridad})).scalar()
+    if prio_nombre is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="id_prioridad no existe")
 
     await db.execute(text("""
         UPDATE solicitud 
@@ -376,13 +404,7 @@ async def receive_ai_analysis(
         "id_prioridad": id_prioridad,
         "ticket_id": ticket_id
     })
-    
-    cat_result = await db.execute(text("SELECT nombre FROM categoria WHERE id_categoria = :id"), {"id": id_categoria})
-    cat_nombre = cat_result.scalar() or "Desconocida"
-    
-    prio_result = await db.execute(text("SELECT nivel FROM prioridad WHERE id_prioridad = :id"), {"id": id_prioridad})
-    prio_nombre = prio_result.scalar() or "Desconocida"
-    
+
     await db.execute(text("""
         INSERT INTO clasificacion_ia (
             id_solicitud, prioridad_ia, categoria_ia, confianza, 
