@@ -10,11 +10,9 @@
 //     desarrollo local con docker compose).
 //
 // Para desplegar el frontend en Vercel (o cualquier host estático) con el backend
-// en otro servidor, descomenta la siguiente línea y pon la URL pública de tu API:
-//
-//   window.APP_API_BASE_URL = 'https://api.tudominio.com/api';
-//
-window.APP_API_BASE_URL = 'https://becoming-psi-hewlett-beverage.trycloudflare.com/api'; // TEMPORAL (prueba de conexión; túnel del 2026-09-05 14:58)
+// en otro servidor, define aquí la URL pública estable de tu API.
+// URL estable actual: Tailscale Funnel del backend local (no caduca).
+window.APP_API_BASE_URL = 'https://desktop-5vclct5.tail5f1502.ts.net/api';
 (function () {
     'use strict';
     var override = (typeof window.APP_API_BASE_URL !== 'undefined') ? window.APP_API_BASE_URL : '';

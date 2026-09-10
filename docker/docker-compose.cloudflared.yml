@@ -71,10 +71,23 @@ services:
   ollama:
     image: ollama/ollama:latest
     container_name: ollama
+    environment:
+      # Mantener los modelos calientes y usar todas las GPU visibles.
+      - OLLAMA_KEEP_ALIVE=30m
     volumes:
       - ollama_data:/root/.ollama
     networks:
       - helpdesk-network
+    # Aceleración por GPU NVIDIA. Docker Desktop (WSL2) inyecta /dev/dxg con
+    # --gpus all; en Docker Engine nativo usa nvidia-container-runtime.
+    # Si el host no tiene GPU NVIDIA, comenta este bloque (Ollama cae a CPU).
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
     restart: unless-stopped
 
   n8n:
