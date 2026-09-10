@@ -229,6 +229,51 @@ fi
 ok "✅ Usuario '$APP_USER' listo (rol + permisos sobre las tablas de la app)"
 
 # ============================================
+# 2.6.1 BASE DE DATOS DEDICADA DE n8n (aislada de la app/pgvector)
+#       n8n deja de compartir helpdesk_db y el superusuario. Idempotente.
+# ============================================
+N8N_USER="$(grep -E '^N8N_DB_USER=' "$ENV_FILE" | head -n1 | cut -d= -f2- | tr -d ' \t\r\"')"
+N8N_USER="${N8N_USER:-n8n}"
+N8N_DB="$(grep -E '^N8N_DB_NAME=' "$ENV_FILE" | head -n1 | cut -d= -f2- | tr -d ' \t\r\"')"
+N8N_DB="${N8N_DB:-n8n_db}"
+N8N_PASS="$(grep -E '^N8N_DB_PASSWORD=' "$ENV_FILE" | head -n1 | cut -d= -f2- | tr -d ' \t\r\"')"
+
+if [ -z "$N8N_PASS" ]; then
+    warn "⚠️ N8N_DB_PASSWORD no está en .env; se omite la BD dedicada de n8n"
+else
+    say "🧩 Configurando la base de datos dedicada de n8n ($N8N_DB)..."
+    N8N_PASS_ESC="${N8N_PASS//$q/$q$q}"
+    N8N_ROLE_SQL="$(cat <<'SQLEOF'
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = '__N8NUSER__') THEN
+    CREATE ROLE __N8NUSER__ LOGIN PASSWORD '__N8NPASS__';
+  ELSE
+    ALTER ROLE __N8NUSER__ WITH LOGIN PASSWORD '__N8NPASS__';
+  END IF;
+END
+$$;
+SQLEOF
+)"
+    N8N_ROLE_SQL="${N8N_ROLE_SQL//__N8NUSER__/$N8N_USER}"
+    N8N_ROLE_SQL="${N8N_ROLE_SQL//__N8NPASS__/$N8N_PASS_ESC}"
+    printf '%s\n' "$N8N_ROLE_SQL" | docker exec -i helpdesk-db psql -v ON_ERROR_STOP=1 -U "$PG_USER" -d postgres >/dev/null
+    if [ $? -ne 0 ]; then
+        err "❌ Error creando el rol $N8N_USER"
+        exit 1
+    fi
+    if [ "$(docker exec helpdesk-db psql -tA -U "$PG_USER" -d postgres -c "SELECT 1 FROM pg_database WHERE datname='$N8N_DB'")" != "1" ]; then
+        docker exec helpdesk-db psql -v ON_ERROR_STOP=1 -U "$PG_USER" -d postgres -c "CREATE DATABASE $N8N_DB OWNER $N8N_USER" >/dev/null
+        if [ $? -ne 0 ]; then
+            err "❌ No se pudo crear la BD $N8N_DB"
+            exit 1
+        fi
+        printf '%s\n' "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"; CREATE EXTENSION IF NOT EXISTS \"pgcrypto\"; ALTER SCHEMA public OWNER TO $N8N_USER; GRANT ALL ON SCHEMA public TO $N8N_USER;" | docker exec -i helpdesk-db psql -v ON_ERROR_STOP=1 -U "$PG_USER" -d "$N8N_DB" >/dev/null
+    fi
+    ok "✅ n8n usará la BD dedicada '$N8N_DB' con el rol '$N8N_USER'"
+fi
+
+# ============================================
 # 2.7 DATOS INICIALES (seed_usuarios.sql)
 #     Idempotente: sincroniza los usuarios de prueba (password123).
 # ============================================

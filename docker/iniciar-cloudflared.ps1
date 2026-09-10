@@ -413,6 +413,57 @@ try {
 }
 
 # ============================================
+# 2.6.1 BASE DE DATOS DEDICADA DE n8n (aislada de la app/pgvector)
+#       n8n deja de compartir helpdesk_db y el superusuario. Idempotente.
+# ============================================
+$N8nUser = "n8n"
+if ($envContent -match "(?m)^\s*N8N_DB_USER\s*=\s*(.+?)\s*$") { $N8nUser = $Matches[1] }
+$N8nDb = "n8n_db"
+if ($envContent -match "(?m)^\s*N8N_DB_NAME\s*=\s*(.+?)\s*$") { $N8nDb = $Matches[1] }
+$N8nPass = ""
+if ($envContent -match "(?m)^\s*N8N_DB_PASSWORD\s*=\s*(.+?)\s*$") { $N8nPass = $Matches[1] }
+
+if ([string]::IsNullOrWhiteSpace($N8nPass)) {
+    Write-Host "⚠️ N8N_DB_PASSWORD no está en .env; se omite la BD dedicada de n8n" -ForegroundColor Yellow
+} elseif ($N8nUser -notmatch "^[a-z_][a-z0-9_]*$" -or $N8nDb -notmatch "^[a-z_][a-z0-9_]*$") {
+    Write-Host "❌ N8N_DB_USER y N8N_DB_NAME deben ser minúsculas/números/guion bajo" -ForegroundColor Red
+    exit 1
+} else {
+    Write-Host "`n🧩 Configurando la base de datos dedicada de n8n ($N8nDb)..." -ForegroundColor Cyan
+    $EscN8n = $N8nPass.Replace("'", "''")
+    $n8nSql = @'
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = '__N8NUSER__') THEN
+    CREATE ROLE __N8NUSER__ LOGIN PASSWORD '__N8NPASS__';
+  ELSE
+    ALTER ROLE __N8NUSER__ WITH LOGIN PASSWORD '__N8NPASS__';
+  END IF;
+END
+$$;
+'@
+    $n8nSql = $n8nSql.Replace('__N8NUSER__', $N8nUser).Replace('__N8NPASS__', $EscN8n)
+    $tmpN8n = Join-Path $env:TEMP "helpdesk_n8n_role.sql"
+    [System.IO.File]::WriteAllText($tmpN8n, $n8nSql, (New-Object System.Text.UTF8Encoding($false)))
+    try {
+        docker cp $tmpN8n "helpdesk-db:/tmp/n8n_role.sql" | Out-Null
+        docker exec helpdesk-db psql -v ON_ERROR_STOP=1 -U $PgUser -d postgres -f /tmp/n8n_role.sql
+        if ($LASTEXITCODE -ne 0) { throw "Error creando el rol $N8nUser" }
+        docker exec helpdesk-db rm -f /tmp/n8n_role.sql
+    } finally {
+        Remove-Item $tmpN8n -ErrorAction SilentlyContinue
+    }
+    $dbExists = docker exec helpdesk-db psql -tA -U $PgUser -d postgres -c "SELECT 1 FROM pg_database WHERE datname='$N8nDb'"
+    if ("$dbExists".Trim() -ne "1") {
+        docker exec helpdesk-db psql -v ON_ERROR_STOP=1 -U $PgUser -d postgres -c "CREATE DATABASE $N8nDb OWNER $N8nUser"
+        if ($LASTEXITCODE -ne 0) { Write-Host "❌ No se pudo crear la BD $N8nDb" -ForegroundColor Red; exit 1 }
+        $extSql = "CREATE EXTENSION IF NOT EXISTS `"uuid-ossp`"; CREATE EXTENSION IF NOT EXISTS `"pgcrypto`"; ALTER SCHEMA public OWNER TO $N8nUser; GRANT ALL ON SCHEMA public TO $N8nUser;"
+        docker exec helpdesk-db psql -v ON_ERROR_STOP=1 -U $PgUser -d $N8nDb -c $extSql
+    }
+    Write-Host "✅ n8n usará la BD dedicada '$N8nDb' con el rol '$N8nUser'" -ForegroundColor Green
+}
+
+# ============================================
 # 2.7 DATOS INICIALES (seed_usuarios.sql)
 # ============================================
 if (-not (Test-Path $SeedFile)) {
