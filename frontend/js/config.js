@@ -9,10 +9,14 @@
 //  3. http://localhost:8000/api cuando abres los HTML desde el disco (file://,
 //     desarrollo local con docker compose).
 //
-// Para desplegar el frontend en Vercel (o cualquier host estático) con el backend
-// en otro servidor, define aquí la URL pública estable de tu API.
-// URL estable actual: Tailscale Funnel del backend local (no caduca).
-window.APP_API_BASE_URL = 'https://desktop-5vclct5.tail5f1502.ts.net/api';
+// DESPLIEGUE EN VERCEL: el frontend llama a su MISMO origen (/api) y Vercel
+// proxya esa ruta al backend con un rewrite definido en vercel.json. Así se
+// evita el bloqueo de Chrome "Local Network Access" (una página pública no
+// puede llamar directamente a la IP privada de Tailscale) y también el CORS.
+// Por eso aquí NO se define una URL absoluta.
+//
+// Para otros hosts estáticos, descomenta y pon la URL pública de tu API:
+//   window.APP_API_BASE_URL = 'https://api.tudominio.com/api';
 (function () {
     'use strict';
     var override = (typeof window.APP_API_BASE_URL !== 'undefined') ? window.APP_API_BASE_URL : '';
