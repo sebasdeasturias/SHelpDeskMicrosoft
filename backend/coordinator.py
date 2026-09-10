@@ -1129,11 +1129,12 @@ async def toggle_workflow(workflow_id: str, data: dict, db: AsyncSession = Depen
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                             detail="N8N_API_KEY no está configurada en el .env")
     import httpx
+    # n8n 2.x: activar/desactivar con endpoints dedicados (PATCH ya no se admite).
+    accion = "activate" if activo else "deactivate"
     try:
-        async with httpx.AsyncClient(timeout=15.0) as c:
-            r = await c.patch(f"{N8N_URL}/api/v1/workflows/{workflow_id}",
-                              headers={"X-N8N-API-KEY": N8N_API_KEY, "Content-Type": "application/json"},
-                              content=json.dumps({"active": activo}))
+        async with httpx.AsyncClient(timeout=20.0) as c:
+            r = await c.post(f"{N8N_URL}/api/v1/workflows/{workflow_id}/{accion}",
+                             headers={"X-N8N-API-KEY": N8N_API_KEY})
             r.raise_for_status()
             return {"status": "ok", "id": workflow_id, "activo": activo}
     except Exception as e:
