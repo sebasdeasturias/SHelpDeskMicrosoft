@@ -201,7 +201,7 @@ DECLARE
   t text;
 BEGIN
   FOREACH t IN ARRAY ARRAY['usuarios','categoria','prioridad','solicitud','adjunto',
-                           'comentario','historial','sla','log','clasificacion_ia',
+                           'comentario','sla','clasificacion_ia',
                            'embedding_vector','sugerencia_rag','log_ia','configuracion_ia',
                            'mensaje_chat_global'] LOOP
     IF EXISTS (SELECT 1 FROM information_schema.tables
@@ -211,6 +211,9 @@ BEGIN
   END LOOP;
 END
 $$;
+-- Tablas de auditoría: append-only (SELECT/INSERT) para el usuario de la app.
+GRANT SELECT, INSERT ON TABLE historial TO __USER__;
+GRANT SELECT, INSERT ON TABLE log TO __USER__;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO __USER__;
 SQLEOF
 )"

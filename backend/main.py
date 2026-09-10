@@ -1,6 +1,5 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 import os
 
 from auth import router as auth_router
@@ -8,7 +7,7 @@ from tickets import router as tickets_router
 from chat_ai import router as chat_router
 from coordinator import router as coordinator_router
 from chat_global import router as chat_global_router
-from adjuntos import router as adjuntos_router, UPLOAD_DIR
+from adjuntos import router as adjuntos_router, router_archivos, UPLOAD_DIR
 
 # Carpeta pública de adjuntos: los archivos se guardan con nombres UUID no
 # adivinables y se sirven estáticos para que <img>/<a> del frontend funcionen
@@ -44,9 +43,8 @@ app.include_router(chat_router, prefix="/api")
 app.include_router(coordinator_router, prefix="/api")
 app.include_router(chat_global_router, prefix="/api")
 app.include_router(adjuntos_router, prefix="/api")
-
-# Archivos adjuntos de los tickets (PNG/JPG, nombres UUID no adivinables)
-app.mount("/api/adjuntos-archivos", StaticFiles(directory=UPLOAD_DIR), name="adjuntos")
+# Descarga de adjuntos AUTENTICADA (antes era StaticFiles público; hallazgo A1).
+app.include_router(router_archivos, prefix="/api")
 
 @app.get("/")
 async def root():

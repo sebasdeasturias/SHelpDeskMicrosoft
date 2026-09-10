@@ -1,7 +1,7 @@
 # backend/auth.py
 from fastapi import APIRouter, HTTPException, Depends, status, Request
 from fastapi.security import OAuth2PasswordBearer
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
@@ -46,7 +46,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 # Modelos Pydantic
 class UserLogin(BaseModel):
     email: EmailStr
-    password: str
+    password: str = Field(..., max_length=128)
 
 class Token(BaseModel):
     access_token: str
@@ -218,11 +218,11 @@ async def login(credentials: UserLogin, request: Request, db: AsyncSession = Dep
 # backend/auth.py
 
 class UserRegister(BaseModel):
-    nombres: str
-    apellidos: str
+    nombres: str = Field(..., min_length=1, max_length=100)
+    apellidos: str = Field(..., min_length=1, max_length=100)
     email: EmailStr
-    area: str
-    password: str
+    area: str = Field(..., min_length=1, max_length=100)
+    password: str = Field(..., min_length=8, max_length=128)
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register_user(user_data: UserRegister, request: Request, db: AsyncSession = Depends(get_db)):
@@ -242,9 +242,11 @@ async def register_user(user_data: UserRegister, request: Request, db: AsyncSess
     existing_user = result.fetchone()
     
     if existing_user:
+        # Mensaje GENÉRICO a propósito: no confirma si el correo existe
+        # (evita enumeración de usuarios; hallazgo A3).
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="El correo electrónico ya está registrado"
+            detail="No se pudo completar el registro. Revisa los datos e inténtalo de nuevo."
         )
     
     # Hashear la contraseña
