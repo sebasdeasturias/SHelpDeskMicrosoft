@@ -10,6 +10,12 @@ const errorMessage = document.getElementById('errorMessage');
 const errorText = document.getElementById('errorText');
 const loadingMessage = document.getElementById('loadingMessage');
 const btnLogin = document.getElementById('btnLogin');
+const mfaSection = document.getElementById('mfaSection');
+const mfaCode = document.getElementById('mfaCode');
+const btnMfaVerify = document.getElementById('btnMfaVerify');
+const groupEmail = document.getElementById('groupEmail');
+const groupPassword = document.getElementById('groupPassword');
+let mfaToken = null;
 
 // Toggle password visibility
 togglePasswordBtn.addEventListener('click', () => {
@@ -58,7 +64,11 @@ loginForm.addEventListener('submit', async (e) => {
         
         const data = await response.json();
         
-        if (response.ok) {
+        if (response.ok && data.mfa_required) {
+            // Credenciales correctas pero el usuario tiene 2FA: pedir el código.
+            mfaToken = data.mfa_token;
+            showMfaStep();
+        } else if (response.ok) {
             // Login exitoso
             await handleSuccessfulLogin(data, remember);
         } else {
@@ -72,6 +82,54 @@ loginForm.addEventListener('submit', async (e) => {
         hideLoading();
         btnLogin.disabled = false;
     }
+});
+
+// Mostrar el paso de segundo factor (2FA) ocultando usuario/contraseña
+function showMfaStep() {
+    hideError();
+    groupEmail.style.display = 'none';
+    groupPassword.style.display = 'none';
+    btnLogin.style.display = 'none';
+    mfaSection.style.display = 'block';
+    mfaCode.value = '';
+    mfaCode.focus();
+}
+
+// Verificar el código TOTP y completar el login
+btnMfaVerify.addEventListener('click', async () => {
+    hideError();
+    const code = mfaCode.value.trim();
+    if (!/^\d{6}$/.test(code)) {
+        showError('Introduce el código de 6 dígitos.');
+        return;
+    }
+    showLoading();
+    btnMfaVerify.disabled = true;
+    try {
+        const response = await fetch(`${API_BASE_URL}/auth/mfa/verify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mfa_token: mfaToken, code: code }),
+        });
+        const data = await response.json();
+        if (response.ok) {
+            const remember = document.getElementById('remember').checked;
+            await handleSuccessfulLogin(data, remember);
+        } else {
+            showError(data.detail || 'Código 2FA incorrecto.');
+        }
+    } catch (error) {
+        console.error('MFA error:', error);
+        showError('Error de conexión. Por favor, verifica si el servidor está en funcionamiento.');
+    } finally {
+        hideLoading();
+        btnMfaVerify.disabled = false;
+    }
+});
+
+// Permite enviar el código con Enter
+mfaCode.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); btnMfaVerify.click(); }
 });
 
 // Manejar login exitoso

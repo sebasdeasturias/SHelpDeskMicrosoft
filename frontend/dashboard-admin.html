@@ -27,6 +27,7 @@
                 <button class="nav-btn" data-page="logs" title="Logs de contenedores"><i class="fas fa-terminal"></i> <span>Logs</span></button>
                 <button class="nav-btn" data-page="n8n" title="Workflows n8n"><i class="fas fa-diagram-project"></i> <span>N8N</span></button>
                 <button class="nav-btn" data-page="ia" title="Modelos y parámetros IA"><i class="fas fa-robot"></i> <span>IA</span></button>
+                <button class="nav-btn" data-page="seguridad" title="Doble factor (2FA)"><i class="fas fa-shield-halved"></i> <span>Seguridad</span></button>
             </nav>
         </div>
         <div class="topbar-right">
@@ -272,9 +273,51 @@
                 </div>
             </div>
         </section>
-    </div>
+        <!-- SEGURIDAD / 2FA -->
+        <section id="page-seguridad" class="page-content">
+            <div class="coordinator-panel-scroll">
+                <div class="panel-header-banner">
+                    <div class="header-info">
+                        <h2>Seguridad · Doble factor (2FA)</h2>
+                        <p>Añade un segundo factor TOTP a tu cuenta. Muy recomendado para administradores y coordinadores.</p>
+                    </div>
+                </div>
 
-    <!-- Modal de confirmación -->
+                <div class="filter-panel-card">
+                    <h3><i class="fas fa-shield-halved"></i> Estado de tu 2FA</h3>
+                    <p id="mfaEstado" style="margin:6px 0 14px;">Cargando...</p>
+
+                    <div id="mfaActions">
+                        <button class="action-header-btn primary" id="btnMfaSetup"><i class="fas fa-shield-halved"></i> Activar 2FA</button>
+                    </div>
+
+                    <div id="mfaSetupBox" style="display:none;">
+                        <p>1. Escanea el QR con Google Authenticator / Authy / Aegis:</p>
+                        <img id="mfaQr" alt="QR 2FA" style="width:180px;height:180px;background:#fff;padding:8px;border-radius:8px;">
+                        <p style="margin-top:8px;">O introduce la clave manualmente: <code id="mfaSecret"></code></p>
+                        <div class="filter-group" style="max-width:240px;">
+                            <label for="mfaEnableCode">2. Código de 6 dígitos de la app</label>
+                            <input class="glass-input" id="mfaEnableCode" inputmode="numeric" maxlength="6" placeholder="000000">
+                        </div>
+                        <div style="margin-top:12px;">
+                            <button class="action-header-btn success" id="btnMfaEnable"><i class="fas fa-check"></i> Activar 2FA</button>
+                            <button class="action-header-btn" id="btnMfaCancelar">Cancelar</button>
+                        </div>
+                    </div>
+
+                    <div id="mfaDisableBox" style="display:none;">
+                        <p>Introduce un código válido de tu app para desactivar el 2FA:</p>
+                        <div class="filter-group" style="max-width:240px;">
+                            <input class="glass-input" id="mfaDisableCode" inputmode="numeric" maxlength="6" placeholder="000000">
+                        </div>
+                        <div style="margin-top:12px;">
+                            <button class="action-header-btn" id="btnMfaDisable"><i class="fas fa-shield-halved"></i> Desactivar 2FA</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
     <div class="modal-overlay" id="modalOverlay">
         <div class="modal-content">
             <div class="modal-header"><h3 id="modalTitulo">Confirmar</h3></div>

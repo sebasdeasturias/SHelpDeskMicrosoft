@@ -48,12 +48,12 @@
                 <h2>Manejo de incidentes TI</h2>
 
                 <form id="loginForm" class="login-form">
-                    <div class="input-group">
+                    <div class="input-group" id="groupEmail">
                         <i class="fas fa-envelope input-icon"></i>
                         <input type="email" id="email" name="email" placeholder="juan.perez@empresa.com" required autocomplete="email">
                     </div>
 
-                    <div class="input-group">
+                    <div class="input-group" id="groupPassword">
                         <i class="fas fa-lock input-icon"></i>
                         <input type="password" id="password" name="password" placeholder="Ingrese su contraseña" required autocomplete="current-password">
                         <button type="button" class="show-pwd" id="togglePassword">
@@ -64,6 +64,18 @@
                     <button type="submit" class="login-btn" id="btnLogin">
                         Ingresar
                     </button>
+
+                    <div id="mfaSection" style="display: none;">
+                        <p class="mfa-hint" style="margin: 0 0 10px; font-size: 0.9em;">
+                            <i class="fas fa-shield-halved"></i>
+                            Introduce el código de 6 dígitos de tu app de autenticación.
+                        </p>
+                        <div class="input-group">
+                            <i class="fas fa-key input-icon"></i>
+                            <input type="text" id="mfaCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000">
+                        </div>
+                        <button type="button" class="login-btn" id="btnMfaVerify">Verificar código</button>
+                    </div>
 
                     <div id="errorMessage" class="error-message" style="display: none;">
                         <i class="fas fa-exclamation-circle"></i>

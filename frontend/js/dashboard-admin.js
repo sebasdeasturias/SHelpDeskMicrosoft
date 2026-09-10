@@ -103,7 +103,8 @@ const LOADERS = {
     'respaldos': loadRespaldos,
     'logs': () => {},
     'n8n': loadN8N,
-    'ia': loadIA
+    'ia': loadIA,
+    'seguridad': loadMfa
 };
 
 function initNavigation() {
@@ -280,6 +281,13 @@ function bindAcciones() {
     document.getElementById('btnRefrescarN8N').addEventListener('click', loadN8N);
     document.getElementById('btnIaPull').addEventListener('click', iaPull);
     document.getElementById('btnIaParams').addEventListener('click', guardarIaParams);
+    document.getElementById('btnMfaSetup').addEventListener('click', mfaSetup);
+    document.getElementById('btnMfaEnable').addEventListener('click', mfaEnable);
+    document.getElementById('btnMfaDisable').addEventListener('click', mfaDisable);
+    document.getElementById('btnMfaCancelar').addEventListener('click', () => {
+        document.getElementById('mfaSetupBox').style.display = 'none';
+        document.getElementById('mfaActions').style.display = 'block';
+    });
 }
 
 async function crearUsuario() {
@@ -653,6 +661,70 @@ async function guardarIaParams() {
             }
         });
         mostrarToast('Parámetros guardados. Se aplican en el próximo mensaje del chat.');
+    } catch (e) {
+        mostrarToast(`Error: ${e.message}`);
+    }
+}
+
+// ============================================
+// SEGURIDAD / 2FA
+// ============================================
+async function loadMfa() {
+    const estado = document.getElementById('mfaEstado');
+    const acciones = document.getElementById('mfaActions');
+    const disableBox = document.getElementById('mfaDisableBox');
+    document.getElementById('mfaSetupBox').style.display = 'none';
+    try {
+        const me = await apiFetch('/auth/me');
+        state.userData = me;
+        if (me.mfa_enabled) {
+            estado.innerHTML = '<i class="fas fa-circle-check"></i> El 2FA está <strong>activado</strong> en tu cuenta.';
+            acciones.style.display = 'none';
+            disableBox.style.display = 'block';
+        } else {
+            estado.innerHTML = '<i class="fas fa-triangle-exclamation"></i> El 2FA está <strong>desactivado</strong>.';
+            acciones.style.display = 'block';
+            disableBox.style.display = 'none';
+        }
+    } catch (e) {
+        estado.textContent = `Error: ${e.message}`;
+    }
+}
+
+async function mfaSetup() {
+    try {
+        const r = await apiFetch('/auth/mfa/setup', { method: 'POST' });
+        document.getElementById('mfaQr').src = r.qr;
+        document.getElementById('mfaSecret').textContent = r.secret;
+        document.getElementById('mfaEnableCode').value = '';
+        document.getElementById('mfaSetupBox').style.display = 'block';
+        document.getElementById('mfaActions').style.display = 'none';
+        document.getElementById('mfaDisableBox').style.display = 'none';
+    } catch (e) {
+        mostrarToast(`Error: ${e.message}`);
+    }
+}
+
+async function mfaEnable() {
+    const code = document.getElementById('mfaEnableCode').value.trim();
+    if (!/^\d{6}$/.test(code)) { mostrarToast('Introduce el código de 6 dígitos'); return; }
+    try {
+        await apiFetch('/auth/mfa/enable', { method: 'POST', body: { code } });
+        mostrarToast('2FA activado correctamente');
+        loadMfa();
+    } catch (e) {
+        mostrarToast(`Error: ${e.message}`);
+    }
+}
+
+async function mfaDisable() {
+    const code = document.getElementById('mfaDisableCode').value.trim();
+    if (!/^\d{6}$/.test(code)) { mostrarToast('Introduce el código de 6 dígitos'); return; }
+    try {
+        await apiFetch('/auth/mfa/disable', { method: 'POST', body: { code } });
+        mostrarToast('2FA desactivado');
+        document.getElementById('mfaDisableCode').value = '';
+        loadMfa();
     } catch (e) {
         mostrarToast(`Error: ${e.message}`);
     }
