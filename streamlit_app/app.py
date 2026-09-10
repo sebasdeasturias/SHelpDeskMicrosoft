@@ -109,15 +109,18 @@ def app_principal():
                 st.rerun()
 
         st.divider()
-        # Ambos roles acceden al centro de control; dentro, el administrador ve
-        # todas las herramientas y el coordinador solo la gestión de n8n.
-        opciones = ["Dashboard de Estadísticas", "Centro de Control"]
+        # El Centro de Control (herramientas de administración) es exclusivo del
+        # administrador; el coordinador solo ve el Dashboard de Estadísticas. La
+        # gestión de n8n quedó en el panel web del administrador.
+        opciones = (["Dashboard de Estadísticas", "Centro de Control"]
+                    if u["rol"] == "administrador"
+                    else ["Dashboard de Estadísticas"])
         vista = st.radio("Navegación", opciones, label_visibility="collapsed")
 
         st.divider()
         st.caption("Streamlit :8501 · Docker shelpdeskmicrosoft")
 
-    if "Centro de Control" in vista:
+    if vista == "Centro de Control":
         admin.render()
     else:
         estadisticas.render()

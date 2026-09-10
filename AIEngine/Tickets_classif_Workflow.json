@@ -95,7 +95,9 @@
         "jsonBody": "={{ JSON.stringify($json.ai_analysis_payload) }}",
         "options": {
           "timeout": 30000
-        }
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
       },
       "id": "341797ac-8fef-4367-bf6a-9c39acb390ee",
       "name": "Almacenar Análisis en Backend",
@@ -105,7 +107,13 @@
         800,
         0
       ],
-      "onError": "continueRegularOutput"
+      "onError": "stopWorkflow",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REEMPLAZA_CON_TU_CREDENCIAL",
+          "name": "HelpDesk AI Callback"
+        }
+      }
     },
     {
       "parameters": {

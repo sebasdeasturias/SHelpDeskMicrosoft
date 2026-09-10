@@ -12,9 +12,7 @@ import theme
 import docker_api
 import backups
 
-N8N_URL = os.getenv("N8N_URL", "http://localhost:5678")
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")
-
 palabras_peligrosas = ("insert", "update", "delete", "drop", "alter", "truncate", "grant", "create")
 
 
@@ -24,11 +22,11 @@ def render():
     if es_admin:
         theme.banner(
             "Centro de Control del Administrador",
-            "Potestad total: usuarios y roles, base de datos, respaldos, logs del sistema, workflows de n8n y modelos de IA.",
+            "Potestad total: usuarios y roles, base de datos, respaldos, logs del sistema y modelos de IA. La gestión de n8n está en el panel web de administración.",
             badge=st.session_state.usuario['nombre'],
         )
-        tab_usuarios, tab_bd, tab_backups, tab_logs, tab_n8n, tab_ia = st.tabs(
-            ["Usuarios y Roles", "Base de Datos", "Respaldos", "Logs del Sistema", "N8N Workflows", "IA / Ollama"]
+        tab_usuarios, tab_bd, tab_backups, tab_logs, tab_ia = st.tabs(
+            ["Usuarios y Roles", "Base de Datos", "Respaldos", "Logs del Sistema", "IA / Ollama"]
         )
         with tab_usuarios:
             _usuarios()
@@ -38,19 +36,16 @@ def render():
             _respaldos()
         with tab_logs:
             _logs()
-        with tab_n8n:
-            _n8n()
         with tab_ia:
             _ia()
     else:
-        # Coordinadores: solo la gestión de workflows n8n (la API key del .env
-        # es compartida únicamente entre coordinadores y administradores).
+        # Los coordinadores ya no gestionan n8n desde aquí: esa potestad quedó
+        # exclusivamente en el panel web del administrador (frontend).
         theme.banner(
-            "Gestión de Workflows n8n",
-            "Consulta, activa y desactiva los workflows de automatización de la plataforma.",
+            "Gestión de n8n movida al panel web",
+            "La activación/desactivación de workflows de n8n se realiza ahora desde el panel del administrador.",
             badge=st.session_state.usuario['nombre'],
         )
-        _n8n()
 
 
 # ============================================================
@@ -369,88 +364,7 @@ def _logs():
 
 
 def _log_defaults():
-    return ["helpdesk-backend", "helpdesk-db", "helpdesk-streamlit", "n8n", "ollama"]
-
-
-# ============================================================
-# N8N
-# ============================================================
-def _n8n():
-    st.markdown("<h3 style='color:#fff; text-shadow:0 1px 4px rgba(0,0,0,0.5);'>Gestión de n8n</h3>", unsafe_allow_html=True)
-
-    ok, detalle = _n8n_health()
-    if ok:
-        st.success(f"n8n accesible en {N8N_URL} ({detalle})")
-    else:
-        st.error(f"n8n NO accesible en {N8N_URL}: {detalle}")
-
-    st.link_button("Abrir editor n8n (puerto 5678)", "http://localhost:5678", use_container_width=True)
-
-    st.divider()
-    api_key = os.getenv("N8N_API_KEY", "").strip()
-    if api_key:
-        st.caption("API key cargada desde el servidor (.env) — uso restringido a coordinadores y administradores; nunca sale del backend.")
-        _n8n_workflows(api_key)
-    else:
-        api_key = st.text_input("N8N API Key (Settings → n8n API)", value=st.session_state.get("n8n_key", ""), type="password")
-        if api_key:
-            st.session_state.n8n_key = api_key
-            _n8n_workflows(api_key)
-        else:
-            st.info("Configura N8N_API_KEY en el .env (recomendado) o introduce la API Key manualmente para listar, activar y desactivar workflows.")
-
-
-def _n8n_health() -> tuple[bool, str]:
-    try:
-        r = requests.get(f"{N8N_URL}/healthz", timeout=5)
-        return r.status_code == 200, f"healthz {r.status_code}"
-    except Exception as e:
-        return False, str(e)
-
-
-def _n8n_workflows(api_key: str):
-    headers = {"X-N8N-API-KEY": api_key}
-    try:
-        r = requests.get(f"{N8N_URL}/api/v1/workflows", headers=headers, timeout=10, params={"limit": 100})
-        if r.status_code != 200:
-            st.error(f"La API de n8n respondió {r.status_code}: {r.text[:300]}")
-            return
-        data = r.json().get("data", [])
-        if not data:
-            st.info("No hay workflows en esta instancia de n8n.")
-            return
-        for wf in data:
-            punto = ('<span style="display:inline-block; width:10px; height:10px; border-radius:50%;'
-                     'background:#22c55e; margin-right:8px;"></span>' if wf.get("active")
-                     else '<span style="display:inline-block; width:10px; height:10px; border-radius:50%;'
-                          'background:#9ca3af; margin-right:8px;"></span>')
-            col1, col2 = st.columns([3, 1])
-            with col1:
-                st.markdown(
-                    f"<div style='background:var(--glass-bg); border:2px solid var(--glass-border);"
-                    f"border-radius:12px; padding:10px 14px;'>"
-                    f"<b style='color:var(--text-dark);'>{punto}{wf.get('name', 'sin nombre')}</b> "
-                    f"<span style='color:var(--text-placeholder); font-size:0.78rem;'>"
-                    f"ID: {wf.get('id')} · {'Activo' if wf.get('active') else 'Inactivo'}</span></div>",
-                    unsafe_allow_html=True,
-                )
-            with col2:
-                accion = "Desactivar" if wf.get("active") else "Activar"
-                if st.button(accion, key=f"wf_{wf.get('id')}", use_container_width=True):
-                    nuevo = not bool(wf.get("active"))
-                    resp = requests.patch(
-                        f"{N8N_URL}/api/v1/workflows/{wf.get('id')}",
-                        headers={**headers, "Content-Type": "application/json"},
-                        data=json.dumps({"active": nuevo}), timeout=10,
-                    )
-                    if resp.status_code == 200:
-                        st.toast(f"Workflow '{wf.get('name')}' {'activado' if nuevo else 'desactivado'}")
-                        time.sleep(0.4)
-                        st.rerun()
-                    else:
-                        st.error(f"Error {resp.status_code}: {resp.text[:200]}")
-    except Exception as e:
-        st.error(f"No se pudo consultar la API de n8n: {e}")
+    return ["helpdesk-backend", "helpdesk-db", "helpdesk-streamlit", "ollama"]
 
 
 # ============================================================

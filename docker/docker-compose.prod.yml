@@ -82,6 +82,8 @@ services:
       - DB_POSTGRESDB_DATABASE=${POSTGRES_DB}
       - DB_POSTGRESDB_USER=${POSTGRES_USER}
       - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
+      # Clave que el workflow de clasificación envía al backend en X-API-Key.
+      - AI_CALLBACK_KEY=${AI_CALLBACK_KEY}
     volumes:
       - n8n_data:/home/node/.n8n
     depends_on:
@@ -142,8 +144,6 @@ services:
     container_name: helpdesk-streamlit
     environment:
       DATABASE_URL: postgresql://${APP_DB_USER}:${APP_DB_PASSWORD}@postgres:5432/${POSTGRES_DB}
-      N8N_URL: http://n8n:5678
-      N8N_API_KEY: ${N8N_API_KEY}
       OLLAMA_URL: http://ollama:11434
       DOCKER_HOST: http://docker-socket-proxy:2375
       POSTGRES_HOST: postgres
