@@ -5,6 +5,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
+# Cliente de PostgreSQL (pg_dump/pg_restore) para los respaldos del panel admin.
+# Sin esto los respaldos se hacían vía Docker exec (socket montado).
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 

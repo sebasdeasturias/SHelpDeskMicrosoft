@@ -73,16 +73,26 @@ services:
       # Orígenes CORS permitidos (separados por coma). Ej: si el frontend está
       # en Vercel: https://helpdesk.midominio.com. Con "*" no se usan cookies.
       CORS_ORIGINS: ${CORS_ORIGINS:-*}
+      # Proxy Docker de SOLO LECTURA (logs del panel admin). El backend ya no
+      # monta el socket: no puede ejecutar comandos ni crear contenedores.
+      DOCKER_HOST: http://docker-socket-proxy:2375
+      # Superusuario SOLO para pg_dump/pg_restore (respaldos); no se usa para el
+      # tráfico normal de la app.
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      BACKUP_DIR: /backups
     volumes:
       # Bind mount: los cambios hechos en ../backend (host) se reflejan en vivo dentro del contenedor
       - ../backend:/app
       # Adjuntos de tickets (PNG/JPG): persisten aunque se recree el contenedor
       - adjuntos_data:/app/uploads
-      # Socket de Docker: logs y respaldos (pg_dump) desde el panel del administrador.
-      # PENDIENTE (auditoria #3): proxy read-only del socket como endurecimiento.
-      - /var/run/docker.sock:/var/run/docker.sock
+      # Volumen compartido de respaldos (lo escribe pg_dump desde el backend).
+      - db_backups:/backups
     depends_on:
       - postgres
+      - docker-socket-proxy
     networks:
       - helpdesk-network
 
@@ -92,21 +102,45 @@ services:
       dockerfile: streamlit_app/Dockerfile
     container_name: helpdesk-streamlit
     ports:
-      - "8501:8501"
+      # Panel administrativo: SOLO accesible desde el host (no desde la LAN ni
+      # Internet). Para acceso remoto, usa el túnel/VPN, nunca publicar 0.0.0.0.
+      - "127.0.0.1:8501:8501"
     environment:
       DATABASE_URL: postgresql://${APP_DB_USER}:${APP_DB_PASSWORD}@postgres:5432/${POSTGRES_DB}
       N8N_URL: http://n8n:5678
       N8N_API_KEY: ${N8N_API_KEY}
       OLLAMA_URL: http://ollama:11434
+      DOCKER_HOST: http://docker-socket-proxy:2375
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      BACKUP_DIR: /backups
     volumes:
       # Bind mount: cambios en ../streamlit_app reflejados en vivo + hot reload de Streamlit
       - ../streamlit_app:/app
-      # Socket de Docker para leer logs del sistema (potestad del administrador)
-      - /var/run/docker.sock:/var/run/docker.sock
+      # Volumen compartido de respaldos (los escribe pg_dump desde el panel).
+      - db_backups:/backups
     depends_on:
       - postgres
+      - docker-socket-proxy
     networks:
       - helpdesk-network
+
+  # Proxy de SOLO LECTURA hacia el socket de Docker (logs/inspección del panel
+  # admin). Ni el backend ni el panel montan el socket directamente, así que no
+  # pueden crear contenedores ni escapar al host (POST=0 bloquea toda escritura).
+  docker-socket-proxy:
+    image: tecnativa/docker-socket-proxy
+    container_name: helpdesk-socket-proxy
+    environment:
+      - CONTAINERS=1
+      - POST=0
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - helpdesk-network
+    restart: unless-stopped
 
   n8n:
     image: n8nio/n8n

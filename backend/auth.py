@@ -103,6 +103,51 @@ async def authenticate_user(db: AsyncSession, email: str, password: str):
     
     return UserData(id_usuario=user[0], nombre=user[1], email=user[2], rol=user[4])
 
+async def usuario_actual(db: AsyncSession, token: str) -> dict:
+    """Decodifica el JWT y lo revalida contra la BD.
+
+    Devuelve los datos REALES del usuario (rol/estado actuales), de modo que
+    desactivar una cuenta o cambiarle el rol invalida al instante los tokens ya
+    emitidos, sin esperar a que expiren. Lanza 401 si el token es inválido o
+    expirado, o si el usuario no existe / no está activo.
+    """
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token inválido o expirado",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    user_id = payload.get("user_id")
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token inválido",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    row = await db.execute(text("""
+        SELECT id_usuario, nombre, email, rol, area, estado
+        FROM usuarios WHERE id_usuario = :id
+    """), {"id": user_id})
+    u = row.fetchone()
+    if not u or u[5] != "activo":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Sesión no válida: el usuario no existe o está inactivo",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return {
+        "user_id": u[0],
+        "nombre": u[1],
+        "email": u[2],
+        "sub": u[2],
+        "role": u[3],
+        "area": u[4],
+        "estado": u[5],
+    }
+
+
 # Endpoint de Login
 @router.post("/login", response_model=Token)
 async def login(credentials: UserLogin, request: Request, db: AsyncSession = Depends(get_db)):
@@ -200,41 +245,13 @@ async def register_user(user_data: UserRegister, request: Request, db: AsyncSess
 @router.get("/me")
 async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
     """
-    Obtener usuario actual desde el token
+    Obtener usuario actual desde el token, revalidado contra la BD.
     """
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("sub")
-        role: str = payload.get("role")
-        user_id: int = payload.get("user_id")
-        
-        if email is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Could not validate credentials"
-            )
-        
-        # Obtener información adicional del usuario
-        result = await db.execute(text("""
-            SELECT nombre, area FROM usuarios WHERE id_usuario = :user_id
-        """), {"user_id": user_id})
-        
-        user_row = result.fetchone()
-        
-        return {
-            "email": email,
-            "role": role,
-            "user_id": user_id,
-            "nombre": user_row[0] if user_row else email,
-            "area": user_row[1] if user_row else None
-        }
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token has expired"
-        )
-    except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token is invalid"
-        )
+    u = await usuario_actual(db, token)
+    return {
+        "email": u["email"],
+        "role": u["role"],
+        "user_id": u["user_id"],
+        "nombre": u["nombre"],
+        "area": u["area"],
+    }

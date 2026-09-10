@@ -9,7 +9,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import get_db
-from auth import SECRET_KEY, ALGORITHM, oauth2_scheme
+from auth import SECRET_KEY, ALGORITHM, oauth2_scheme, usuario_actual
 from ratelimit import chat_limiter
 
 router = APIRouter(prefix="/chat-global", tags=["Chat Global"])
@@ -34,15 +34,9 @@ class MensajeGlobalRequest(BaseModel):
         return v
 
 
-def _payload_token(token: str) -> dict:
-    try:
-        return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token inválido o expirado",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+async def _payload_token(db: AsyncSession, token: str) -> dict:
+    # Revalidado contra la BD: usuario existente y activo.
+    return await usuario_actual(db, token)
 
 
 def _fila_a_dict(r) -> dict:
@@ -66,7 +60,7 @@ async def listar_mensajes(
 ):
     """Historial del chat global. El frontend hace polling con since_id:
     solo llegan los mensajes nuevos (barato en BD y red)."""
-    _payload_token(token)
+    await _payload_token(db, token)
 
     limit = max(1, min(limit, 100))
     # Primer arranque: últimos `limit` mensajes en orden cronológico.
@@ -101,7 +95,7 @@ async def enviar_mensaje(
     db: AsyncSession = Depends(get_db),
     token: str = Depends(oauth2_scheme),
 ):
-    payload = _payload_token(token)
+    payload = await _payload_token(db, token)
     user_id = payload.get("user_id")
 
     # Flood control por usuario (independiente del cupo del chat IA).

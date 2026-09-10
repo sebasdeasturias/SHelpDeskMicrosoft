@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_db
-from auth import oauth2_scheme, SECRET_KEY, ALGORITHM
+from auth import oauth2_scheme, SECRET_KEY, ALGORITHM, usuario_actual
 from embeddings import generar_embedding, a_vector_sql, indexar_ticket, EMBEDDING_MODEL
 from jose import jwt, JWTError
 from datetime import datetime, timedelta, date
@@ -23,11 +23,11 @@ SUPPORT_ROLES = ("agente", "coordinador", "administrador")
 MAX_TICKETS_AGENTE_DIA = int(os.getenv("MAX_TICKETS_AGENTE_DIA", "3"))
 
 
-def _verify_token(token: str) -> dict:
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    except JWTError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido")
+async def _verify_token(db: AsyncSession, token: str) -> dict:
+    # Revalida contra la BD: el usuario debe existir y estar activo, y el rol
+    # se toma del estado ACTUAL (no del token) para que degradar/desactivar una
+    # cuenta surta efecto de inmediato.
+    payload = await usuario_actual(db, token)
     if payload.get("role") not in ("coordinador", "administrador"):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Se requiere rol coordinador")
     return payload
@@ -42,7 +42,7 @@ def _iso(dt):
 # ============================================================
 @router.get("/estadisticas")
 async def get_estadisticas(db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
-    _verify_token(token)
+    await _verify_token(db, token)
 
     # --- Tickets del mes ---
     r = await db.execute(text("""
@@ -165,7 +165,7 @@ async def get_reportes(
     db: AsyncSession = Depends(get_db),
     token: str = Depends(oauth2_scheme),
 ):
-    _verify_token(token)
+    await _verify_token(db, token)
 
     conditions = []
     params = {}
@@ -225,7 +225,7 @@ async def get_reportes(
 # ============================================================
 @router.get("/agentes")
 async def get_agentes(db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
-    _verify_token(token)
+    await _verify_token(db, token)
     result = await db.execute(text("""
         SELECT id_usuario, nombre, email, tip_especialidad,
                COALESCE(nivel_jerarquia::text, 'Técnico'), permisos_supervision,
@@ -258,7 +258,7 @@ async def get_agentes(db: AsyncSession = Depends(get_db), token: str = Depends(o
 
 @router.post("/agentes/{usuario_id}/permisos")
 async def set_permisos(usuario_id: int, data: dict, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
-    _verify_token(token)
+    await _verify_token(db, token)
     await db.execute(text("""
         UPDATE usuarios
         SET permisos_supervision = COALESCE(:ps, permisos_supervision),
@@ -278,7 +278,7 @@ async def set_permisos(usuario_id: int, data: dict, db: AsyncSession = Depends(g
 # ============================================================
 @router.get("/asignacion")
 async def get_asignacion(db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
-    _verify_token(token)
+    await _verify_token(db, token)
 
     # Agentes de soporte con carga y asignaciones de hoy
     result = await db.execute(text("""
@@ -352,7 +352,7 @@ def _recomendar_agente(agentes, categoria_prioridad, max_diario=MAX_TICKETS_AGEN
 
 @router.post("/asignar/{ticket_id}")
 async def asignar_ticket(ticket_id: int, data: dict, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
-    payload = _verify_token(token)
+    payload = await _verify_token(db, token)
     agente_id = data.get("agente_id")
     if not agente_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="agente_id es requerido")
@@ -430,7 +430,7 @@ async def asignar_ticket(ticket_id: int, data: dict, db: AsyncSession = Depends(
 # ============================================================
 @router.get("/sla")
 async def get_sla(db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
-    _verify_token(token)
+    await _verify_token(db, token)
     result = await db.execute(text("""
         SELECT p.id_prioridad, p.nivel, p.color,
                p.tiempo_respuesta_min, p.tiempo_solucion_min,
@@ -454,7 +454,7 @@ async def get_sla(db: AsyncSession = Depends(get_db), token: str = Depends(oauth
 
 @router.post("/sla")
 async def set_sla(data: dict, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
-    _verify_token(token)
+    await _verify_token(db, token)
     items = data.get("sla", [])
     for item in items:
         id_prio = item.get("id_prioridad")
@@ -494,7 +494,7 @@ async def set_sla(data: dict, db: AsyncSession = Depends(get_db), token: str = D
 # ============================================================
 @router.get("/rag")
 async def search_rag(query: str = Query(..., min_length=1), db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
-    _verify_token(token)
+    await _verify_token(db, token)
 
     # 1) Intentar búsqueda vectorial sobre embeddings reales
     vector_rows = await _vector_search(db, query)
@@ -591,7 +591,7 @@ async def rag_indexar(db: AsyncSession = Depends(get_db), token: str = Depends(o
     """Indexa (backfill) todos los tickets resueltos/cerrados (incluidos los
     archivados) que aún no tengan embedding para el modelo actual.
     Exclusivo de coordinador/administrador."""
-    payload = _verify_token(token)
+    payload = await _verify_token(db, token)
     if payload.get("role") not in ("coordinador", "administrador"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -640,6 +640,40 @@ import docker_admin
 from passlib.context import CryptContext
 _pwd_admin = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+# Respaldos: pg_dump/pg_restore DIRECTOS contra Postgres (sin Docker exec).
+# Los ficheros viven en el volumen compartido /backups (montado también en la BD).
+import subprocess
+
+BACKUP_DIR = os.getenv("BACKUP_DIR", "/backups")
+PG_ENV = {
+    **os.environ,
+    "PGHOST": os.getenv("POSTGRES_HOST", "postgres"),
+    "PGPORT": os.getenv("POSTGRES_PORT", "5432"),
+    "PGUSER": os.getenv("POSTGRES_USER", ""),
+    "PGPASSWORD": os.getenv("POSTGRES_PASSWORD", ""),
+    "PGDATABASE": os.getenv("POSTGRES_DB", ""),
+}
+
+
+def _listar_respaldos_fs() -> list:
+    if not os.path.isdir(BACKUP_DIR):
+        return []
+    out = []
+    for nombre in os.listdir(BACKUP_DIR):
+        if not nombre.endswith(".dump"):
+            continue
+        ruta = os.path.join(BACKUP_DIR, nombre)
+        try:
+            st = os.stat(ruta)
+        except OSError:
+            continue
+        out.append({
+            "nombre": nombre,
+            "bytes": st.st_size,
+            "fecha": datetime.fromtimestamp(st.st_mtime).strftime("%Y-%m-%d %H:%M"),
+        })
+    return sorted(out, key=lambda r: r["nombre"], reverse=True)
+
 
 def _require_admin(payload: dict) -> None:
     if payload.get("role") != "administrador":
@@ -657,7 +691,7 @@ async def _admins_activos(db: AsyncSession) -> int:
 
 @router.get("/usuarios")
 async def listar_usuarios(db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
-    payload = _verify_token(token)
+    payload = await _verify_token(db, token)
     _require_admin(payload)
     r = await db.execute(text("""
         SELECT id_usuario, nombre, email, rol, area, estado, carga_trabajo,
@@ -679,7 +713,7 @@ async def listar_usuarios(db: AsyncSession = Depends(get_db), token: str = Depen
 
 @router.post("/usuarios", status_code=status.HTTP_201_CREATED)
 async def crear_usuario(data: dict, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
-    payload = _verify_token(token)
+    payload = await _verify_token(db, token)
     _require_admin(payload)
     nombre = (data.get("nombre") or "").strip()
     email = (data.get("email") or "").strip().lower()
@@ -715,7 +749,7 @@ async def _obtener_usuario(db: AsyncSession, uid: int):
 
 @router.patch("/usuarios/{usuario_id}")
 async def actualizar_usuario(usuario_id: int, data: dict, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
-    payload = _verify_token(token)
+    payload = await _verify_token(db, token)
     _require_admin(payload)
     user = await _obtener_usuario(db, usuario_id)
     if not user:
@@ -751,7 +785,7 @@ async def actualizar_usuario(usuario_id: int, data: dict, db: AsyncSession = Dep
 
 @router.patch("/usuarios/{usuario_id}/rol")
 async def cambiar_rol(usuario_id: int, data: dict, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
-    payload = _verify_token(token)
+    payload = await _verify_token(db, token)
     _require_admin(payload)
     user = await _obtener_usuario(db, usuario_id)
     if not user:
@@ -793,7 +827,7 @@ async def cambiar_rol(usuario_id: int, data: dict, db: AsyncSession = Depends(ge
 
 @router.delete("/usuarios/{usuario_id}")
 async def eliminar_usuario(usuario_id: int, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
-    payload = _verify_token(token)
+    payload = await _verify_token(db, token)
     _require_admin(payload)
     user = await _obtener_usuario(db, usuario_id)
     if not user:
@@ -823,7 +857,7 @@ async def eliminar_usuario(usuario_id: int, db: AsyncSession = Depends(get_db), 
 @router.get("/logs/{contenedor}")
 async def logs_contenedor(contenedor: str, tail: int = Query(200, ge=10, le=1000),
                           db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
-    payload = _verify_token(token)
+    payload = await _verify_token(db, token)
     _require_admin(payload)
     try:
         texto = await docker_admin.logs(contenedor, tail)
@@ -835,47 +869,26 @@ async def logs_contenedor(contenedor: str, tail: int = Query(200, ge=10, le=1000
 
 @router.get("/respaldos")
 async def listar_respaldos(db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
-    payload = _verify_token(token)
+    payload = await _verify_token(db, token)
     _require_admin(payload)
-    code, out, err = await docker_admin.exec_cmd("helpdesk-db",
-        ["sh", "-c", "ls -la --time-style='+%Y-%m-%d %H:%M' /backups"])
-    if code != 0:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            detail=err.decode("utf-8", "replace") or "No se pudo listar /backups")
-    respaldos = []
-    for linea in out.decode("utf-8", "replace").splitlines():
-        partes = linea.split()
-        if len(partes) < 8 or not partes[-1].endswith(".dump"):
-            continue
-        respaldos.append({"nombre": partes[-1], "bytes": int(partes[4]), "fecha": f"{partes[5]} {partes[6]}"})
-    return sorted(respaldos, key=lambda r: r["nombre"], reverse=True)
+    return _listar_respaldos_fs()
 
 
 @router.post("/respaldos")
 async def crear_respaldo(db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
-    payload = _verify_token(token)
+    payload = await _verify_token(db, token)
     _require_admin(payload)
     nombre = f"helpdesk_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.dump"
-    code, out, err = await docker_admin.exec_cmd("helpdesk-db",
-        ["sh", "-c", f"pg_dump -U $POSTGRES_USER -Fc $POSTGRES_DB -f /backups/{nombre}"], timeout=600.0)
-    if code != 0:
+    os.makedirs(BACKUP_DIR, exist_ok=True)
+    try:
+        r = subprocess.run(["pg_dump", "-Fc", "-f", os.path.join(BACKUP_DIR, nombre)],
+                           env=PG_ENV, capture_output=True, text=True, timeout=600)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"pg_dump falló: {e}")
+    if r.returncode != 0:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            detail=f"pg_dump falló (exit {code}): {err.decode('utf-8', 'replace')[:300]}")
+                            detail=f"pg_dump falló (exit {r.returncode}): {r.stderr[:300]}")
     return {"status": "ok", "archivo": nombre}
-
-
-@router.get("/respaldos/{nombre}/descargar")
-async def descargar_respaldo(nombre: str, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
-    payload = _verify_token(token)
-    _require_admin(payload)
-    if not _nombre_backup_valido(nombre):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nombre de archivo inválido")
-    code, out, _ = await docker_admin.exec_cmd("helpdesk-db", ["sh", "-c", f"cat /backups/{nombre}"])
-    if code != 0:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No se pudo leer el respaldo")
-    from fastapi import Response
-    return Response(content=out, media_type="application/octet-stream",
-                    headers={"Content-Disposition": f'attachment; filename="{nombre}"'})
 
 
 def _nombre_backup_valido(nombre: str) -> bool:
@@ -883,36 +896,61 @@ def _nombre_backup_valido(nombre: str) -> bool:
     return bool(re.fullmatch(r"[A-Za-z0-9_.-]+", nombre)) and ".." not in nombre
 
 
-@router.delete("/respaldos/{nombre}")
-async def eliminar_respaldo(nombre: str, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
-    payload = _verify_token(token)
+@router.get("/respaldos/{nombre}/descargar")
+async def descargar_respaldo(nombre: str, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
+    payload = await _verify_token(db, token)
     _require_admin(payload)
     if not _nombre_backup_valido(nombre):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nombre de archivo inválido")
-    code, _, err = await docker_admin.exec_cmd("helpdesk-db", ["sh", "-c", f"rm -f /backups/{nombre}"])
-    if code != 0:
+    ruta = os.path.join(BACKUP_DIR, nombre)
+    if not os.path.isfile(ruta):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No se pudo leer el respaldo")
+    with open(ruta, "rb") as f:
+        data = f.read()
+    from fastapi import Response
+    return Response(content=data, media_type="application/octet-stream",
+                    headers={"Content-Disposition": f'attachment; filename="{nombre}"'})
+
+
+@router.delete("/respaldos/{nombre}")
+async def eliminar_respaldo(nombre: str, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
+    payload = await _verify_token(db, token)
+    _require_admin(payload)
+    if not _nombre_backup_valido(nombre):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nombre de archivo inválido")
+    ruta = os.path.join(BACKUP_DIR, nombre)
+    if not os.path.isfile(ruta):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No se pudo eliminar")
+    try:
+        os.remove(ruta)
+    except OSError:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="No se pudo eliminar")
     return {"status": "ok", "eliminado": nombre}
 
 
 @router.post("/respaldos/{nombre}/restaurar")
 async def restaurar_respaldo(nombre: str, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
-    payload = _verify_token(token)
+    payload = await _verify_token(db, token)
     _require_admin(payload)
     if not _nombre_backup_valido(nombre):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nombre de archivo inválido")
-    code, out, err = await docker_admin.exec_cmd("helpdesk-db",
-        ["sh", "-c", f"pg_restore -U $POSTGRES_USER -d $POSTGRES_DB --clean --if-exists /backups/{nombre}"],
-        timeout=600.0)
-    if code != 0:
+    ruta = os.path.join(BACKUP_DIR, nombre)
+    if not os.path.isfile(ruta):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No se pudo leer el respaldo")
+    try:
+        r = subprocess.run(["pg_restore", "-d", PG_ENV["PGDATABASE"], "--clean", "--if-exists", ruta],
+                           env=PG_ENV, capture_output=True, text=True, timeout=600)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"pg_restore falló: {e}")
+    if r.returncode != 0:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            detail=f"pg_restore falló: {err.decode('utf-8', 'replace')[:300]}")
+                            detail=f"pg_restore falló: {r.stderr[:300]}")
     return {"status": "ok", "restaurado": nombre}
 
 
 @router.get("/bd/tablas")
 async def tablas_bd(db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
-    payload = _verify_token(token)
+    payload = await _verify_token(db, token)
     _require_admin(payload)
     r = await db.execute(text("""
         SELECT relname AS tabla, n_live_tup AS filas
@@ -944,7 +982,7 @@ async def _es_modelo_embeddings_ollama(modelo: str) -> tuple[bool, str]:
 
 @router.get("/ia")
 async def estado_ia(db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
-    payload = _verify_token(token)
+    payload = await _verify_token(db, token)
     _require_admin(payload)
     r = await db.execute(text("SELECT clave, valor FROM configuracion_ia"))
     config = {k: v for k, v in r.fetchall()}
@@ -971,7 +1009,7 @@ async def estado_ia(db: AsyncSession = Depends(get_db), token: str = Depends(oau
 
 @router.post("/ia/modelo")
 async def set_modelo_ia(data: dict, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
-    payload = _verify_token(token)
+    payload = await _verify_token(db, token)
     _require_admin(payload)
     modelo = (data.get("modelo") or "").strip()
     if not modelo:
@@ -994,7 +1032,7 @@ async def set_modelo_ia(data: dict, db: AsyncSession = Depends(get_db), token: s
 
 @router.post("/ia/pull")
 async def pull_modelo_ia(data: dict, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
-    payload = _verify_token(token)
+    payload = await _verify_token(db, token)
     _require_admin(payload)
     modelo = (data.get("modelo") or "").strip()
     if not modelo:
@@ -1014,7 +1052,7 @@ async def pull_modelo_ia(data: dict, db: AsyncSession = Depends(get_db), token: 
 
 @router.post("/ia/probar")
 async def probar_modelo_ia(data: dict, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
-    payload = _verify_token(token)
+    payload = await _verify_token(db, token)
     _require_admin(payload)
     modelo = (data.get("modelo") or "").strip()
     if not modelo:
@@ -1040,7 +1078,7 @@ async def probar_modelo_ia(data: dict, db: AsyncSession = Depends(get_db), token
 
 @router.post("/ia/params")
 async def set_params_ia(data: dict, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
-    payload = _verify_token(token)
+    payload = await _verify_token(db, token)
     _require_admin(payload)
     permitidos = ("temperatura", "num_predict", "top_p")
     actualizados = {}
@@ -1064,7 +1102,7 @@ async def set_params_ia(data: dict, db: AsyncSession = Depends(get_db), token: s
 
 @router.get("/n8n/workflows")
 async def listar_workflows(db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
-    payload = _verify_token(token)
+    payload = await _verify_token(db, token)
     _require_admin(payload)
     if not N8N_API_KEY:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
@@ -1084,7 +1122,7 @@ async def listar_workflows(db: AsyncSession = Depends(get_db), token: str = Depe
 
 @router.post("/n8n/workflows/{workflow_id}/toggle")
 async def toggle_workflow(workflow_id: str, data: dict, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
-    payload = _verify_token(token)
+    payload = await _verify_token(db, token)
     _require_admin(payload)
     activo = bool(data.get("activo"))
     if not N8N_API_KEY:

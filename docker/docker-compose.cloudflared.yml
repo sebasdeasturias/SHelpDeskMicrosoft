@@ -127,10 +127,17 @@ services:
       CORS_ORIGINS: ${CORS_ORIGINS:-*}
       # Cloudflare inyecta X-Forwarded-For: el rate-limiter confía en él.
       TRUST_PROXY: "true"
+      # Proxy Docker de SOLO LECTURA (logs). Ya no se monta el socket.
+      DOCKER_HOST: http://docker-socket-proxy:2375
+      # Superusuario SOLO para pg_dump/pg_restore (respaldos).
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      BACKUP_DIR: /backups
     volumes:
-      # Socket de Docker: logs y respaldos (pg_dump) del panel administrador.
-      # Endurecimiento pendiente (auditoría #3): proxy read-only del socket.
-      - /var/run/docker.sock:/var/run/docker.sock
+      # Volumen compartido de respaldos (lo escribe pg_dump desde el backend).
+      - db_backups:/backups
     command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
     depends_on:
       postgres:
@@ -155,11 +162,31 @@ services:
       N8N_URL: http://n8n:5678
       N8N_API_KEY: ${N8N_API_KEY}
       OLLAMA_URL: http://ollama:11434
+      DOCKER_HOST: http://docker-socket-proxy:2375
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      BACKUP_DIR: /backups
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      # Volumen compartido de respaldos (los escribe pg_dump desde el panel).
+      - db_backups:/backups
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - helpdesk-network
+    restart: unless-stopped
+
+  # Proxy de SOLO LECTURA hacia el socket de Docker (logs del panel admin).
+  docker-socket-proxy:
+    image: tecnativa/docker-socket-proxy
+    container_name: helpdesk-socket-proxy
+    environment:
+      - CONTAINERS=1
+      - POST=0
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - helpdesk-network
     restart: unless-stopped

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query, Header, HTTPException, status
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_db
-from auth import oauth2_scheme, SECRET_KEY, ALGORITHM
+from auth import oauth2_scheme, SECRET_KEY, ALGORITHM, usuario_actual
 from embeddings import indexar_ticket
 from jose import jwt, JWTError
 from datetime import datetime
@@ -53,11 +53,8 @@ def _programar_notificacion(url: str, payload: dict) -> None:
 
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def create_ticket(data: dict, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    except JWTError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido")
-        
+    payload = await usuario_actual(db, token)
+
     if payload.get("role") != 'solicitante':
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Solo solicitantes pueden crear tickets")
         
@@ -126,10 +123,7 @@ async def create_ticket(data: dict, db: AsyncSession = Depends(get_db), token: s
 
 @router.patch("/{ticket_id}")
 async def update_ticket(ticket_id: int, data: dict, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    except JWTError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido")
+    payload = await usuario_actual(db, token)
 
     user_role = payload.get("role")
     user_id = payload.get("user_id")
@@ -238,16 +232,26 @@ async def get_ticket_detail(ticket_id: int, db: AsyncSession = Depends(get_db), 
     análisis de la IA local (Ollama) e historial de estados.
     Solo disponible para roles con acceso al Kanban.
     """
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    except JWTError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido")
+    payload = await usuario_actual(db, token)
+    role = payload.get("role")
 
-    if payload.get("role") not in ("agente", "coordinador", "administrador"):
+    if role not in ("agente", "coordinador", "administrador"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Sin permisos para ver el detalle del tablero"
         )
+
+    # IDOR: un agente solo puede ver el detalle de los tickets que tiene asignados.
+    if role == "agente":
+        chk = await db.execute(
+            text("SELECT id_agente_asignado FROM solicitud WHERE id_solicitud = :id"),
+            {"id": ticket_id})
+        fila_asig = chk.fetchone()
+        if not fila_asig or fila_asig[0] != payload.get("user_id"):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Solo puedes ver los tickets que tienes asignados"
+            )
 
     result = await db.execute(text("""
         SELECT s.id_solicitud, s.asunto, s.descripcion, s.estado,
@@ -411,12 +415,9 @@ async def get_tickets(
     db: AsyncSession = Depends(get_db),
     token: str = Depends(oauth2_scheme)  # ← FIX BUG #2: requerir autenticación
 ):
-    # Validar token
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    except JWTError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido")
-    
+    # Validar token (revalidado contra la BD: usuario existente y activo)
+    payload = await usuario_actual(db, token)
+
     user_role = payload.get("role")
     user_id = payload.get("user_id")
 

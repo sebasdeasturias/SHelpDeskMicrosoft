@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, status
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_db
-from auth import oauth2_scheme, SECRET_KEY, ALGORITHM
+from auth import oauth2_scheme, usuario_actual
 from jose import jwt, JWTError
 import os
 import re
@@ -41,11 +41,9 @@ def _nombre_seguro(nombre: str) -> str:
     return nombre[:255] or "archivo"
 
 
-async def _usuario_actual(token: str):
-    try:
-        return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    except JWTError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido")
+async def _usuario_actual(db, token: str):
+    # Revalidado contra la BD (usuario existente y activo).
+    return await usuario_actual(db, token)
 
 
 @router.post("/{ticket_id}/adjuntos", status_code=status.HTTP_201_CREATED)
@@ -55,7 +53,7 @@ async def subir_adjuntos(
     db: AsyncSession = Depends(get_db),
     token: str = Depends(oauth2_scheme),
 ):
-    payload = await _usuario_actual(token)
+    payload = await _usuario_actual(db, token)
     user_id = payload.get("user_id")
     role = payload.get("role")
 
@@ -63,7 +61,7 @@ async def subir_adjuntos(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No se recibieron archivos")
 
     fila = await db.execute(
-        text("SELECT id_solicitante FROM solicitud WHERE id_solicitud = :id"), {"id": ticket_id})
+        text("SELECT id_solicitante, id_agente_asignado FROM solicitud WHERE id_solicitud = :id"), {"id": ticket_id})
     ticket = fila.fetchone()
     if not ticket:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket no encontrado")
@@ -71,6 +69,8 @@ async def subir_adjuntos(
     # El dueño del ticket puede adjuntar; el staff también (evidencias del agente).
     if role == "solicitante" and ticket[0] != user_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No puedes adjuntar a un ticket ajeno")
+    if role == "agente" and ticket[1] != user_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Solo puedes adjuntar en tickets que tengas asignados")
 
     conteo = await db.execute(
         text("SELECT COUNT(*) FROM adjunto WHERE id_solicitud = :id"), {"id": ticket_id})
@@ -147,19 +147,21 @@ async def listar_adjuntos(
     db: AsyncSession = Depends(get_db),
     token: str = Depends(oauth2_scheme),
 ):
-    payload = await _usuario_actual(token)
+    payload = await _usuario_actual(db, token)
     user_id = payload.get("user_id")
     role = payload.get("role")
 
     fila = await db.execute(text("""
-        SELECT s.id_solicitante FROM solicitud s WHERE s.id_solicitud = :id
+        SELECT s.id_solicitante, s.id_agente_asignado FROM solicitud s WHERE s.id_solicitud = :id
     """), {"id": ticket_id})
     ticket = fila.fetchone()
     if not ticket:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket no encontrado")
 
-    # El solicitante solo ve los adjuntos de sus propios tickets.
+    # El solicitante solo ve los adjuntos de sus propios tickets; el agente, los suyos asignados.
     if role == "solicitante" and ticket[0] != user_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Sin acceso a este ticket")
+    if role == "agente" and ticket[1] != user_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Sin acceso a este ticket")
 
     result = await db.execute(text("""

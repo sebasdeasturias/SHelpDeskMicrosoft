@@ -1,14 +1,12 @@
 # streamlit_app/docker_api.py
-# Lectura de logs de contenedores vía Docker Engine API (socket montado)
-# con fallback a la CLI local `docker logs` cuando la app corre fuera de Docker.
+# Acceso de SOLO LECTURA a la Docker Engine API a través del proxy
+# docker-socket-proxy (POST deshabilitado). El panel ya NO monta el socket de
+# Docker: solo puede listar contenedores y leer logs, nunca ejecutar comandos.
 import io
-import json
-import socket
-import http.client
-import subprocess
-from contextlib import contextmanager
+import os
+import requests
 
-SOCKET_PATH = "/var/run/docker.sock"
+DOCKER_HOST = os.getenv("DOCKER_HOST", "http://docker-socket-proxy:2375").rstrip("/")
 API = "/v1.43"
 
 CONTAINERS = [
@@ -20,34 +18,23 @@ CONTAINERS = [
 ]
 
 
-class UnixSocketConnection(http.client.HTTPConnection):
-    def __init__(self, socket_path: str):
-        super().__init__("localhost")
-        self.socket_path = socket_path
-
-    def connect(self):
-        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        sock.settimeout(10)
-        sock.connect(self.socket_path)
-        self.sock = sock
+def _get(path: str, **params):
+    return requests.get(f"{DOCKER_HOST}{API}{path}", params=params, timeout=15)
 
 
-@contextmanager
-def _engine():
-    conn = UnixSocketConnection(SOCKET_PATH)
+def list_containers() -> list[dict]:
     try:
-        yield conn
-    finally:
-        conn.close()
-
-
-def _engine_available() -> bool:
-    try:
-        with _engine() as conn:
-            conn.request("GET", f"{API}/version")
-            return conn.getresponse().status == 200
+        data = _get("/containers/json", all=1).json()
+        return [
+            {
+                "nombre": ", ".join(n.lstrip("/") for n in c.get("Names", [])),
+                "estado": c.get("State", "?"),
+                "imagen": c.get("Image", "?"),
+            }
+            for c in data
+        ]
     except Exception:
-        return False
+        return []
 
 
 def _demux(raw: bytes) -> str:
@@ -63,93 +50,9 @@ def _demux(raw: bytes) -> str:
     return "".join(out)
 
 
-def list_containers() -> list[dict]:
-    try:
-        with _engine() as conn:
-            conn.request("GET", f"{API}/containers/json?all=1")
-            resp = conn.getresponse()
-            data = json.loads(resp.read())
-            return [
-                {
-                    "nombre": ", ".join(n.lstrip("/") for n in c.get("Names", [])),
-                    "estado": c.get("State", "?"),
-                    "imagen": c.get("Image", "?"),
-                }
-                for c in data
-            ]
-    except Exception:
-        try:
-            out = subprocess.run(
-                ["docker", "ps", "-a", "--format", "{{.Names}}|{{.State}}|{{.Image}}"],
-                capture_output=True, text=True, timeout=15,
-            ).stdout
-            return [
-                dict(zip(["nombre", "estado", "imagen"], line.split("|")))
-                for line in out.strip().splitlines() if line
-            ]
-        except Exception:
-            return []
-
-
-def _demux_bytes(raw: bytes) -> tuple[bytes, bytes]:
-    """Separa el stream multiplexado del Engine API en (stdout, stderr) crudos."""
-    buf = io.BytesIO(raw)
-    stdout, stderr = bytearray(), bytearray()
-    while True:
-        header = buf.read(8)
-        if len(header) < 8:
-            break
-        size = int.from_bytes(header[4:8], "big")
-        payload = buf.read(size)
-        (stdout if header[0] == 1 else stderr).extend(payload)
-    return bytes(stdout), bytes(stderr)
-
-
-def container_exec(nombre: str, cmd: list) -> tuple[int, bytes, bytes]:
-    """Ejecuta un comando dentro de un contenedor vía Docker Engine API.
-    Devuelve (exit_code, stdout_bytes, stderr_bytes). Requiere el socket montado."""
-    if not _engine_available():
-        raise RuntimeError("Docker Engine API no disponible (¿socket no montado?)")
-    with _engine() as conn:
-        body = json.dumps({"Container": nombre, "Cmd": cmd,
-                           "AttachStdout": True, "AttachStderr": True})
-        conn.request("POST", f"{API}/containers/{nombre}/exec",
-                     body=body, headers={"Content-Type": "application/json"})
-        resp = conn.getresponse()
-        if resp.status not in (200, 201):
-            raise RuntimeError(f"exec create falló: HTTP {resp.status} {resp.read()[:200]}")
-        exec_id = json.loads(resp.read())["Id"]
-
-        conn.request("POST", f"{API}/exec/{exec_id}/start",
-                     body=json.dumps({"Detach": False, "Tty": False}),
-                     headers={"Content-Type": "application/json"})
-        resp = conn.getresponse()
-        if resp.status != 200:
-            raise RuntimeError(f"exec start falló: HTTP {resp.status} {resp.read()[:200]}")
-        stdout, stderr = _demux_bytes(resp.read())
-
-        conn.request("GET", f"{API}/exec/{exec_id}/json")
-        resp = conn.getresponse()
-        info = json.loads(resp.read())
-        return int(info.get("ExitCode", 0)), stdout, stderr
-
-
 def container_logs(nombre: str, tail: int = 200) -> str:
-    if _engine_available():
-        try:
-            with _engine() as conn:
-                path = f"{API}/containers/{nombre}/logs?stdout=true&stderr=true&tail={tail}"
-                conn.request("GET", path)
-                resp = conn.getresponse()
-                raw = resp.read()
-                return _demux(raw).strip() or "(sin logs)"
-        except Exception as e:
-            return f"[ERROR Engine API] {e}"
     try:
-        out = subprocess.run(
-            ["docker", "logs", "--tail", str(tail), nombre],
-            capture_output=True, text=True, timeout=20,
-        )
-        return (out.stdout + out.stderr).strip() or "(sin logs)"
+        raw = _get(f"/containers/{nombre}/logs", stdout="true", stderr="true", tail=str(tail)).content
+        return _demux(raw).strip() or "(sin logs)"
     except Exception as e:
         return f"[ERROR] No se pudo leer logs de '{nombre}': {e}"

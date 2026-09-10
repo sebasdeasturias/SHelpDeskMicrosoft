@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 
 from database import get_db
-from auth import SECRET_KEY, ALGORITHM, oauth2_scheme
+from auth import SECRET_KEY, ALGORITHM, oauth2_scheme, usuario_actual
 from ratelimit import chat_limiter
 
 router = APIRouter(prefix="/chat", tags=["Chat IA"])
@@ -261,8 +261,8 @@ async def chat_with_ai(
     Endpoint principal de chat con IA.
     Flujo: Frontend → Backend → n8n → Ollama → respuesta
     """
-    # 1. Validar token
-    payload = verify_token(token)
+    # 1. Validar token (revalidado contra la BD: usuario existente y activo)
+    payload = await usuario_actual(db, token)
     user_id = payload.get("user_id")
     user_role = payload.get("role")
 
@@ -297,6 +297,17 @@ async def chat_with_ai(
     ticket_contexto = None
     mensaje_completo = request.mensaje
     if request.ticket_id:
+        # IDOR: un agente solo puede consultar el contexto de sus tickets asignados.
+        if user_role == "agente":
+            chk = await db.execute(
+                text("SELECT id_agente_asignado FROM solicitud WHERE id_solicitud = :id"),
+                {"id": request.ticket_id})
+            fila_asig = chk.fetchone()
+            if not fila_asig or fila_asig[0] != user_id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Solo puedes consultar tickets que tengas asignados"
+                )
         contexto = await get_ticket_context(db, request.ticket_id)
         if contexto:
             ticket_contexto = contexto
