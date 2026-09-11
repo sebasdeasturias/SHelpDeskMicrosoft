@@ -34,7 +34,7 @@ python-multipart>=0.0.9,<1.0.0
 # ============================================================
 
 # Panel web de estadísticas y control del administrador
-streamlit>=1.40.0,<2.0.0
+streamlit>=1.63.0,<2.0.0
 watchdog>=4.0.0,<7.0.0
 
 # Gráficos y manejo de datos
