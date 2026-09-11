@@ -1,0 +1,47 @@
+/* badges.css — Descripciones desplegables de las badges flotantes y estado. */
+.badges-col .badge {
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.15s ease, filter 0.2s ease;
+}
+.badges-col .badge:hover { filter: brightness(1.08); }
+.badges-col .badge:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+.badges-col .badge.activa { filter: brightness(1.12); }
+
+/* Estado del sistema caído: rojo y con aviso visual */
+.badges-col .badge.red {
+    background: linear-gradient(to bottom, #ff7b7b, #c0392b) !important;
+    color: #ffffff !important;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.6) !important;
+    border-color: rgba(255,255,255,0.7);
+    animation: badgeAlerta 1.6s ease-in-out infinite;
+}
+@keyframes badgeAlerta {
+    0%, 100% { filter: brightness(1); }
+    50%      { filter: brightness(1.25); }
+}
+
+.badge-desc {
+    max-width: 300px;
+    margin-top: -8px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: rgba(8, 28, 46, 0.94);
+    color: #eaf6ff;
+    border: 1px solid rgba(255,255,255,0.28);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+    font-size: 0.82rem;
+    line-height: 1.45;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    animation: badgeDescIn 0.18s ease;
+}
+.badge-desc[hidden] { display: none; }
+@keyframes badgeDescIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 900px) {
+    .badge-desc { max-width: 100%; flex-basis: 100%; margin-top: 0; }
+}

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crear Ticket - HelpDesk IT</title>
     <link rel="stylesheet" href="styles/formulario-ticket.css">
+    <link rel="stylesheet" href="styles/badges.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/png" href="favicon.png">
 </head>
@@ -28,14 +29,14 @@
         <div class="ui-container">
             <!-- Badges Flotantes Izquierda -->
             <div class="badges-col">
-                <div class="badge green">
-                    <i class="fas fa-ticket-alt"></i> Nuevo Ticket 
+                <div class="badge green" data-desc="Registra un incidente o solicitud de TI; el sistema lo clasifica con IA y lo asigna al agente adecuado.">
+                    <i class="fas fa-ticket-alt"></i> <span class="badge-txt">Nuevo Ticket</span>
                 </div>
-                <div class="badge blue">
-                    <i class="fas fa-shield-alt"></i> Datos Protegidos 
+                <div class="badge blue" data-desc="La descripción y los adjuntos se guardan de forma segura y solo los ve el personal con acceso a tu ticket.">
+                    <i class="fas fa-shield-alt"></i> <span class="badge-txt">Datos Protegidos</span>
                 </div>
-                <div class="badge silver">
-                    <i class="fas fa-clock"></i> Respuesta Rápida 
+                <div class="badge silver" data-desc="Los tickets se priorizan por criticidad y tiempos de SLA para darte respuesta lo antes posible.">
+                    <i class="fas fa-clock"></i> <span class="badge-txt">Respuesta Rápida</span>
                 </div>
             </div>
 
@@ -213,6 +214,7 @@
         </div>
     </div>
     <script src="js/config.js"></script>
+    <script src="js/badges.js"></script>
     <script src="js/formulario-ticket.js"></script>
     <script src="js/theme-toggle.js"></script>
 </body>

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inicio de Sesión - HelpDesk IT</title>
     <link rel="stylesheet" href="styles/login.css">
+    <link rel="stylesheet" href="styles/badges.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/png" href="favicon.png">
 </head>
@@ -28,14 +29,16 @@
         <div class="ui-container">
             <!-- Badges Flotantes Izquierda -->
             <div class="badges-col">
-                <div class="badge green">
-                    <i class="fas fa-shield-alt"></i> Sistemas en línea
+                <div class="badge green" data-status="sistema"
+                     data-desc="HelpDesk es la mesa de ayuda TI: registra incidentes, los clasifica con IA local, los asigna al equipo y hace seguimiento. Aquí se verifica en vivo que el backend, la base de datos y la IA respondan."
+                     data-desc-offline="No se pudo contactar con el backend. Algunas funciones (inicio de sesión, tickets e IA) pueden no estar disponibles. Revisa que el servicio esté en ejecución.">
+                    <i class="fas fa-shield-alt"></i> <span class="badge-txt">Sistemas en línea</span>
                 </div>
-                <div class="badge blue">
-                    <i class="fas fa-check-circle"></i> SOC 2
+                <div class="badge blue" data-desc="SOC 2 es un marco de auditoría de seguridad (Trust Services Criteria) que acredita controles sobre seguridad, disponibilidad y confidencialidad de los datos del servicio.">
+                    <i class="fas fa-check-circle"></i> <span class="badge-txt">SOC 2</span>
                 </div>
-                <div class="badge silver">
-                    <i class="fas fa-clock"></i> Soporte 24/7 
+                <div class="badge silver" data-desc="Atención continua: los incidentes se atienden según su prioridad y los tiempos de SLA, con seguimiento hasta su resolución.">
+                    <i class="fas fa-clock"></i> <span class="badge-txt">Soporte 24/7</span>
                 </div>
             </div>
         <div class="logoHelpdesk">
@@ -107,6 +110,7 @@
     </div>
 
     <script src="js/config.js"></script>
+    <script src="js/badges.js"></script>
     <script src="js/login.js"></script>
     <script src="js/theme-toggle.js"></script>
 </body>

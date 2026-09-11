@@ -507,6 +507,15 @@ async function sendChatMessage() {
         // Agregar respuesta del bot
         const botMsg = addChatMessage(respuesta, 'bot');
 
+        // Si el usuario no está viendo la pestaña IA (panel cerrado u otra tab),
+        // la respuesta cuenta como pendiente y aviva el botón del chat.
+        const _panel = document.getElementById('chatPanel');
+        const _viendoIA = _panel && _panel.classList.contains('open')
+            && window.ChatGlobal && window.ChatGlobal.tab() === 'ia';
+        if (!_viendoIA && window.ChatGlobal && window.ChatGlobal.nuevaIA) {
+            window.ChatGlobal.nuevaIA();
+        }
+
         // Agregar metadata si existe
         if (data.tokens || data.modelo) {
             const meta = document.createElement('div');

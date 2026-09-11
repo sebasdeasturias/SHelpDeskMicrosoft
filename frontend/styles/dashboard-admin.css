@@ -633,6 +633,15 @@ body.night-mode .chat-fab .fab-icon i { text-shadow: 0 2px 6px rgba(0,0,0,0.6), 
 }
 .fab-badge[hidden] { display: none; }
 
+/* Propagación: el botón del chat "late" si hay mensajes pendientes
+   (respuesta de IA, chat global o chat privado). */
+@keyframes fabNovedad {
+    0%, 100% { transform: scale(1); filter: none; }
+    50%      { transform: scale(1.09); filter: drop-shadow(0 0 10px rgba(255,80,80,0.85)); }
+}
+.chat-fab.tiene-novedad { animation: fabNovedad 1.6s ease-in-out infinite; }
+.chat-fab.tiene-novedad.open { animation: none; }
+
 /* Panel flotante */
 .chat-panel {
     position: fixed;

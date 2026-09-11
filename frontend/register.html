@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registro de Usuario - HelpDesk IT</title>
     <link rel="stylesheet" href="styles/register.css">
+    <link rel="stylesheet" href="styles/badges.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/png" href="favicon.png">
 </head>
@@ -26,14 +27,14 @@
         <div class="ui-container">
             <!-- Badges Flotantes Izquierda -->
             <div class="badges-col">
-                <div class="badge green">
-                    <i class="fas fa-user-plus"></i> Registro Seguro 
+                <div class="badge green" data-desc="El registro crea tu cuenta de solicitante para reportar incidentes de TI. Los datos viajan cifrados por HTTPS.">
+                    <i class="fas fa-user-plus"></i> <span class="badge-txt">Registro Seguro</span>
                 </div>
-                <div class="badge blue">
-                    <i class="fas fa-shield-alt"></i> Datos Protegidos 
+                <div class="badge blue" data-desc="Tu información personal se almacena en la base de datos con acceso restringido por rol y no se comparte con terceros.">
+                    <i class="fas fa-shield-alt"></i> <span class="badge-txt">Datos Protegidos</span>
                 </div>
-                <div class="badge silver">
-                    <i class="fas fa-lock"></i> Contraseña Hasheada 
+                <div class="badge silver" data-desc="La contraseña se guarda hasheada con bcrypt: nadie, ni el administrador, puede leerla.">
+                    <i class="fas fa-lock"></i> <span class="badge-txt">Contraseña Hasheada</span>
                 </div>
             </div>
 
@@ -175,6 +176,7 @@
     </div>
 
     <script src="js/config.js"></script>
+    <script src="js/badges.js"></script>
     <script src="js/register.js"></script>
     <script src="js/theme-toggle.js"></script>
 </body>

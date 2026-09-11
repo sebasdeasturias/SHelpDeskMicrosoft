@@ -941,6 +941,15 @@ body.night-mode .chat-tab.active { background: linear-gradient(to bottom, var(--
 }
 .fab-badge[hidden] { display: none; }
 
+/* Propagación: el botón del chat "late" si hay mensajes pendientes
+   (respuesta de IA, chat global o chat privado). */
+@keyframes fabNovedad {
+    0%, 100% { transform: scale(1); filter: none; }
+    50%      { transform: scale(1.09); filter: drop-shadow(0 0 10px rgba(255,80,80,0.85)); }
+}
+.chat-fab.tiene-novedad { animation: fabNovedad 1.6s ease-in-out infinite; }
+.chat-fab.tiene-novedad.open { animation: none; }
+
 @media (max-width: 600px) {
     .chat-tabs { padding: 6px 10px 0 10px; }
     .chat-tab { font-size: 0.75rem; padding: 7px 8px; }

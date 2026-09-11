@@ -22,6 +22,7 @@
     let sinceId = 0;            // último id visto (polling incremental)
     let tabActiva = 'global';   // 'ia' | 'global' | 'privado'
     let noLeidos = 0;
+    let noLeidosIA = 0;         // respuestas de IA no vistas
     let timerPoll = null;
     let historialIA = [];       // solo admin (fallback IA propio)
     let primeraCarga = true;    // el historial inicial no cuenta como no leído
@@ -130,8 +131,9 @@
             else input.placeholder = 'Escribe tu mensaje...';
         }
 
-        // Al abrir Chat Global: sin pendientes
+        // Al abrir una pestaña: se marcan como leídos sus pendientes
         if (tab === 'global') marcarLeido();
+        if (tab === 'ia') marcarIALeido();
         if (tab === 'privado') {
             cargarContactos();
             if (privadoSel) enfocarInputPrivado(); else desactivarInputPrivado();
@@ -154,6 +156,7 @@
             new MutationObserver(() => {
                 if (!panel.classList.contains('open')) return;
                 if (tabActiva === 'global') marcarLeido();
+                else if (tabActiva === 'ia') marcarIALeido();
                 else if (tabActiva === 'privado' && privadoSel) {
                     cargarConversacion().then(pollPrivadoNoLeidos);
                 }
@@ -198,6 +201,9 @@
         // API pública para que los dashboards con IA propia deleguen el envío
         window.ChatGlobal = {
             activo: () => tabActiva === 'global' || tabActiva === 'privado',
+            tab: () => tabActiva,
+            nuevaIA,
+            marcarIALeido,
             enviarDesdeInput
         };
     }
@@ -253,6 +259,10 @@
             const respuesta = data.respuesta || 'No recibí respuesta del modelo.';
             historialIA.push({ role: 'assistant', content: respuesta });
             addMsg(msgsIA, respuesta, 'bot', null, `IA · ${data.modelo || 'local'}`);
+            // ¿El usuario está viendo la IA? Si no, cuenta como pendiente.
+            const panel = $('chatPanel');
+            const viendoIA = panel && panel.classList.contains('open') && tabActiva === 'ia';
+            if (!viendoIA) nuevaIA();
         } catch (e) {
             typing.remove();
             console.error('chat-global: error IA', e);
@@ -662,10 +672,22 @@
         actualizarBadge();
     }
 
+    function marcarIALeido() {
+        noLeidosIA = 0;
+        actualizarBadge();
+    }
+
+    function nuevaIA() {
+        noLeidosIA++;
+        actualizarBadge();
+    }
+
     function actualizarBadge() {
         const badge = document.querySelector('#chatFab .fab-badge');
+        const fab = document.querySelector('#chatFab');
+        const total = noLeidos + privadoNoLeidos + noLeidosIA;
+        if (fab) fab.classList.toggle('tiene-novedad', total > 0);
         if (!badge) return;
-        const total = noLeidos + privadoNoLeidos;
         if (total > 0) {
             badge.textContent = total > 99 ? '99+' : String(total);
             badge.hidden = false;
