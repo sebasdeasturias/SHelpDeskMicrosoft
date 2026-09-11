@@ -28,9 +28,16 @@ services:
       - db_backups:/backups
     networks:
       - helpdesk-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
 
   ollama:
-    image: ollama/ollama:latest
+    image: ollama/ollama:0.33.3
     container_name: ollama
     ports:
       # Solo accesible desde el host (backend/streamlit usan la red interna)
@@ -42,6 +49,7 @@ services:
       - ollama_data:/root/.ollama
     networks:
       - helpdesk-network
+    restart: unless-stopped
     # Aceleración por GPU NVIDIA. Docker Desktop (WSL2) inyecta /dev/dxg con
     # --gpus all; en Docker Engine nativo usa nvidia-container-runtime.
     # Si el host no tiene GPU NVIDIA, comenta este bloque (Ollama cae a CPU).
@@ -86,6 +94,8 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
       BACKUP_DIR: /backups
+      BACKUP_RETENCION_DIAS: ${BACKUP_RETENCION_DIAS:-30}
+      BACKUP_MIN_CONSERVAR: ${BACKUP_MIN_CONSERVAR:-5}
     volumes:
       # Bind mount: los cambios hechos en ../backend (host) se reflejan en vivo dentro del contenedor
       - ../backend:/app
@@ -94,10 +104,19 @@ services:
       # Volumen compartido de respaldos (lo escribe pg_dump desde el backend).
       - db_backups:/backups
     depends_on:
-      - postgres
-      - docker-socket-proxy
+      postgres:
+        condition: service_healthy
+      docker-socket-proxy:
+        condition: service_started
     networks:
       - helpdesk-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=5).getcode()==200 else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
 
   streamlit:
     build:
@@ -123,16 +142,19 @@ services:
       # Volumen compartido de respaldos (los escribe pg_dump desde el panel).
       - db_backups:/backups
     depends_on:
-      - postgres
-      - docker-socket-proxy
+      postgres:
+        condition: service_healthy
+      docker-socket-proxy:
+        condition: service_started
     networks:
       - helpdesk-network
+    restart: unless-stopped
 
   # Proxy de SOLO LECTURA hacia el socket de Docker (logs/inspección del panel
   # admin). Ni el backend ni el panel montan el socket directamente, así que no
   # pueden crear contenedores ni escapar al host (POST=0 bloquea toda escritura).
   docker-socket-proxy:
-    image: tecnativa/docker-socket-proxy
+    image: tecnativa/docker-socket-proxy:v0.5.0
     container_name: helpdesk-socket-proxy
     environment:
       - CONTAINERS=1
@@ -144,7 +166,7 @@ services:
     restart: unless-stopped
 
   n8n:
-    image: n8nio/n8n
+    image: n8nio/n8n:2.37.10
     container_name: n8n
     ports:
       # Solo accesible desde el host. NOTA: N8N_BASIC_AUTH_* fue eliminado de n8n
@@ -163,14 +185,18 @@ services:
       - AI_CALLBACK_KEY=${AI_CALLBACK_KEY}
     volumes:
       - n8n_data:/home/node/.n8n
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - helpdesk-network
+    restart: unless-stopped
 
   # Conector del Cloudflare Tunnel (token en .env). El hostname público se
   # define en Zero Trust -> Networks -> Tunnels -> Public Hostname:
   #   api.sistemahelpdesk.online -> http://backend:8000  (servicio en esta red)
   cloudflared:
-    image: cloudflare/cloudflared:latest
+    image: cloudflare/cloudflared:2026.9.0
     container_name: helpdesk-cloudflared
     restart: unless-stopped
     command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}

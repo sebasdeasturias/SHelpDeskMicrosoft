@@ -1,6 +1,8 @@
 # Archivos de entorno y variables secretas
 .env
 .env.*
+# La plantilla SÍ se versiona (no contiene secretos reales).
+!.env.example
 env/
 *.yml
 
@@ -10,9 +12,16 @@ venv/
 
 # Base de datos y datos locales
 basededatos/
-database/
 db_logic.sql
 *.sql
+# El esquema y los scripts de BD SÍ se versionan: permiten replicar la base
+# en otro equipo y controlar los cambios de esquema (migraciones idempotentes).
+database/*
+!database/db_logic.sql
+!database/seed_usuarios.sql
+!database/mock_tickets_resueltos.sql
+!database/migraciones/
+!database/migraciones/*.sql
 
 # --- Python / Bytecode ---
 __pycache__/
@@ -52,4 +61,7 @@ AGENTS.md
 !docker/docker-compose.prod.yml
 !docker/docker-compose.cloudflared.yml
 !backend/database.py
+# Integración continua (YAML de GitHub Actions)
+!.github/workflows/*.yml
+!.github/dependabot.yml
 .git

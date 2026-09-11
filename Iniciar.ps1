@@ -174,6 +174,8 @@ $Migraciones = @()
 if (Test-Path $MigracionesDir) {
     $Migraciones = Get-ChildItem -Path $MigracionesDir -Filter *.sql | Sort-Object Name
 }
+# Tabla de control de migraciones (idempotente; se crea antes del bucle).
+Invoke-DockerQuiet exec helpdesk-db psql -v ON_ERROR_STOP=1 -U $PgUser -d $PgDb -c "CREATE TABLE IF NOT EXISTS schema_migrations (version VARCHAR(100) PRIMARY KEY, applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW());" | Out-Null
 if ($Migraciones.Count -eq 0) {
     Write-Host "   (no hay migraciones en database\migraciones; se omite)" -ForegroundColor DarkGray
 } else {
@@ -187,6 +189,7 @@ if ($Migraciones.Count -eq 0) {
             exit 1
         }
         docker exec helpdesk-db rm -f /tmp/helpdesk_mig.sql
+        Invoke-DockerQuiet exec helpdesk-db psql -v ON_ERROR_STOP=1 -U $PgUser -d $PgDb -c "INSERT INTO schema_migrations (version) VALUES ('$($m.BaseName)') ON CONFLICT (version) DO NOTHING;" | Out-Null
         Write-Host "   ✅ $($m.Name)" -ForegroundColor Green
     }
 }
@@ -218,7 +221,7 @@ BEGIN
   FOREACH t IN ARRAY ARRAY['usuarios','categoria','prioridad','solicitud','adjunto',
                            'comentario','sla','clasificacion_ia',
                            'embedding_vector','sugerencia_rag','log_ia','configuracion_ia',
-                           'mensaje_chat_global'] LOOP
+                           'mensaje_chat_global','mensaje_chat_privado'] LOOP
     IF EXISTS (SELECT 1 FROM information_schema.tables
                WHERE table_schema = 'public' AND table_name = t) THEN
       EXECUTE format('GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE %I TO __USER__', t);

@@ -6,12 +6,15 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_db
 from auth import oauth2_scheme, SECRET_KEY, ALGORITHM, usuario_actual
+from audit import registrar_log
 from embeddings import generar_embedding, a_vector_sql, indexar_ticket, EMBEDDING_MODEL
 from jose import jwt, JWTError
 from datetime import datetime, timedelta, date
 from typing import List, Optional
 import json
 import os
+import hashlib
+import time
 
 router = APIRouter(prefix="/coordinator", tags=["Coordinador"])
 
@@ -258,7 +261,7 @@ async def get_agentes(db: AsyncSession = Depends(get_db), token: str = Depends(o
 
 @router.post("/agentes/{usuario_id}/permisos")
 async def set_permisos(usuario_id: int, data: dict, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
-    await _verify_token(db, token)
+    payload = await _verify_token(db, token)
     await db.execute(text("""
         UPDATE usuarios
         SET permisos_supervision = COALESCE(:ps, permisos_supervision),
@@ -270,6 +273,9 @@ async def set_permisos(usuario_id: int, data: dict, db: AsyncSession = Depends(g
         "id": usuario_id,
     })
     await db.commit()
+    await registrar_log("permisos_actualizados",
+                        f"usuario={usuario_id} sup={data.get('permisos_supervision')} esp={data.get('permisos_especiales')}",
+                        id_usuario=payload.get("user_id"))
     return {"status": "ok", "usuario_id": usuario_id}
 
 
@@ -454,7 +460,7 @@ async def get_sla(db: AsyncSession = Depends(get_db), token: str = Depends(oauth
 
 @router.post("/sla")
 async def set_sla(data: dict, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
-    await _verify_token(db, token)
+    payload = await _verify_token(db, token)
     items = data.get("sla", [])
     for item in items:
         id_prio = item.get("id_prioridad")
@@ -486,6 +492,8 @@ async def set_sla(data: dict, db: AsyncSession = Depends(get_db), token: str = D
             """), {"resp": str(resp), "sol": str(sol), "id": id_prio, "activo": activo})
 
     await db.commit()
+    await registrar_log("sla_actualizado", f"prioridades={len(items)}",
+                        id_usuario=payload.get("user_id"))
     return {"status": "ok", "actualizados": len(items)}
 
 
@@ -675,6 +683,43 @@ def _listar_respaldos_fs() -> list:
     return sorted(out, key=lambda r: r["nombre"], reverse=True)
 
 
+# Retención de respaldos automáticos (se conserva siempre un mínimo).
+BACKUP_RETENCION_DIAS = int(os.getenv("BACKUP_RETENCION_DIAS", "30"))
+BACKUP_MIN_CONSERVAR = int(os.getenv("BACKUP_MIN_CONSERVAR", "5"))
+
+
+def _sha256(ruta: str) -> str:
+    h = hashlib.sha256()
+    with open(ruta, "rb") as f:
+        for bloque in iter(lambda: f.read(1024 * 1024), b""):
+            h.update(bloque)
+    return h.hexdigest()
+
+
+def _aplicar_retencion() -> None:
+    """Elimina respaldos automáticos (helpdesk_*.dump) más antiguos que la
+    retención configurada, conservando siempre los más recientes."""
+    if not os.path.isdir(BACKUP_DIR):
+        return
+    archivos = sorted(
+        [n for n in os.listdir(BACKUP_DIR) if n.startswith("helpdesk_") and n.endswith(".dump")],
+        key=lambda n: os.stat(os.path.join(BACKUP_DIR, n)).st_mtime,
+        reverse=True,
+    )
+    limite = time.time() - BACKUP_RETENCION_DIAS * 86400
+    for nombre in archivos[BACKUP_MIN_CONSERVAR:]:
+        ruta = os.path.join(BACKUP_DIR, nombre)
+        try:
+            if os.stat(ruta).st_mtime < limite:
+                for sufijo in ("", ".sha256"):
+                    try:
+                        os.remove(ruta + sufijo)
+                    except OSError:
+                        pass
+        except OSError:
+            continue
+
+
 def _require_admin(payload: dict) -> None:
     if payload.get("role") != "administrador":
         raise HTTPException(
@@ -737,6 +782,8 @@ async def crear_usuario(data: dict, db: AsyncSession = Depends(get_db), token: s
         VALUES (:n, :e, :p, :r, :a, 'activo', 0, FALSE, FALSE)
     """), {"n": nombre, "e": email, "p": _pwd_admin.hash(password), "r": rol, "a": area})
     await db.commit()
+    await registrar_log("usuario_creado", f"email={email} rol={rol}",
+                        id_usuario=payload.get("user_id"))
     return {"status": "ok", "email": email, "rol": rol}
 
 
@@ -775,11 +822,15 @@ async def actualizar_usuario(usuario_id: int, data: dict, db: AsyncSession = Dep
                                 detail="La contraseña debe tener al menos 8 caracteres")
         cambios.append("contraseña = :pwd")
         params["pwd"] = _pwd_admin.hash(data["password"])
+        # Revoca los JWT vigentes del usuario al cambiarle la contraseña.
+        cambios.append("token_version = token_version + 1")
 
     if not cambios:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nada que actualizar")
     await db.execute(text(f"UPDATE usuarios SET {', '.join(cambios)} WHERE id_usuario = :id"), params)
     await db.commit()
+    await registrar_log("usuario_actualizado", f"id={usuario_id} campos={','.join(cambios)}",
+                        id_usuario=payload.get("user_id"))
     return {"status": "ok", "id_usuario": usuario_id}
 
 
@@ -822,6 +873,8 @@ async def cambiar_rol(usuario_id: int, data: dict, db: AsyncSession = Depends(ge
         resultado = {"status": "ok", "rol": nuevo_rol, "temporal": False}
 
     await db.commit()
+    await registrar_log("rol_cambiado", f"usuario={usuario_id} nuevo_rol={resultado.get('rol')}",
+                        id_usuario=payload.get("user_id"))
     return resultado
 
 
@@ -851,6 +904,8 @@ async def eliminar_usuario(usuario_id: int, db: AsyncSession = Depends(get_db), 
 
     await db.execute(text("DELETE FROM usuarios WHERE id_usuario = :id"), {"id": usuario_id})
     await db.commit()
+    await registrar_log("usuario_eliminado", f"id={usuario_id} email={user[2]} rol={user[3]}",
+                        id_usuario=payload.get("user_id"))
     return {"status": "ok", "eliminado": usuario_id}
 
 
@@ -888,7 +943,14 @@ async def crear_respaldo(db: AsyncSession = Depends(get_db), token: str = Depend
     if r.returncode != 0:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail=f"pg_dump falló (exit {r.returncode}): {r.stderr[:300]}")
-    return {"status": "ok", "archivo": nombre}
+    # Integridad: se guarda el SHA-256 en un fichero sidecar para poder verificarlo.
+    digest = _sha256(os.path.join(BACKUP_DIR, nombre))
+    with open(os.path.join(BACKUP_DIR, nombre) + ".sha256", "w", encoding="utf-8") as f:
+        f.write(digest + "\n")
+    _aplicar_retencion()
+    await registrar_log("respaldo_creado", f"archivo={nombre} sha256={digest[:16]}",
+                        id_usuario=payload.get("user_id"))
+    return {"status": "ok", "archivo": nombre, "sha256": digest}
 
 
 def _nombre_backup_valido(nombre: str) -> bool:
@@ -912,6 +974,36 @@ async def descargar_respaldo(nombre: str, db: AsyncSession = Depends(get_db), to
                     headers={"Content-Disposition": f'attachment; filename="{nombre}"'})
 
 
+@router.get("/respaldos/{nombre}/verificar")
+async def verificar_respaldo(nombre: str, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
+    """Verifica un respaldo: checksum SHA-256 y validez del archivo (pg_restore --list)."""
+    payload = await _verify_token(db, token)
+    _require_admin(payload)
+    if not _nombre_backup_valido(nombre):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nombre de archivo inválido")
+    ruta = os.path.join(BACKUP_DIR, nombre)
+    if not os.path.isfile(ruta):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No se encontró el respaldo")
+
+    digest = _sha256(ruta)
+    sidecar = ruta + ".sha256"
+    coincide = None
+    if os.path.isfile(sidecar):
+        with open(sidecar, "r", encoding="utf-8") as f:
+            coincide = (f.read().strip() == digest)
+
+    try:
+        chk = subprocess.run(["pg_restore", "--list", ruta], env=PG_ENV,
+                             capture_output=True, text=True, timeout=120)
+        contenido_ok = (chk.returncode == 0)
+        detalle = (chk.stderr or "")[:300]
+    except Exception as e:
+        contenido_ok, detalle = False, str(e)
+
+    return {"archivo": nombre, "sha256": digest, "checksum_coincide": coincide,
+            "contenido_ok": contenido_ok, "detalle": detalle}
+
+
 @router.delete("/respaldos/{nombre}")
 async def eliminar_respaldo(nombre: str, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
     payload = await _verify_token(db, token)
@@ -923,8 +1015,13 @@ async def eliminar_respaldo(nombre: str, db: AsyncSession = Depends(get_db), tok
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No se pudo eliminar")
     try:
         os.remove(ruta)
+        try:
+            os.remove(ruta + ".sha256")
+        except OSError:
+            pass
     except OSError:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="No se pudo eliminar")
+    await registrar_log("respaldo_eliminado", f"archivo={nombre}", id_usuario=payload.get("user_id"))
     return {"status": "ok", "eliminado": nombre}
 
 
@@ -937,6 +1034,31 @@ async def restaurar_respaldo(nombre: str, db: AsyncSession = Depends(get_db), to
     ruta = os.path.join(BACKUP_DIR, nombre)
     if not os.path.isfile(ruta):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No se pudo leer el respaldo")
+
+    # 1) Validar el archivo ANTES de tocar la base de datos.
+    try:
+        chk = subprocess.run(["pg_restore", "--list", ruta], env=PG_ENV,
+                             capture_output=True, text=True, timeout=120)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail=f"No se pudo validar el respaldo: {e}")
+    if chk.returncode != 0:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail=f"El respaldo no es un archivo válido: {chk.stderr[:200]}")
+
+    # 2) Respaldo de seguridad previo: permite revertir si la restauración falla.
+    seguro = f"pre_restore_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.dump"
+    try:
+        sr = subprocess.run(["pg_dump", "-Fc", "-f", os.path.join(BACKUP_DIR, seguro)],
+                            env=PG_ENV, capture_output=True, text=True, timeout=600)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail=f"No se pudo crear el respaldo de seguridad previo: {e}")
+    if sr.returncode != 0:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail=f"No se pudo crear el respaldo de seguridad previo (exit {sr.returncode}): {sr.stderr[:200]}")
+
+    # 3) Restaurar.
     try:
         r = subprocess.run(["pg_restore", "-d", PG_ENV["PGDATABASE"], "--clean", "--if-exists", ruta],
                            env=PG_ENV, capture_output=True, text=True, timeout=600)
@@ -945,7 +1067,9 @@ async def restaurar_respaldo(nombre: str, db: AsyncSession = Depends(get_db), to
     if r.returncode != 0:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail=f"pg_restore falló: {r.stderr[:300]}")
-    return {"status": "ok", "restaurado": nombre}
+    await registrar_log("respaldo_restaurado", f"archivo={nombre} pre_restore={seguro}",
+                        id_usuario=payload.get("user_id"))
+    return {"status": "ok", "restaurado": nombre, "respaldo_previo": seguro}
 
 
 @router.get("/bd/tablas")
@@ -1027,6 +1151,7 @@ async def set_modelo_ia(data: dict, db: AsyncSession = Depends(get_db), token: s
         ON CONFLICT (clave) DO UPDATE SET valor = EXCLUDED.valor, fecha_actualizacion = now()
     """), {"m": modelo})
     await db.commit()
+    await registrar_log("modelo_ia_cambiado", f"modelo={modelo}", id_usuario=payload.get("user_id"))
     return {"status": "ok", "modelo": modelo}
 
 
@@ -1097,6 +1222,7 @@ async def set_params_ia(data: dict, db: AsyncSession = Depends(get_db), token: s
     if not actualizados:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nada que actualizar")
     await db.commit()
+    await registrar_log("params_ia_actualizados", f"{actualizados}", id_usuario=payload.get("user_id"))
     return {"status": "ok", "actualizados": actualizados}
 
 
@@ -1136,6 +1262,9 @@ async def toggle_workflow(workflow_id: str, data: dict, db: AsyncSession = Depen
             r = await c.post(f"{N8N_URL}/api/v1/workflows/{workflow_id}/{accion}",
                              headers={"X-N8N-API-KEY": N8N_API_KEY})
             r.raise_for_status()
+            await registrar_log("n8n_workflow_toggle",
+                                f"workflow={workflow_id} activo={activo}",
+                                id_usuario=payload.get("user_id"))
             return {"status": "ok", "id": workflow_id, "activo": activo}
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=f"Error actualizando workflow: {e}")

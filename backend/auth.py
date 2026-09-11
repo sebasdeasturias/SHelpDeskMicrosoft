@@ -17,6 +17,7 @@ import segno
 from dotenv import load_dotenv
 from database import get_db
 from ratelimit import login_limiter
+from audit import registrar_log
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -41,6 +42,15 @@ LOGIN_VENTANA_SEG = int(os.getenv("LOGIN_VENTANA_SEG", str(15 * 60)))
 REGISTER_MAX_POR_IP = int(os.getenv("REGISTER_MAX_POR_IP", "5"))
 REGISTER_VENTANA_SEG = int(os.getenv("REGISTER_VENTANA_SEG", str(60 * 60)))
 
+# Bloqueo temporal de cuenta por intentos fallidos (persistido en BD, no solo
+# en memoria): complementa al rate-limit por IP/email.
+LOGIN_MAX_FALLOS = int(os.getenv("LOGIN_MAX_FALLOS", "5"))
+LOGIN_BLOQUEO_MIN = int(os.getenv("LOGIN_BLOQUEO_MIN", "15"))
+
+# Rate limit del segundo factor: evita fuerza bruta del código TOTP de 6 dígitos.
+MFA_MAX_INTENTOS = int(os.getenv("MFA_MAX_INTENTOS", "5"))
+MFA_VENTANA_SEG = int(os.getenv("MFA_VENTANA_SEG", "300"))
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
@@ -59,6 +69,7 @@ class UserData(BaseModel):
     nombre: str
     email: str
     rol: str
+    token_version: int = 0
 
 class MfaVerify(BaseModel):
     mfa_token: str
@@ -66,6 +77,9 @@ class MfaVerify(BaseModel):
 
 class MfaCode(BaseModel):
     code: str
+
+class MfaSetupRequest(BaseModel):
+    code: Optional[str] = None
 
 # Funciones auxiliares
 def verify_password(plain_password, hashed_password):
@@ -180,7 +194,7 @@ async def usuario_actual(db: AsyncSession, token: str) -> dict:
             headers={"WWW-Authenticate": "Bearer"},
         )
     row = await db.execute(text("""
-        SELECT id_usuario, nombre, email, rol, area, estado, mfa_enabled
+        SELECT id_usuario, nombre, email, rol, area, estado, mfa_enabled, token_version
         FROM usuarios WHERE id_usuario = :id
     """), {"id": user_id})
     u = row.fetchone()
@@ -188,6 +202,14 @@ async def usuario_actual(db: AsyncSession, token: str) -> dict:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Sesión no válida: el usuario no existe o está inactivo",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    # Revocación: si la contraseña se cambió (token_version subió), los tokens
+    # emitidos antes dejan de ser válidos inmediatamente.
+    if int(payload.get("tv", 0)) != int(u[7] or 0):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Sesión no válida: credenciales actualizadas. Inicia sesión de nuevo.",
             headers={"WWW-Authenticate": "Bearer"},
         )
     return {
@@ -212,7 +234,8 @@ def _crear_mfa_token(user_id: int) -> str:
 
 def _respuesta_token(user: "UserData") -> dict:
     access_token = create_access_token(
-        data={"sub": user.email, "role": user.rol, "user_id": user.id_usuario})
+        data={"sub": user.email, "role": user.rol, "user_id": user.id_usuario,
+              "tv": user.token_version})
     return {"access_token": access_token, "token_type": "bearer", "user": user.dict()}
 
 
@@ -221,6 +244,8 @@ def _respuesta_token(user: "UserData") -> dict:
 async def login(credentials: UserLogin, request: Request, db: AsyncSession = Depends(get_db)):
     # Rate limiting anti fuerza bruta (por IP y por cuenta).
     await _revisar_limite_login(request, credentials.email)
+    ip = _cliente_ip(request)
+    ua = (request.headers.get("user-agent") or "")[:100] or None
     # Expirar promociones temporales a administrador: si admin_temporal_hasta
     # ya pasó, el usuario recupera su rol anterior automáticamente.
     await db.execute(text("""
@@ -233,14 +258,62 @@ async def login(credentials: UserLogin, request: Request, db: AsyncSession = Dep
     """))
     await db.commit()
 
-    user = await authenticate_user(db, credentials.email, credentials.password)
+    fila_user = await db.execute(text("""
+        SELECT id_usuario, nombre, email, contraseña, rol, estado,
+               (bloqueado_hasta IS NOT NULL AND bloqueado_hasta > NOW()) AS bloqueado,
+               token_version
+        FROM usuarios WHERE email = :email
+    """), {"email": credentials.email})
+    u = fila_user.fetchone()
 
-    if not user:
+    credenciales_invalidas = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Credenciales incorrectas o usuario inactivo",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    if not u:
+        await registrar_log("login_fallido", f"email={credentials.email} (no existe)",
+                            ip=ip, navegador=ua)
+        raise credenciales_invalidas
+    if u[6]:
+        await registrar_log("login_bloqueado", f"email={credentials.email}",
+                            id_usuario=u[0], ip=ip, navegador=ua)
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Credenciales incorrectas o usuario inactivo",
-            headers={"WWW-Authenticate": "Bearer"},
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Cuenta bloqueada temporalmente por intentos fallidos. Intenta de nuevo más tarde.",
         )
+    if u[5] != "activo":
+        await registrar_log("login_fallido", f"email={credentials.email} (inactivo)",
+                            id_usuario=u[0], ip=ip, navegador=ua)
+        raise credenciales_invalidas
+    if not verify_password(credentials.password, u[3]):
+        # Contador persistente: al superar el máximo, bloquea la cuenta.
+        await db.execute(text("""
+            UPDATE usuarios
+            SET intentos_fallidos = intentos_fallidos + 1,
+                bloqueado_hasta = CASE
+                    WHEN intentos_fallidos + 1 >= :max
+                    THEN NOW() + make_interval(mins => :bloqueo)
+                    ELSE bloqueado_hasta END
+            WHERE id_usuario = :id
+        """), {"max": LOGIN_MAX_FALLOS, "bloqueo": LOGIN_BLOQUEO_MIN, "id": u[0]})
+        await db.commit()
+        await registrar_log("login_fallido", f"email={credentials.email} (contraseña incorrecta)",
+                            id_usuario=u[0], ip=ip, navegador=ua)
+        raise credenciales_invalidas
+
+    # Acceso correcto: limpiar contadores y registrar fecha de último acceso.
+    await db.execute(text("""
+        UPDATE usuarios
+        SET intentos_fallidos = 0, bloqueado_hasta = NULL, fecha_ultimo_acceso = NOW()
+        WHERE id_usuario = :id
+    """), {"id": u[0]})
+    await db.commit()
+    await registrar_log("login_ok", "autenticación por contraseña",
+                        id_usuario=u[0], ip=ip, navegador=ua)
+
+    user = UserData(id_usuario=u[0], nombre=u[1], email=u[2], rol=u[4],
+                    token_version=u[7] or 0)
 
     # Si el usuario tiene 2FA activo, no se entrega el token definitivo todavía:
     # se devuelve un reto para completar el segundo factor.
@@ -307,7 +380,9 @@ async def register_user(user_data: UserRegister, request: Request, db: AsyncSess
     })
     
     await db.commit()
-    
+
+    await registrar_log("registro", f"email={user_data.email}",
+                        ip=ip, navegador=(request.headers.get("user-agent") or "")[:100] or None)
     return {
         "message": "Usuario registrado exitosamente",
         "email": user_data.email,
@@ -326,8 +401,10 @@ def _qr_data_uri(texto: str) -> str:
 
 
 @router.post("/mfa/verify")
-async def mfa_verify(data: MfaVerify, db: AsyncSession = Depends(get_db)):
+async def mfa_verify(data: MfaVerify, request: Request, db: AsyncSession = Depends(get_db)):
     """Segundo paso del login: valida el código TOTP y emite el token real."""
+    ip = _cliente_ip(request)
+    ua = (request.headers.get("user-agent") or "")[:100] or None
     try:
         payload = jwt.decode(data.mfa_token, SECRET_KEY, algorithms=[ALGORITHM])
     except JWTError:
@@ -335,22 +412,44 @@ async def mfa_verify(data: MfaVerify, db: AsyncSession = Depends(get_db)):
                             detail="Reto 2FA inválido o expirado")
     if payload.get("scope") != "mfa":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Reto 2FA inválido")
+
+    # Rate limit del segundo factor (fuerza bruta del TOTP de 6 dígitos).
+    user_id = payload.get("user_id")
+    if not await login_limiter.allow(f"mfa:verify:{user_id}", MFA_MAX_INTENTOS, MFA_VENTANA_SEG):
+        await registrar_log("mfa_fallido", "rate limit del 2FA", id_usuario=user_id, ip=ip, navegador=ua)
+        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                            detail="Demasiados intentos de 2FA. Espera unos minutos.")
+
     row = await db.execute(text("""
-        SELECT id_usuario, nombre, email, rol, mfa_secret, mfa_enabled, estado
+        SELECT id_usuario, nombre, email, rol, mfa_secret, mfa_enabled, estado, token_version
         FROM usuarios WHERE id_usuario = :id
-    """), {"id": payload.get("user_id")})
+    """), {"id": user_id})
     u = row.fetchone()
     if not u or u[6] != "activo" or not u[5] or not u[4]:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Sesión no válida")
     if not pyotp.TOTP(u[4]).verify((data.code or "").strip(), valid_window=1):
+        await registrar_log("mfa_fallido", "código 2FA incorrecto", id_usuario=u[0], ip=ip, navegador=ua)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Código 2FA incorrecto")
-    return _respuesta_token(UserData(id_usuario=u[0], nombre=u[1], email=u[2], rol=u[3]))
+    await registrar_log("login_ok", "autenticación con 2FA", id_usuario=u[0], ip=ip, navegador=ua)
+    return _respuesta_token(UserData(id_usuario=u[0], nombre=u[1], email=u[2], rol=u[3],
+                                     token_version=u[7] or 0))
 
 
 @router.post("/mfa/setup")
-async def mfa_setup(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
-    """Genera un secreto TOTP (aún sin activar) y devuelve QR y URI otpauth."""
+async def mfa_setup(data: Optional[MfaSetupRequest] = None,
+                    token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
+    """Genera un secreto TOTP (aún sin activar) y devuelve QR y URI otpauth.
+    Si el 2FA ya está activo, exige el código vigente para regenerarlo: evita que
+    un token robado desactive silenciosamente el segundo factor."""
     u = await usuario_actual(db, token)
+    fila = (await db.execute(text(
+        "SELECT mfa_enabled, mfa_secret FROM usuarios WHERE id_usuario = :id"),
+        {"id": u["user_id"]})).fetchone()
+    if fila and fila[0] and fila[1]:
+        codigo = (data.code if data else "") or ""
+        if not codigo or not pyotp.TOTP(fila[1]).verify(codigo.strip(), valid_window=1):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail="Confirma tu código 2FA actual para reconfigurarlo")
     secret = pyotp.random_base32()
     await db.execute(text(
         "UPDATE usuarios SET mfa_secret = :s, mfa_enabled = FALSE WHERE id_usuario = :id"),
@@ -394,6 +493,18 @@ async def mfa_disable(data: MfaCode, token: str = Depends(oauth2_scheme), db: As
         {"id": u["user_id"]})
     await db.commit()
     return {"status": "ok", "mfa_enabled": False}
+
+
+@router.post("/logout")
+async def logout(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
+    """Cierra la sesión revocando los JWT del usuario (sube token_version)."""
+    u = await usuario_actual(db, token)
+    await db.execute(text(
+        "UPDATE usuarios SET token_version = token_version + 1 WHERE id_usuario = :id"),
+        {"id": u["user_id"]})
+    await db.commit()
+    await registrar_log("logout", None, id_usuario=u["user_id"])
+    return {"status": "ok"}
 
 
 @router.get("/me")

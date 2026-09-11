@@ -872,3 +872,64 @@ body.night-mode .spinner-ring {
     border-top-color: #cfe4ff;
 }
 @keyframes spinner-rotar { to { transform: rotate(360deg); } }
+
+/* ============================================
+   CHAT PRIVADO 1 A 1 (widget compartido chat-global.js)
+============================================ */
+.chat-privado-lista,
+.chat-privado-conv {
+    flex: 1; min-height: 0;
+    display: flex; flex-direction: column; overflow: hidden;
+}
+.chat-privado-contactos {
+    flex: 1; overflow-y: auto; padding: 8px;
+    display: flex; flex-direction: column; gap: 6px;
+}
+.chat-privado-contactos::-webkit-scrollbar { width: 5px; }
+.chat-privado-contactos::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+.chat-privado-item {
+    display: flex; align-items: center; gap: 10px; width: 100%;
+    padding: 9px 10px; text-align: left;
+    border: 1px solid rgba(255,255,255,0.15); border-radius: 12px;
+    background: rgba(255,255,255,0.08); color: var(--text-dark, #1a2b3c);
+    font-family: inherit; cursor: pointer; transition: background 0.2s;
+}
+.chat-privado-item:hover { background: rgba(255,255,255,0.2); }
+.chat-privado-avatar {
+    flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, var(--btn-top, #3ca0d4), var(--btn-bottom, #10599d));
+    color: #fff; font-size: 0.72rem; font-weight: 700;
+}
+.chat-privado-info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.chat-privado-nombre {
+    font-size: 0.85rem; font-weight: 700; color: var(--text-dark, #1a2b3c);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.chat-privado-sub {
+    font-size: 0.72rem; color: var(--text-placeholder, #6b7a8a);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.chat-privado-badge {
+    flex-shrink: 0; min-width: 20px; height: 20px; padding: 0 6px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 10px; background: linear-gradient(to bottom, #ff7b7b, #d63c3c);
+    color: #fff; font-size: 0.68rem; font-weight: 700;
+}
+.chat-privado-conv-bar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px; font-size: 0.85rem; font-weight: 700;
+    color: var(--text-dark, #1a2b3c);
+    border-bottom: 1px solid rgba(255,255,255,0.18);
+}
+.chat-privado-volver {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.35);
+    color: white; width: 26px; height: 26px; border-radius: 50%;
+    cursor: pointer; font-size: 0.9rem; line-height: 1;
+}
+.chat-privado-volver:hover { background: rgba(255,255,255,0.3); }
+body.night-mode .chat-privado-item,
+body.night-mode .chat-privado-nombre,
+body.night-mode .chat-privado-conv-bar { color: #e0e0ff; }
+.chat-privado-msgs { flex: 1; min-height: 0; }

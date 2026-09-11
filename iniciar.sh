@@ -160,9 +160,12 @@ fi
 MIGRACIONES_DIR="$PROJECT_ROOT/database/migraciones"
 if [ -d "$MIGRACIONES_DIR" ] && ls "$MIGRACIONES_DIR"/*.sql >/dev/null 2>&1; then
     dim "   Aplicando migraciones (idempotentes)..."
+    # Tabla de control de migraciones (idempotente; se crea antes del bucle).
+    docker exec -i helpdesk-db psql -v ON_ERROR_STOP=1 -U "$PG_USER" -d "$PG_DB" -c "CREATE TABLE IF NOT EXISTS schema_migrations (version VARCHAR(100) PRIMARY KEY, applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW());" >/dev/null 2>&1
     for f in "$MIGRACIONES_DIR"/*.sql; do
         nombre="$(basename "$f")"
         if cat "$f" | docker exec -i helpdesk-db psql -v ON_ERROR_STOP=1 -U "$PG_USER" -d "$PG_DB" >/dev/null 2>&1; then
+            docker exec -i helpdesk-db psql -v ON_ERROR_STOP=1 -U "$PG_USER" -d "$PG_DB" -c "INSERT INTO schema_migrations (version) VALUES ('${nombre%.sql}') ON CONFLICT (version) DO NOTHING;" >/dev/null 2>&1
             ok "   ✅ $nombre"
         else
             err "   ❌ Error aplicando $nombre"
@@ -203,7 +206,7 @@ BEGIN
   FOREACH t IN ARRAY ARRAY['usuarios','categoria','prioridad','solicitud','adjunto',
                            'comentario','sla','clasificacion_ia',
                            'embedding_vector','sugerencia_rag','log_ia','configuracion_ia',
-                           'mensaje_chat_global'] LOOP
+                           'mensaje_chat_global','mensaje_chat_privado'] LOOP
     IF EXISTS (SELECT 1 FROM information_schema.tables
                WHERE table_schema = 'public' AND table_name = t) THEN
       EXECUTE format('GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE %I TO __USER__', t);

@@ -351,6 +351,7 @@
         <div class="chat-tabs" role="tablist" aria-label="Tipo de chat">
             <button type="button" class="chat-tab active" data-chat-tab="ia" role="tab" aria-selected="true">Chat IA</button>
             <button type="button" class="chat-tab" data-chat-tab="global" role="tab" aria-selected="false">Chat Global</button>
+            <button type="button" class="chat-tab" data-chat-tab="privado" role="tab" aria-selected="false">Privado</button>
         </div>
         <div class="chat-messages" id="chatMessages">
             <div class="chat-msg bot">
@@ -359,6 +360,16 @@
         </div>
         <div class="chat-messages chat-global-msgs" id="chatGlobalMessages" style="display:none;">
             <div class="chat-msg system">Canal común de todo el equipo HelpDesk. Los mensajes son visibles para todos los roles.</div>
+        </div>
+        <div class="chat-privado-lista" id="chatPrivadoLista" style="display:none;">
+            <div class="chat-privado-contactos" id="chatPrivadoContactos"></div>
+        </div>
+        <div class="chat-privado-conv" id="chatPrivadoConv" style="display:none;">
+            <div class="chat-privado-conv-bar">
+                <button type="button" id="chatPrivadoVolver" class="chat-privado-volver" aria-label="Volver a contactos">←</button>
+                <span id="chatPrivadoNombre">Conversación</span>
+            </div>
+            <div class="chat-messages chat-privado-msgs" id="chatPrivadoMessages"></div>
         </div>
         <div class="chat-input-area">
             <textarea id="chatInput" rows="1" placeholder="Escribe tu mensaje..."></textarea>

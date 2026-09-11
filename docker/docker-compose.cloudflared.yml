@@ -69,7 +69,7 @@ services:
       start_period: 10s
 
   ollama:
-    image: ollama/ollama:latest
+    image: ollama/ollama:0.33.3
     container_name: ollama
     environment:
       # Mantener los modelos calientes y usar todas las GPU visibles.
@@ -91,7 +91,7 @@ services:
     restart: unless-stopped
 
   n8n:
-    image: n8nio/n8n
+    image: n8nio/n8n:2.37.10
     container_name: n8n
     environment:
       - DB_TYPE=postgresdb
@@ -183,7 +183,7 @@ services:
 
   # Proxy de SOLO LECTURA hacia el socket de Docker (logs del panel admin).
   docker-socket-proxy:
-    image: tecnativa/docker-socket-proxy
+    image: tecnativa/docker-socket-proxy:v0.5.0
     container_name: helpdesk-socket-proxy
     environment:
       - CONTAINERS=1
@@ -199,7 +199,7 @@ services:
   # en el panel de Cloudflare Zero Trust).
   # --------------------------------------------------------------------------
   cloudflared:
-    image: cloudflare/cloudflared:latest
+    image: cloudflare/cloudflared:2026.9.0
     container_name: helpdesk-cloudflared
     restart: unless-stopped
     command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN:?CLOUDFLARE_TUNNEL_TOKEN es obligatorio (Cloudflare Zero Trust -> Tunnels)}
@@ -214,7 +214,7 @@ services:
   # NOTA: es una URL pública temporal; la protección real es el login de Streamlit.
   # --------------------------------------------------------------------------
   cloudflared-panel:
-    image: cloudflare/cloudflared:latest
+    image: cloudflare/cloudflared:2026.9.0
     container_name: helpdesk-cloudflared-panel
     restart: unless-stopped
     command: tunnel --no-autoupdate --url http://streamlit:8501

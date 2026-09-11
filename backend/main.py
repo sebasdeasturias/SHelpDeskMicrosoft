@@ -1,12 +1,18 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
+import httpx
 import os
+
+from database import get_db
 
 from auth import router as auth_router
 from tickets import router as tickets_router
 from chat_ai import router as chat_router
 from coordinator import router as coordinator_router
 from chat_global import router as chat_global_router
+from chat_privado import router as chat_privado_router
 from adjuntos import router as adjuntos_router, router_archivos, UPLOAD_DIR
 
 # Carpeta pública de adjuntos: los archivos se guardan con nombres UUID no
@@ -48,6 +54,7 @@ app.include_router(tickets_router, prefix="/api")
 app.include_router(chat_router, prefix="/api")
 app.include_router(coordinator_router, prefix="/api")
 app.include_router(chat_global_router, prefix="/api")
+app.include_router(chat_privado_router, prefix="/api")
 app.include_router(adjuntos_router, prefix="/api")
 # Descarga de adjuntos AUTENTICADA (antes era StaticFiles público; hallazgo A1).
 app.include_router(router_archivos, prefix="/api")
@@ -56,6 +63,34 @@ app.include_router(router_archivos, prefix="/api")
 async def root():
     return {"message": "HelpDesk API is running successfully!", "status": "ok"}
 
+async def _ping(url: str) -> str:
+    """Comprueba un servicio HTTP interno (Ollama/n8n). No propaga excepciones."""
+    try:
+        async with httpx.AsyncClient(timeout=2.0) as client:
+            r = await client.get(url)
+            return "ok" if r.status_code == 200 else f"http {r.status_code}"
+    except Exception:
+        return "unreachable"
+
+
 @app.get("/api/health")
-async def health_check():
-    return {"status": "healthy", "database": "connected"}
+async def health_check(db: AsyncSession = Depends(get_db)):
+    """Estado REAL del servicio: consulta la BD y la disponibilidad de las
+    dependencias (Ollama y n8n). La BD es el componente crítico: si falla, el
+    endpoint devuelve 503 (el contenedor se marca unhealthy). La caída solo de
+    IA se reporta como 'degraded' sin tumbar el servicio."""
+    checks = {}
+    try:
+        await db.execute(text("SELECT 1"))
+        checks["database"] = "ok"
+    except Exception:
+        checks["database"] = "error"
+
+    checks["ollama"] = await _ping(f"{os.getenv('OLLAMA_URL', 'http://ollama:11434')}/api/tags")
+    checks["n8n"] = await _ping(f"{os.getenv('N8N_URL', 'http://n8n:5678')}/healthz")
+
+    if checks["database"] != "ok":
+        raise HTTPException(status_code=503, detail={"status": "unhealthy", "checks": checks})
+    if checks["ollama"] != "ok" or checks["n8n"] != "ok":
+        return {"status": "degraded", "checks": checks}
+    return {"status": "healthy", "checks": checks}

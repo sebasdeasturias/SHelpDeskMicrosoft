@@ -1,13 +1,13 @@
-// chat-global.js — Widget compartido del chat con tabs (Chat IA / Chat Global).
+// chat-global.js — Widget compartido del chat con tabs (Chat IA / Chat Global / Privado).
 //
 // Modos según la pantalla:
 //   * agente/coordinador: su dashboard ya maneja el chat IA (window.__chatIaPropia
-//     = true); aquí solo añadimos la tab Chat Global, el polling y el badge.
-//   * admin: este archivo maneja TODO (FAB, tabs, IA básica + chat global).
-//   * solicitante: solo Chat Global (el backend le niega el chat IA).
+//     = true); aquí añadimos Chat Global, Chat Privado, el polling y el badge.
+//   * admin: este archivo maneja TODO (FAB, tabs, IA básica + chat global + privado).
+//   * solicitante: solo Chat Global (el backend le niega IA y chat privado).
 //
-// Transporte del chat global: REST + polling con since_id (sin WebSockets:
-// suficiente para el volumen de un helpdesk interno y cero infra nueva).
+// Transporte: REST + polling con since_id (sin WebSockets). El chat privado es
+// exclusivo de personal interno (agente/coordinador/administrador).
 (function () {
     'use strict';
 
@@ -20,11 +20,20 @@
     let miUserId = null;
     let mensajes = [];          // cache del chat global
     let sinceId = 0;            // último id visto (polling incremental)
-    let tabActiva = 'global';   // 'ia' | 'global'
+    let tabActiva = 'global';   // 'ia' | 'global' | 'privado'
     let noLeidos = 0;
     let timerPoll = null;
     let historialIA = [];       // solo admin (fallback IA propio)
     let primeraCarga = true;    // el historial inicial no cuenta como no leído
+
+    // Chat privado
+    let privadoSoporte = false;
+    let contactosPriv = [];
+    let privadoSel = null;      // { id, nombre }
+    let privadoSinceId = 0;
+    let privadoNoLeidos = 0;
+    let cargandoContactos = false;
+    let timerPrivPoll = null;
 
     const ROL_ETIQUETA = {
         solicitante: 'Solicitante',
@@ -45,12 +54,18 @@
     // ¿Panel solo con chat global? (solicitante: no existe #chatMessages)
     function soloGlobal() { return !$('chatMessages') && !!$('chatGlobalMessages'); }
 
+    function privadoDisponible() {
+        return !!($('chatPrivadoLista') && $('chatPrivadoMessages'));
+    }
+
     document.addEventListener('DOMContentLoaded', init);
 
     async function init() {
         token = getToken();
         if (!token) return; // el dashboard principal redirige a login
         if (!$('chatPanel') || !$('chatGlobalMessages')) return; // sin chat en esta página
+
+        privadoSoporte = privadoDisponible();
 
         // Identidad propia (para resaltar mis mensajes)
         try {
@@ -63,11 +78,13 @@
         initTabs();
         initBindings();
         initFabBadge();
+        initPrivado();
         startPolling();
+        if (privadoSoporte) startPollingPrivado();
     }
 
     // ------------------------------------------------------------
-    // TABS (Chat IA ↔ Chat Global)
+    // TABS (Chat IA ↔ Chat Global ↔ Privado)
     // ------------------------------------------------------------
     function initTabs() {
         const tabs = document.querySelectorAll('.chat-tab');
@@ -88,6 +105,8 @@
         tabActiva = tab;
         const msgsIA = $('chatMessages');
         const msgsGlobal = $('chatGlobalMessages');
+        const listaPriv = $('chatPrivadoLista');
+        const convPriv = $('chatPrivadoConv');
         const attachBtn = $('attachBtn');
         const input = $('chatInput');
 
@@ -97,19 +116,26 @@
         // Se muestra con 'flex' (no con ''): la regla CSS ".chat-global-msgs
         // { display:none }" ocultaba el panel global al quitar el inline, y la
         // textbox quedaba arriba sin área de mensajes. 'flex' (inline) la anula.
-        if (msgsIA && msgsGlobal) {
-            msgsIA.style.display = tab === 'ia' ? 'flex' : 'none';
-            msgsGlobal.style.display = tab === 'global' ? 'flex' : 'none';
-        }
+        if (msgsIA) msgsIA.style.display = tab === 'ia' ? 'flex' : 'none';
+        if (msgsGlobal) msgsGlobal.style.display = tab === 'global' ? 'flex' : 'none';
+        if (listaPriv) listaPriv.style.display = (tab === 'privado' && !privadoSel) ? 'flex' : 'none';
+        if (convPriv) convPriv.style.display = (tab === 'privado' && privadoSel) ? 'flex' : 'none';
+
         // El adjuntar-ticket es exclusivo del chat IA
         if (attachBtn) attachBtn.style.display = tab === 'ia' ? '' : 'none';
         if (input) {
-            input.placeholder = tab === 'global'
-                ? 'Mensaje para el equipo...'
-                : 'Escribe tu mensaje...';
+            input.disabled = false;
+            if (tab === 'global') input.placeholder = 'Mensaje para el equipo...';
+            else if (tab === 'privado') input.placeholder = privadoSel ? 'Mensaje privado...' : 'Selecciona un contacto...';
+            else input.placeholder = 'Escribe tu mensaje...';
         }
+
         // Al abrir Chat Global: sin pendientes
         if (tab === 'global') marcarLeido();
+        if (tab === 'privado') {
+            cargarContactos();
+            if (privadoSel) enfocarInputPrivado(); else desactivarInputPrivado();
+        }
     }
 
     // ------------------------------------------------------------
@@ -122,11 +148,15 @@
         const panel = $('chatPanel');
         const closeBtn = $('chatClose');
 
-        // Al abrir el panel con la tab global activa: sin pendientes.
+        // Al abrir el panel con la tab global/privada activa: sin pendientes.
         // (MutationObserver funciona aunque el FAB lo enlace otro script)
         if (panel) {
             new MutationObserver(() => {
-                if (panel.classList.contains('open') && tabActiva === 'global') marcarLeido();
+                if (!panel.classList.contains('open')) return;
+                if (tabActiva === 'global') marcarLeido();
+                else if (tabActiva === 'privado' && privadoSel) {
+                    cargarConversacion().then(pollPrivadoNoLeidos);
+                }
             }).observe(panel, { attributes: true, attributeFilter: ['class'] });
         }
 
@@ -167,7 +197,7 @@
 
         // API pública para que los dashboards con IA propia deleguen el envío
         window.ChatGlobal = {
-            activo: () => tabActiva === 'global',
+            activo: () => tabActiva === 'global' || tabActiva === 'privado',
             enviarDesdeInput
         };
     }
@@ -238,7 +268,9 @@
         const texto = (input.value || '').trim();
         if (!texto) return;
 
-        if (tabActiva === 'global' || soloGlobal()) {
+        if (tabActiva === 'privado') {
+            enviarPrivado(texto);
+        } else if (tabActiva === 'global' || soloGlobal()) {
             enviarGlobal(texto);
         } else if (iaPropia()) {
             // En agente/coordinador el guard de su sendChatMessage delega aquí;
@@ -323,6 +355,238 @@
     }
 
     // ------------------------------------------------------------
+    // CHAT PRIVADO 1 A 1
+    // ------------------------------------------------------------
+    function initPrivado() {
+        if (!privadoSoporte) return;
+        const volver = $('chatPrivadoVolver');
+        if (volver) volver.addEventListener('click', mostrarContactos);
+        desactivarInputPrivado();
+    }
+
+    async function cargarContactos() {
+        if (!privadoSoporte || cargandoContactos) return;
+        cargandoContactos = true;
+        try {
+            const resp = await fetch(`${API_BASE_URL}/chat-privado/contactos`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (resp.status === 401) { logout(); return; }
+            if (!resp.ok) return;
+            contactosPriv = await resp.json();
+            renderContactos();
+        } catch (e) {
+            console.error('chat-global: error cargando contactos privados', e);
+        } finally {
+            cargandoContactos = false;
+        }
+    }
+
+    function iniciales(nombre) {
+        return (nombre || '?').split(' ').filter(Boolean)
+            .map(w => w[0]).join('').substring(0, 2).toUpperCase();
+    }
+
+    function renderContactos() {
+        const cont = $('chatPrivadoContactos');
+        if (!cont) return;
+        cont.innerHTML = '';
+
+        if (!contactosPriv.length) {
+            const vacio = document.createElement('div');
+            vacio.className = 'chat-msg system';
+            vacio.textContent = 'No hay otros usuarios disponibles para chat privado.';
+            cont.appendChild(vacio);
+            return;
+        }
+
+        contactosPriv.forEach(c => {
+            const item = document.createElement('button');
+            item.type = 'button';
+            item.className = 'chat-privado-item';
+            item.dataset.id = c.id_usuario;
+
+            const av = document.createElement('span');
+            av.className = 'chat-privado-avatar';
+            av.textContent = iniciales(c.nombre);
+            item.appendChild(av);
+
+            const info = document.createElement('span');
+            info.className = 'chat-privado-info';
+            const nom = document.createElement('span');
+            nom.className = 'chat-privado-nombre';
+            nom.textContent = c.nombre || 'Usuario';
+            const sub = document.createElement('span');
+            sub.className = 'chat-privado-sub';
+            sub.textContent = c.ultimo_mensaje
+                ? c.ultimo_mensaje
+                : (ROL_ETIQUETA[c.rol] || c.rol || '');
+            info.appendChild(nom);
+            info.appendChild(sub);
+            item.appendChild(info);
+
+            if (c.no_leidos > 0) {
+                const badge = document.createElement('span');
+                badge.className = 'chat-privado-badge';
+                badge.textContent = c.no_leidos > 99 ? '99+' : String(c.no_leidos);
+                item.appendChild(badge);
+            }
+
+            item.addEventListener('click', () => abrirConversacion(c.id_usuario, c.nombre));
+            cont.appendChild(item);
+        });
+    }
+
+    function mostrarContactos() {
+        privadoSel = null;
+        privadoSinceId = 0;
+        const lista = $('chatPrivadoLista');
+        const conv = $('chatPrivadoConv');
+        if (lista) lista.style.display = 'flex';
+        if (conv) conv.style.display = 'none';
+        desactivarInputPrivado();
+        cargarContactos();
+    }
+
+    async function abrirConversacion(id, nombre) {
+        privadoSel = { id: id, nombre: nombre };
+        privadoSinceId = 0;
+        const lista = $('chatPrivadoLista');
+        const conv = $('chatPrivadoConv');
+        if (lista) lista.style.display = 'none';
+        if (conv) conv.style.display = 'flex';
+        const nombreEl = $('chatPrivadoNombre');
+        if (nombreEl) nombreEl.textContent = nombre || 'Usuario';
+        const msgs = $('chatPrivadoMessages');
+        if (msgs) msgs.innerHTML = '';
+        enfocarInputPrivado();
+        await cargarConversacion();
+        await pollPrivadoNoLeidos();
+    }
+
+    async function cargarConversacion() {
+        if (!privadoSel) return;
+        try {
+            const resp = await fetch(
+                `${API_BASE_URL}/chat-privado/conversacion/${privadoSel.id}?since_id=${privadoSinceId}&limit=50`,
+                { headers: { 'Authorization': `Bearer ${token}` } }
+            );
+            if (resp.status === 401) { logout(); return; }
+            if (!resp.ok) return;
+            const nuevos = await resp.json();
+            if (!Array.isArray(nuevos) || !nuevos.length) return;
+            nuevos.forEach(m => agregarMensajePrivado(m));
+            privadoSinceId = nuevos[nuevos.length - 1].id_mensaje;
+        } catch (e) {
+            // Silencioso: red inestable no debe ensuciar la consola
+        }
+    }
+
+    function agregarMensajePrivado(m) {
+        const msgs = $('chatPrivadoMessages');
+        if (!msgs) return;
+        if (msgs.querySelector(`[data-msg-id="${m.id_mensaje}"]`)) return;
+
+        const esMio = miUserId != null && m.id_emisor === miUserId;
+        const div = document.createElement('div');
+        div.className = 'chat-msg ' + (esMio ? 'user' : 'bot');
+        div.dataset.msgId = m.id_mensaje;
+
+        const cuerpo = document.createElement('div');
+        cuerpo.textContent = m.mensaje;
+        div.appendChild(cuerpo);
+
+        const meta = document.createElement('div');
+        meta.className = 'msg-meta';
+        const hora = m.fecha ? new Date(m.fecha).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }) : '';
+        const autor = esMio ? 'Tú' : (privadoSel ? privadoSel.nombre : '');
+        meta.textContent = hora ? `${autor} · ${hora}` : autor;
+        div.appendChild(meta);
+
+        msgs.appendChild(div);
+        scrollAbajo(msgs);
+    }
+
+    async function enviarPrivado(texto) {
+        if (!privadoSel) return;
+        const input = $('chatInput');
+        const msgs = $('chatPrivadoMessages');
+
+        try {
+            const resp = await fetch(`${API_BASE_URL}/chat-privado/conversacion/${privadoSel.id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ mensaje: texto })
+            });
+
+            if (resp.status === 401) { logout(); return; }
+            if (resp.status === 429) {
+                const err = await resp.json().catch(() => ({}));
+                addMsg(msgs, err.detail || 'Vas muy rápido, espera unos segundos.', 'system', null, null);
+                return;
+            }
+            if (!resp.ok) {
+                const err = await resp.json().catch(() => ({}));
+                addMsg(msgs, err.detail || 'No se pudo enviar el mensaje.', 'system', null, null);
+                return;
+            }
+
+            const mensaje = await resp.json();
+            agregarMensajePrivado(mensaje);
+            if (mensaje.id_mensaje > privadoSinceId) privadoSinceId = mensaje.id_mensaje;
+            input.value = '';
+            input.style.height = 'auto';
+        } catch (e) {
+            console.error('chat-global: error enviando privado', e);
+            addMsg(msgs, 'Error de conexión. Intenta de nuevo.', 'system', null, null);
+        }
+    }
+
+    function enfocarInputPrivado() {
+        const input = $('chatInput');
+        if (!input) return;
+        input.disabled = false;
+        input.placeholder = 'Mensaje privado...';
+        input.focus();
+    }
+
+    function desactivarInputPrivado() {
+        const input = $('chatInput');
+        if (!input) return;
+        input.disabled = true;
+        input.placeholder = 'Selecciona un contacto...';
+    }
+
+    function startPollingPrivado() {
+        pollPrivadoNoLeidos();
+        timerPrivPoll = setInterval(() => {
+            pollPrivadoNoLeidos();
+            const panel = $('chatPanel');
+            const abierto = panel && panel.classList.contains('open')
+                && tabActiva === 'privado' && privadoSel;
+            if (abierto) cargarConversacion();
+        }, INTERVALO_POLLING_MS);
+    }
+
+    async function pollPrivadoNoLeidos() {
+        if (!privadoSoporte) return;
+        try {
+            const resp = await fetch(`${API_BASE_URL}/chat-privado/no-leidos`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!resp.ok) return;
+            const data = await resp.json();
+            privadoNoLeidos = data.total || 0;
+            actualizarBadge();
+        } catch (e) {
+            // Silencioso
+        }
+    }
+
+    // ------------------------------------------------------------
     // RENDER
     // ------------------------------------------------------------
     function agregarMensaje(m, esMioRecienEnviado) {
@@ -381,7 +645,7 @@
     }
 
     // ------------------------------------------------------------
-    // BADGE DE NO LEÍDOS
+    // BADGE DE NO LEÍDOS (global + privado)
     // ------------------------------------------------------------
     function initFabBadge() {
         const fab = $('chatFab');
@@ -401,8 +665,9 @@
     function actualizarBadge() {
         const badge = document.querySelector('#chatFab .fab-badge');
         if (!badge) return;
-        if (noLeidos > 0) {
-            badge.textContent = noLeidos > 99 ? '99+' : String(noLeidos);
+        const total = noLeidos + privadoNoLeidos;
+        if (total > 0) {
+            badge.textContent = total > 99 ? '99+' : String(total);
             badge.hidden = false;
         } else {
             badge.hidden = true;

@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  calidad:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar linter
+        run: pip install ruff
+
+      # Solo errores reales (sintaxis, nombres indefinidos). No bloquea por estilo.
+      - name: Ruff (errores)
+        run: ruff check backend streamlit_app --select E9,F63,F7,F82 --output-format=github
+
+      - name: Compilar (sintaxis Python)
+        run: python -m compileall -q backend streamlit_app
+
+      - name: Validar docker-compose (dev y prod)
+        run: |
+          docker compose -f docker/docker-compose.yml --env-file .env.example config --quiet
+          docker compose -f docker/docker-compose.prod.yml --env-file .env.example config --quiet

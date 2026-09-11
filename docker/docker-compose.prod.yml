@@ -51,7 +51,7 @@ services:
       start_period: 10s
 
   ollama:
-    image: ollama/ollama:latest
+    image: ollama/ollama:0.33.3
     container_name: ollama
     environment:
       # Mantener los modelos calientes y usar todas las GPU visibles.
@@ -72,7 +72,7 @@ services:
     restart: unless-stopped
 
   n8n:
-    image: n8nio/n8n
+    image: n8nio/n8n:2.37.10
     container_name: n8n
     environment:
       - WEBHOOK_URL=http://${API_DOMAIN}/
@@ -121,6 +121,8 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
       BACKUP_DIR: /backups
+      BACKUP_RETENCION_DIAS: ${BACKUP_RETENCION_DIAS:-30}
+      BACKUP_MIN_CONSERVAR: ${BACKUP_MIN_CONSERVAR:-5}
     volumes:
       # Adjuntos de tickets (PNG/JPG): persisten aunque se recree el contenedor
       - adjuntos_data:/app/uploads
@@ -166,7 +168,7 @@ services:
 
   # Proxy de SOLO LECTURA hacia el socket de Docker (logs del panel admin).
   docker-socket-proxy:
-    image: tecnativa/docker-socket-proxy
+    image: tecnativa/docker-socket-proxy:v0.5.0
     container_name: helpdesk-socket-proxy
     environment:
       - CONTAINERS=1
