@@ -307,6 +307,17 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+# Conector Cloudflare Tunnel (opcional): publica el backend sin abrir puertos.
+if grep -qE '^[[:space:]]*CLOUDFLARE_TUNNEL_TOKEN=[^[:space:]]' "$ENV_FILE"; then
+    say "☁️  Levantando el conector Cloudflare Tunnel..."
+    docker compose "${COMPOSE_ARGS[@]}" up -d cloudflared
+    if [ $? -eq 0 ]; then
+        ok "✅ cloudflared arriba (api.sistemahelpdesk.online -> backend:8000)"
+    else
+        warn "⚠️ No se pudo iniciar cloudflared; revisa CLOUDFLARE_TUNNEL_TOKEN"
+    fi
+fi
+
 # ============================================
 # 3. HEALTH CHECKS (no fatales)
 # ============================================

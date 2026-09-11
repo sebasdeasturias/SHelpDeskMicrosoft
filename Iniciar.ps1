@@ -346,6 +346,20 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 # ============================================
+# 4.5 CLOUDFLARE TUNNEL (conector saliente; opcional)
+#     Publica el backend en api.sistemahelpdesk.online sin abrir puertos.
+# ============================================
+if ($envContent -match "(?m)^\s*CLOUDFLARE_TUNNEL_TOKEN\s*=\s*\S") {
+    Write-Host "`n☁️  Levantando el conector Cloudflare Tunnel..." -ForegroundColor Cyan
+    docker compose -f $ComposeFile --env-file $EnvFile up -d cloudflared
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "⚠️ No se pudo iniciar cloudflared; revisa CLOUDFLARE_TUNNEL_TOKEN" -ForegroundColor Yellow
+    } else {
+        Write-Host "✅ cloudflared arriba (api.sistemahelpdesk.online -> backend:8000)" -ForegroundColor Green
+    }
+}
+
+# ============================================
 # 5. HEALTH CHECKS (no fatales)
 # ============================================
 function Wait-HttpOk {
