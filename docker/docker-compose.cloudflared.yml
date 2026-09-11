@@ -210,7 +210,7 @@ services:
   # TÚNEL RÁPIDO extra para el PANEL (Streamlit): genera una URL automática
   # temporal (trycloudflare.com) sin configurar nada en el panel de Cloudflare.
   # La URL se imprime en los logs: docker logs helpdesk-cloudflared-panel
-  # (los scripts docker/iniciar-cloudflared.* la extraen y la muestran sola).
+  # La URL se imprime en los logs: docker logs helpdesk-cloudflared-panel
   # NOTA: es una URL pública temporal; la protección real es el login de Streamlit.
   # --------------------------------------------------------------------------
   cloudflared-panel:
