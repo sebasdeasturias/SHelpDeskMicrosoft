@@ -1966,3 +1966,34 @@ body.night-mode .chat-privado-item,
 body.night-mode .chat-privado-nombre,
 body.night-mode .chat-privado-conv-bar { color: #e0e0ff; }
 .chat-privado-msgs { flex: 1; min-height: 0; }
+
+/* ============================================
+   ADJUNTOS EN EL DETALLE DEL TICKET
+============================================ */
+.detail-adjunto {
+    display: flex; gap: 10px; align-items: center;
+    padding: 8px 0;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+.detail-adjunto-thumb {
+    width: 56px; height: 56px; object-fit: cover;
+    border-radius: 8px; border: 1px solid rgba(255,255,255,0.25);
+    background: rgba(0,0,0,0.08); flex-shrink: 0;
+}
+.detail-adjunto-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.detail-adjunto-nombre {
+    font-size: 0.82rem; font-weight: 600; color: var(--text-dark, #1a2b3c);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.detail-adjunto-meta { font-size: 0.7rem; color: var(--text-placeholder, #6b7a8a); }
+.detail-adjunto-btn {
+    align-self: flex-start; margin-top: 3px;
+    background: rgba(60,160,212,0.2);
+    border: 1px solid rgba(60,160,212,0.5);
+    color: var(--text-dark, #1a2b3c);
+    border-radius: 12px; padding: 2px 10px;
+    font-size: 0.72rem; cursor: pointer; transition: background 0.2s;
+}
+.detail-adjunto-btn:hover { background: rgba(60,160,212,0.35); }
+body.night-mode .detail-adjunto-nombre,
+body.night-mode .detail-adjunto-btn { color: #e0e0ff; }

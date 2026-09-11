@@ -1474,6 +1474,7 @@ async function openTicketDetail(ticketId) {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         body.innerHTML = buildTicketDetailHTML(data);
+        await cargarAdjuntosDetalle(data.adjuntos || [], body);
     } catch (err) {
         console.error('Error cargando detalle:', err);
         body.innerHTML = `<div class="detail-loading">❌ Error al cargar los detalles: ${esc(err.message)}</div>`;
@@ -1537,6 +1538,11 @@ function buildTicketDetailHTML(d) {
             ${ia.comentario_revision ? `<div class="detail-row"><span class="detail-key">Comentario revisión</span><span class="detail-val">${esc(ia.comentario_revision)}</span></div>` : ''}
             ` : '<div class="detail-row"><span class="detail-val">La IA aún no ha analizado este ticket</span></div>'}
         </div>
+
+        <div class="detail-section">
+            <h4>📎 Adjuntos</h4>
+            <div id="detailAdjuntos"></div>
+        </div>
     `;
 
     if (d.historial && d.historial.length > 0) {
@@ -1553,4 +1559,87 @@ function buildTicketDetailHTML(d) {
     }
 
     return html;
+}
+
+// ============================================
+// ADJUNTOS DEL DETALLE (miniaturas autenticadas)
+// ============================================
+const _adjuntoUrls = [];
+
+function _limpiarAdjuntosUrls() {
+    _adjuntoUrls.forEach(u => { try { URL.revokeObjectURL(u); } catch (_) {} });
+    _adjuntoUrls.length = 0;
+}
+
+function _urlAdjunto(ruta) {
+    const base = API.replace(/\/api\/?$/, '');
+    return `${base}${ruta}`;
+}
+
+async function cargarAdjuntosDetalle(adjuntos, contenedor) {
+    _limpiarAdjuntosUrls();
+    const cont = contenedor ? contenedor.querySelector('#detailAdjuntos') : document.getElementById('detailAdjuntos');
+    if (!cont) return;
+    if (!adjuntos.length) {
+        cont.innerHTML = '<div class="detail-row"><span class="detail-val">Sin adjuntos</span></div>';
+        return;
+    }
+    adjuntos.forEach(a => {
+        const item = document.createElement('div');
+        item.className = 'detail-adjunto';
+
+        const img = document.createElement('img');
+        img.className = 'detail-adjunto-thumb';
+        img.alt = a.nombre_archivo || 'Adjunto';
+        img.loading = 'lazy';
+        item.appendChild(img);
+
+        const info = document.createElement('div');
+        info.className = 'detail-adjunto-info';
+        const nombre = document.createElement('span');
+        nombre.className = 'detail-adjunto-nombre';
+        nombre.textContent = a.nombre_archivo || 'adjunto';
+        const meta = document.createElement('small');
+        meta.className = 'detail-adjunto-meta';
+        const peso = a.tamaño != null ? `${(a.tamaño / 1024).toFixed(0)} KB` : '';
+        const fecha = a.fecha_subida ? new Date(a.fecha_subida).toLocaleString('es-ES') : '';
+        meta.textContent = [peso, fecha].filter(Boolean).join(' · ');
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'detail-adjunto-btn';
+        btn.textContent = 'Descargar';
+        btn.addEventListener('click', () => descargarAdjunto(a));
+        info.append(nombre, meta, btn);
+        item.appendChild(info);
+
+        cont.appendChild(item);
+        cargarMiniatura(a, img);
+    });
+}
+
+async function cargarMiniatura(a, img) {
+    try {
+        const res = await fetch(_urlAdjunto(a.ruta), { headers: { 'Authorization': `Bearer ${state.authToken}` } });
+        if (!res.ok) { img.remove(); return; }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        _adjuntoUrls.push(url);
+        img.src = url;
+    } catch (_) { img.remove(); }
+}
+
+async function descargarAdjunto(a) {
+    try {
+        const res = await fetch(_urlAdjunto(a.ruta), { headers: { 'Authorization': `Bearer ${state.authToken}` } });
+        if (!res.ok) return;
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = a.nombre_archivo || 'adjunto';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
+    } catch (_) {}
 }

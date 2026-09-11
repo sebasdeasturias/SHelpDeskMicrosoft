@@ -284,6 +284,24 @@ async def get_ticket_detail(ticket_id: int, db: AsyncSession = Depends(get_db), 
     """), {"id": ticket_id})
     ai = ai_result.fetchone()
 
+    adj_result = await db.execute(text("""
+        SELECT id_adjunto, nombre_archivo, ruta, tipo, tamaño, fecha_subida
+        FROM adjunto
+        WHERE id_solicitud = :id
+        ORDER BY fecha_subida ASC
+    """), {"id": ticket_id})
+    adjuntos = [
+        {
+            "id_adjunto": a[0],
+            "nombre_archivo": a[1],
+            "ruta": a[2],
+            "tipo": a[3],
+            "tamaño": a[4],
+            "fecha_subida": a[5].isoformat() if a[5] else None,
+        }
+        for a in adj_result.fetchall()
+    ]
+
     hist_result = await db.execute(text("""
         SELECT estado_anterior, estado_nuevo, comentario, fecha
         FROM historial
@@ -341,6 +359,7 @@ async def get_ticket_detail(ticket_id: int, db: AsyncSession = Depends(get_db), 
             "revision_manual": ai[7],
             "comentario_revision": ai[8]
         } if ai else None,
+        "adjuntos": adjuntos,
         "historial": historial
     }
 
