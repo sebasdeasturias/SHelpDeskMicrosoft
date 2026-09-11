@@ -39,6 +39,11 @@ comando
 comando.txt
 
 # ---------------------------------------------------------------------------
+# Contexto para agentes de codificación: NO se publica en GitHub.
+# ---------------------------------------------------------------------------
+AGENTS.md
+
+# ---------------------------------------------------------------------------
 # Excepciones: archivos SIN secretos imprescindibles para desplegar/producir.
 # (docker-compose.yml y backend/database.py no contienen credenciales: leen
 #  las variables del .env, que ese sí sigue ignorado.)
