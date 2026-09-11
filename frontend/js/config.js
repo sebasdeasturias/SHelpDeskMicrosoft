@@ -40,7 +40,7 @@
     if (typeof window === 'undefined' || !window.fetch || window.__fetchRetry) return;
     window.__fetchRetry = true;
     var origFetch = window.fetch.bind(window);
-    var MAX = 5;
+    var MAX = 8;
     window.fetch = function (input, init) {
         var intento = 0;
         function delay(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
@@ -48,12 +48,12 @@
             intento++;
             return origFetch(input, init).then(function (res) {
                 if (res.status >= 500 && intento < MAX) {
-                    return delay(250 * intento).then(exec);
+                    return delay(Math.min(250 * intento, 800)).then(exec);
                 }
                 return res;
             }).catch(function (err) {
                 if (intento < MAX) {
-                    return delay(250 * intento).then(exec);
+                    return delay(Math.min(250 * intento, 800)).then(exec);
                 }
                 throw err;
             });

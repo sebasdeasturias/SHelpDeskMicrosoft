@@ -109,6 +109,9 @@ services:
       N8N_API_KEY: ${N8N_API_KEY}
       MAX_TICKETS_AGENTE_DIA: ${MAX_TICKETS_AGENTE_DIA:-3}
       CORS_ORIGINS: ${CORS_ORIGINS:-*}
+      # Detrás del proxy de Vercel todas las peticiones comparten IP, así que el
+      # límite por IP se eleva; el control real anti-fuerza-bruta es por email.
+      LOGIN_MAX_POR_IP: ${LOGIN_MAX_POR_IP:-200}
       TRUST_PROXY: ${TRUST_PROXY:-true}
       # Proxy Docker de SOLO LECTURA (logs). Ya no se monta el socket.
       DOCKER_HOST: http://docker-socket-proxy:2375

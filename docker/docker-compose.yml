@@ -73,6 +73,9 @@ services:
       # Orígenes CORS permitidos (separados por coma). Ej: si el frontend está
       # en Vercel: https://helpdesk.midominio.com. Con "*" no se usan cookies.
       CORS_ORIGINS: ${CORS_ORIGINS:-*}
+      # Detrás del proxy de Vercel todas las peticiones comparten IP, así que el
+      # límite por IP se eleva; el control real anti-fuerza-bruta es por email.
+      LOGIN_MAX_POR_IP: ${LOGIN_MAX_POR_IP:-200}
       # Proxy Docker de SOLO LECTURA (logs del panel admin). El backend ya no
       # monta el socket: no puede ejecutar comandos ni crear contenedores.
       DOCKER_HOST: http://docker-socket-proxy:2375
