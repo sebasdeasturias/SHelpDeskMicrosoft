@@ -6,7 +6,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://desktop-5vclct5.tail5f1502.ts.net/api/:path*"
+      "destination": "https://api.sistemahelpdesk.online/api/:path*"
     }
   ],
   "headers": [
