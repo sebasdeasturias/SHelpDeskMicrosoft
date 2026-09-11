@@ -30,3 +30,34 @@
     }
     window.API_BASE_URL = base.replace(/\/+$/, '');
 })();
+
+// Reintentos automáticos ante fallos transitorios (5xx / red).
+// Motivo: el proxy de Vercel hacia el Funnel de Tailscale falla de forma
+// intermitente con DNS_HOSTNAME_EMPTY (502); un reintento inmediato lo salva.
+// No reintenta errores 4xx (son de negocio: credenciales, permisos, etc.).
+(function () {
+    'use strict';
+    if (typeof window === 'undefined' || !window.fetch || window.__fetchRetry) return;
+    window.__fetchRetry = true;
+    var origFetch = window.fetch.bind(window);
+    var MAX = 3;
+    window.fetch = function (input, init) {
+        var intento = 0;
+        function delay(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+        function exec() {
+            intento++;
+            return origFetch(input, init).then(function (res) {
+                if (res.status >= 500 && intento < MAX) {
+                    return delay(400 * intento).then(exec);
+                }
+                return res;
+            }).catch(function (err) {
+                if (intento < MAX) {
+                    return delay(400 * intento).then(exec);
+                }
+                throw err;
+            });
+        }
+        return exec();
+    };
+})();
