@@ -164,6 +164,13 @@ async function loadUserData() {
             };
             window.location.href = redirectMap[state.userData.role] || 'login.html';
         }
+
+        if (state.userData.role === 'administrador') {
+            const btnAdmin = document.getElementById('adminReturnBtn');
+            if (btnAdmin) btnAdmin.style.display = 'inline-flex';
+            const roleBadge = document.getElementById('userRoleBadge');
+            if (roleBadge) roleBadge.textContent = '👑 Administrador';
+        }
     } catch (error) {
         console.error('Error cargando usuario:', error);
         window.location.href = 'login.html';

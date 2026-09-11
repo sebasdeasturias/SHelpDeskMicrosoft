@@ -59,6 +59,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             window.location.href = 'dashboard-solicitante.html';
             return;
         }
+
+        if (userData.role === 'administrador') {
+            const btnAdmin = document.getElementById('adminReturnBtn');
+            if (btnAdmin) btnAdmin.style.display = 'inline-flex';
+        }
     } catch (error) {
         console.error('Error de autenticación:', error);
         localStorage.removeItem('token');

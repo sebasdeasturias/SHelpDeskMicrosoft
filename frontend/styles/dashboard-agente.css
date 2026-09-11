@@ -141,6 +141,14 @@ body.night-mode .stars-overlay { opacity: 1; }
 }
 .logout-btn:hover { background: rgba(255,100,100,0.4); }
 
+.admin-return-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(255,215,0,0.22);
+    border-color: rgba(255,215,0,0.6);
+    text-decoration: none;
+}
+.admin-return-btn:hover { background: rgba(255,215,0,0.42); }
+
 /* ==========================================
    SWITCH DE MODO DIURNO/NOCTURNO (copiado de login.css)
    ========================================== */

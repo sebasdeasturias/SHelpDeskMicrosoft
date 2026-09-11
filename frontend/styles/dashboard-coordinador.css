@@ -418,6 +418,13 @@ body.night-mode .theme-label {
 }
 .logout-btn:hover { background: rgba(255,100,100,0.4); }
 
+.admin-return-btn {
+    background: rgba(255,215,0,0.22);
+    border-color: rgba(255,215,0,0.6);
+    text-decoration: none;
+}
+.admin-return-btn:hover { background: rgba(255,215,0,0.42); }
+
 /* ============================================
    CONTENIDO PRINCIPAL - PÁGINAS
 ============================================ */
