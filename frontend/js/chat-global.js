@@ -371,7 +371,9 @@
         if (!privadoSoporte) return;
         const volver = $('chatPrivadoVolver');
         if (volver) volver.addEventListener('click', mostrarContactos);
-        desactivarInputPrivado();
+        // El estado inicial del input lo fija setTab() (IA o global). NO lo
+        // deshabilitamos aquí: hacerlo dejaba el textarea del chat IA
+        // deshabilitado al abrir el panel (bug).
     }
 
     async function cargarContactos() {
