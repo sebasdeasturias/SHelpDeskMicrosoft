@@ -359,23 +359,23 @@ body.night-mode .column-header .count-badge { background: #203b5c; color: #cfe3f
 .card-id { font-size: 0.7rem; color: var(--text-placeholder); font-weight: 600; letter-spacing: 0.5px; }
 .card-tags { display: flex; gap: 4px; flex-wrap: wrap; }
 
-.tag {
-    font-size: 0.65rem; padding: 3px 9px;
-    border-radius: 999px; font-weight: 700;
+/* Pills/tags estandarizados: relleno vivo + texto blanco + neón blanco suave */
+.tag, .role-pill, .status-pill, .priority-pill, .similarity-badge, .ticket-status {
+    display: inline-block; padding: 3px 10px;
+    border-radius: 999px; font-size: 0.66rem; font-weight: 700;
+    line-height: 1.4;
     text-transform: uppercase; letter-spacing: 0.4px;
     color: #fff; white-space: nowrap;
-    background: var(--tag-bg, #475569);
-    border: 1px solid rgba(255,255,255,0.5);
+    background: var(--pill-bg, #475569);
+    border: 1px solid rgba(255,255,255,0.6);
     text-shadow: 0 1px 2px rgba(0,0,0,0.45);
-    /* Neón suave: halo del color de la categoría + brillo interno */
-    box-shadow: 0 0 7px var(--tag-glow, rgba(71,85,105,0.6)),
-                inset 0 0 3px rgba(255,255,255,0.3);
+    box-shadow: 0 0 8px rgba(255,255,255,0.45), inset 0 0 3px rgba(255,255,255,0.35);
 }
-.tag-network { --tag-bg: #1d4ed8; --tag-glow: rgba(59,130,246,0.8); }
-.tag-hardware { --tag-bg: #c2410c; --tag-glow: rgba(249,115,22,0.8); }
-.tag-software { --tag-bg: #7c3aed; --tag-glow: rgba(167,139,250,0.8); }
-.tag-access { --tag-bg: #be123c; --tag-glow: rgba(244,63,94,0.8); }
-.tag-email { --tag-bg: #047857; --tag-glow: rgba(16,185,129,0.8); }
+.tag-network { --pill-bg: #1d4ed8; }
+.tag-hardware { --pill-bg: #c2410c; }
+.tag-software { --pill-bg: #7c3aed; }
+.tag-access { --pill-bg: #be123c; }
+.tag-email { --pill-bg: #047857; }
 
 .card-assignee {
     display: flex; align-items: center; gap: 6px;

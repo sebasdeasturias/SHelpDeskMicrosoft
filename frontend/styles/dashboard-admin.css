@@ -392,25 +392,23 @@ body.night-mode .badge-tag { background: #203b5c; border-color: #cfe3ff; color: 
 .glass-table tbody tr:hover { background: rgba(255,255,255,0.1); }
 
 /* Pills */
+/* Pills estandarizados: relleno vivo + texto blanco + neón blanco suave */
 .status-pill, .role-pill {
     display: inline-block; padding: 3px 10px;
-    border-radius: 10px; font-size: 0.68rem; font-weight: 700;
-    text-transform: uppercase; letter-spacing: 0.3px;
-    border: 1px solid currentColor;
+    border-radius: 999px; font-size: 0.68rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.4px;
+    color: #fff; white-space: nowrap;
+    background: var(--pill-bg, #475569);
+    border: 1px solid rgba(255,255,255,0.6);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.45);
+    box-shadow: 0 0 8px rgba(255,255,255,0.45), inset 0 0 3px rgba(255,255,255,0.35);
 }
-.status-pill.activo { background: #b8f2d6; color: #075f3d; }
-.status-pill.inactivo { background: #e5e7eb; color: #374151; }
-.role-pill.administrador { background: #fff0a8; color: #684b00; }
-.role-pill.coordinador { background: #e5d7ff; color: #54208a; }
-.role-pill.agente { background: #cfe3ff; color: #124b8b; }
-.role-pill.solicitante { background: #b8f2d6; color: #075f3d; }
-
-body.night-mode .status-pill.activo { background: #075f3d; color: #b8f2d6; }
-body.night-mode .status-pill.inactivo { background: #374151; color: #e5e7eb; }
-body.night-mode .role-pill.administrador { background: #684b00; color: #fff0a8; }
-body.night-mode .role-pill.coordinador { background: #54208a; color: #e5d7ff; }
-body.night-mode .role-pill.agente { background: #124b8b; color: #cfe3ff; }
-body.night-mode .role-pill.solicitante { background: #075f3d; color: #b8f2d6; }
+.status-pill.activo { --pill-bg: #047857; }
+.status-pill.inactivo { --pill-bg: #475569; }
+.role-pill.administrador { --pill-bg: #b45309; }
+.role-pill.coordinador { --pill-bg: #7c3aed; }
+.role-pill.agente { --pill-bg: #1d4ed8; }
+.role-pill.solicitante { --pill-bg: #047857; }
 
 /* Botones de fila */
 .btn-mini {

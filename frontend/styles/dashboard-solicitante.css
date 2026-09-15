@@ -136,19 +136,24 @@ body.night-mode .ticket-item { background: rgba(40,40,70,0.3); border-color: rgb
 .ticket-subject { font-size: 1rem; font-weight: 600; color: var(--text-dark); }
 .ticket-date { font-size: 0.8rem; color: var(--text-placeholder); }
 
+/* Ticket status estandarizado: relleno vivo + texto blanco + neón blanco suave */
 .ticket-status {
-    padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 700;
-    text-transform: uppercase; letter-spacing: 0.5px; text-align: center; min-width: 120px;
-    border: 1px solid currentColor;
+    display: inline-block; padding: 5px 14px; min-width: 110px; text-align: center;
+    border-radius: 999px; font-size: 0.72rem; font-weight: 700;
+    letter-spacing: 0.4px; text-transform: uppercase;
+    color: #fff; white-space: nowrap;
+    background: var(--pill-bg, #475569);
+    border: 1px solid rgba(255,255,255,0.6);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.45);
+    box-shadow: 0 0 8px rgba(255,255,255,0.45), inset 0 0 3px rgba(255,255,255,0.35);
 }
-.status-nuevo { background: #cfe3ff; color: #124b8b; }
-.status-en_proceso { background: #ffe0b2; color: #8a4300; }
-.status-resuelto { background: #b8f2d6; color: #075f3d; }
-.status-cerrado { background: #e5e7eb; color: #374151; }
-body.night-mode .status-nuevo { background: #124b8b; color: #cfe3ff; }
-body.night-mode .status-en_proceso { background: #713800; color: #ffe0b2; }
-body.night-mode .status-resuelto { background: #075f3d; color: #b8f2d6; }
-body.night-mode .status-cerrado { background: #374151; color: #e5e7eb; }
+.status-nuevo { --pill-bg: #1d4ed8; }
+.status-en_proceso { --pill-bg: #c2410c; }
+.status-resuelto { --pill-bg: #047857; }
+.status-cerrado { --pill-bg: #475569; }
+.status-asignado { --pill-bg: #0369a1; }
+.status-escalado { --pill-bg: #be123c; }
+.status-archivado { --pill-bg: #475569; }
 
 .loading-state, .empty-state { text-align: center; padding: 40px 20px; color: white; }
 .loading-state i { font-size: 24px; margin-bottom: 12px; }
@@ -221,18 +226,7 @@ body.night-mode .theme-label {
     .theme-switch-wrapper { top: 10px; right: 10px; }
     .theme-label { display: none; }
 }
-.status-asignado { 
-    background: rgba(139, 92, 246, 0.2); 
-    color: #8b5cf6; 
-    border: 1px solid rgba(139, 92, 246, 0.4); 
-}
-.status-escalado { 
-    background: rgba(239, 68, 68, 0.2); 
-    color: #ef4444; 
-    border: 1px solid rgba(239, 68, 68, 0.4); 
-}
-body.night-mode .status-asignado { color: #a78bfa; }
-body.night-mode .status-escalado { color: #f87171; }
+/* (variantes .status-* centralizadas arriba, en el bloque de .ticket-status) */
 
 @media (max-width: 480px) {
     .main-container { padding: 12px; }
