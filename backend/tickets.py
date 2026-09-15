@@ -3,6 +3,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_db
 from auth import oauth2_scheme, SECRET_KEY, ALGORITHM, usuario_actual
+from ratelimit import ticket_limiter
 from embeddings import indexar_ticket
 from jose import jwt, JWTError
 from datetime import datetime
@@ -58,7 +59,15 @@ async def create_ticket(data: dict, db: AsyncSession = Depends(get_db), token: s
 
     if payload.get("role") != 'solicitante':
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Solo solicitantes pueden crear tickets")
-        
+
+    # Límite del formulario: máximo 4 tickets por hora y por usuario (anti-abuso).
+    user_id = payload.get("user_id")
+    if not await ticket_limiter.allow(f"ticket:user:{user_id}", 4, 3600):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Has alcanzado el límite de 4 tickets por hora. Intenta de nuevo más tarde."
+        )
+
     asunto = data.get("asunto", "").strip()
     descripcion = data.get("descripcion", "").strip()
     id_categoria = data.get("id_categoria")

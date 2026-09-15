@@ -12,7 +12,7 @@ from sqlalchemy import text
 
 from database import get_db
 from auth import SECRET_KEY, ALGORITHM, oauth2_scheme, usuario_actual
-from ratelimit import chat_limiter
+from ratelimit import chat_limiter, chat_ia_limiter
 
 router = APIRouter(prefix="/chat", tags=["Chat IA"])
 
@@ -287,6 +287,13 @@ async def chat_with_ai(
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail="Demasiados mensajes por minuto. Espera unos segundos antes de continuar."
+        )
+
+    # 1b-bis. Espera mínima de 3 s entre mensajes del chat IA.
+    if not await chat_ia_limiter.allow(f"chat-ia:cooldown:{user_id}", 1, 3):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Espera 3 segundos antes de enviar otro mensaje."
         )
 
     # 1c. Contexto operacional REAL (migración de conocimiento en la rama

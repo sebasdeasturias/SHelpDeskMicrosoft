@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import get_db
 from auth import SECRET_KEY, ALGORITHM, oauth2_scheme, usuario_actual
-from ratelimit import chat_limiter
+from ratelimit import chat_limiter, chat_global_guard
 
 router = APIRouter(prefix="/chat-global", tags=["Chat Global"])
 
@@ -103,6 +103,13 @@ async def enviar_mensaje(
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail="Estás enviando mensajes demasiado rápido. Espera unos segundos."
+        )
+
+    # Anti-spam: si envía más de 5 mensajes en 10 s, se bloquea 15 s.
+    if not await chat_global_guard.allow(f"chat-global:spam:{user_id}"):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Estás enviando mensajes demasiado rápido. Espera 15 segundos."
         )
 
     # El usuario debe seguir activo (un usuario desactivado no escribe).
