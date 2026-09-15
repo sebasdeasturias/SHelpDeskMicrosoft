@@ -290,13 +290,15 @@ function navigateTo(page) {
 // KANBAN: Fetch y Render
 // ============================================
 let isDragging = false;
+let dropZonesBound = false; // .column-body persisten: sus listeners se enlazan una sola vez
+let mutando = 0;            // PATCHs en vuelo: pausa el polling para no pisar el optimista
 
 function initKanban() {
     // Se inicializa después del render
 }
 
 async function fetchTickets() {
-    if (isDragging || state.currentPage !== 'kanban') return;
+    if (isDragging || mutando > 0 || state.currentPage !== 'kanban') return;
 
     try {
         const res = await fetch(`${API}/tickets`, {
@@ -405,6 +407,11 @@ function initDragDrop() {
         });
     });
 
+    // Los .column-body NO se recrean en cada render: enlazar sus listeners una
+    // sola vez para no acumularlos (causa de la lentitud progresiva del drag).
+    if (dropZonesBound) return;
+    dropZonesBound = true;
+
     document.querySelectorAll('.column-body').forEach(body => {
         body.addEventListener('dragover', e => {
             e.preventDefault();
@@ -439,8 +446,7 @@ function initDragDrop() {
             const column = body.closest('.kanban-column');
             column.classList.remove('drag-over');
             const ph = body.querySelector('.drop-placeholder');
-            if (ph) ph.remove();
-            if (!dragged) return;
+            if (!dragged) { if (ph) ph.remove(); return; }
 
             const ticketId = dragged.dataset.id;
             const newColKey = body.id.replace('col-', '');
@@ -448,6 +454,7 @@ function initDragDrop() {
             // Columna 'Archivado': no es un estado más del tablero, dispara el
             // flujo de archivo (confirmación obligatoria; estado terminal).
             if (newColKey === 'archived') {
+                if (ph) ph.remove();
                 dragged.style.opacity = '1';
                 dragged.classList.remove('dragging');
                 dragged = null;
@@ -465,18 +472,20 @@ function initDragDrop() {
                 newStatus = Object.keys(COLUMN_MAP).find(k => COLUMN_MAP[k] === newColKey);
             }
 
+            // Optimista: mueve la tarjeta YA a la columna destino (sin esperar al
+            // servidor) para que el drag & drop se sienta inmediato.
+            const el = dragged;
+            el.style.opacity = '1';
+            el.classList.remove('dragging');
+            if (ph) { body.insertBefore(el, ph); ph.remove(); } else { body.appendChild(el); }
+            el.dataset.col = newColKey;
+            dragged = null;
+
             if (newStatus) {
-                dragged.style.opacity = '0.5';
                 try {
                     await updateTicketStatus(ticketId, newStatus);
                 } catch (error) {
                     console.error('Error al actualizar estado:', error);
-                } finally {
-                    if (dragged) {
-                        dragged.style.opacity = '1';
-                        dragged.classList.remove('dragging');
-                        dragged = null;
-                    }
                 }
             }
         });
@@ -497,6 +506,15 @@ function getAfterElement(container, y) {
 }
 
 async function updateTicketStatus(id, newStatus) {
+    const idx = state.tickets.findIndex(t => t.id_solicitud == id);
+    const estadoPrevio = idx !== -1 ? state.tickets[idx].estado : null;
+    // Optimista: aplica el cambio en el estado local de inmediato.
+    if (idx !== -1) {
+        state.tickets[idx].estado = newStatus;
+        state.tickets[idx].fecha_actualizacion = new Date().toISOString();
+    }
+    updateCounts();
+    mutando++;
     try {
         const response = await fetch(`${API}/tickets/${id}`, {
             method: 'PATCH',
@@ -507,17 +525,16 @@ async function updateTicketStatus(id, newStatus) {
             body: JSON.stringify({ estado: newStatus })
         });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-        const ticketIndex = state.tickets.findIndex(t => t.id_solicitud == id);
-        if (ticketIndex !== -1) {
-            state.tickets[ticketIndex].estado = newStatus;
-            state.tickets[ticketIndex].fecha_actualizacion = new Date().toISOString();
-        }
-        renderBoard();
-        updateCounts();
+        // Sin re-render: el DOM ya se movió en el drop; el polling reconcilia.
+        // (Excepción: archivar debe quitar la tarjeta del tablero.)
+        if (newStatus === 'archivado') renderBoard();
     } catch (error) {
         console.error('Update failed', error);
-        renderBoard();
+        if (idx !== -1 && estadoPrevio) state.tickets[idx].estado = estadoPrevio;
+        renderBoard(); // deshace el movimiento optimista
+        throw error;
+    } finally {
+        mutando--;
     }
 }
 

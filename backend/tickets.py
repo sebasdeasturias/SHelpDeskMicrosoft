@@ -60,12 +60,12 @@ async def create_ticket(data: dict, db: AsyncSession = Depends(get_db), token: s
     if payload.get("role") != 'solicitante':
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Solo solicitantes pueden crear tickets")
 
-    # Límite del formulario: máximo 4 tickets por hora y por usuario (anti-abuso).
+    # Límite del formulario: máximo 20 tickets por hora y por usuario (anti-abuso).
     user_id = payload.get("user_id")
-    if not await ticket_limiter.allow(f"ticket:user:{user_id}", 4, 3600):
+    if not await ticket_limiter.allow(f"ticket:user:{user_id}", 20, 3600):
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="Has alcanzado el límite de 4 tickets por hora. Intenta de nuevo más tarde."
+            detail="Has alcanzado el límite de 20 tickets por hora. Intenta de nuevo más tarde."
         )
 
     asunto = data.get("asunto", "").strip()
