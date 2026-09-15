@@ -581,15 +581,22 @@ body.night-mode .column-header .count-badge { background: #203b5c; color: #cfe3f
 .card-tags { display: flex; gap: 4px; flex-wrap: wrap; }
 
 .tag {
-    font-size: 0.6rem; padding: 2px 7px;
-    border-radius: 6px; font-weight: 600;
-    text-transform: uppercase; letter-spacing: 0.3px;
+    font-size: 0.62rem; padding: 3px 9px;
+    border-radius: 999px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.4px;
+    color: #fff; white-space: nowrap;
+    background: var(--tag-bg, #475569);
+    border: 1px solid rgba(255,255,255,0.5);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.45);
+    /* Neón suave: halo del color de la categoría + brillo interno */
+    box-shadow: 0 0 7px var(--tag-glow, rgba(71,85,105,0.6)),
+                inset 0 0 3px rgba(255,255,255,0.3);
 }
-.tag-network { background: rgba(241, 147, 241, 0.3); color: #2244aa; border: 1px solid rgba(100,150,255,0.4); }
-.tag-hardware { background: rgba(172, 111, 55, 0.822); color: #aa6600; border: 1px solid rgba(255,150,50,0.4); }
-.tag-software { background: rgba(158, 118, 243, 0.993); color: #5533aa; border: 1px solid rgba(150,100,255,0.4); }
-.tag-access { background: rgb(255, 80, 80); color: #aa2222; border: 1px solid rgba(255,80,80,0.4); }
-.tag-email { background: rgb(50, 200, 120); color: #117744; border: 1px solid rgba(50,200,120,0.4); }
+.tag-network { --tag-bg: #1d4ed8; --tag-glow: rgba(59,130,246,0.8); }
+.tag-hardware { --tag-bg: #c2410c; --tag-glow: rgba(249,115,22,0.8); }
+.tag-software { --tag-bg: #7c3aed; --tag-glow: rgba(167,139,250,0.8); }
+.tag-access { --tag-bg: #be123c; --tag-glow: rgba(244,63,94,0.8); }
+.tag-email { --tag-bg: #047857; --tag-glow: rgba(16,185,129,0.8); }
 
 .card-assignee {
     display: flex; align-items: center; gap: 6px;
