@@ -464,6 +464,11 @@ body.night-mode .badge-tag { background: #203b5c; border-color: #cfe3ff; color: 
 .glass-select option { color: #11425e; }
 .hint { font-size: 0.72rem; color: var(--text-placeholder); margin-top: 10px; }
 
+/* Seguridad (2FA): los <p> del card no heredaban el color del tema y en modo
+   nocturno quedaban en negro (ilegible). Forzamos el color de texto del tema,
+   que se adapta por sí solo a ambos modos. */
+#page-seguridad .filter-panel-card p { color: var(--text-dark); }
+
 /* Lista n8n / modelos IA */
 .n8n-lista { display: flex; flex-direction: column; gap: 10px; }
 .item-glass {
