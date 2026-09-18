@@ -87,6 +87,9 @@ CREATE TABLE solicitud (
     fecha_actualizacion TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     categoria VARCHAR(50),
     prioridad VARCHAR(20),
+    -- Comentario de solución: cómo resolvió el incidente el agente/coordinador/
+    -- administrador al cerrar el ticket (visible para el solicitante).
+    solucion TEXT,
     -- Claves foráneas
     id_solicitante INT NOT NULL REFERENCES usuarios(id_usuario) ON DELETE CASCADE,
     id_agente_asignado INT REFERENCES usuarios(id_usuario) ON DELETE SET NULL,
