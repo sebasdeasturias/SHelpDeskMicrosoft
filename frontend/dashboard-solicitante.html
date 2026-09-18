@@ -95,6 +95,17 @@
         </div>
     </div>
 
+    <!-- Modal de Solución del Ticket -->
+    <div class="solucion-overlay" id="solucionOverlay" aria-hidden="true">
+        <div class="solucion-modal" role="dialog" aria-modal="true" aria-labelledby="solucionTitulo">
+            <div class="solucion-header">
+                <h3 id="solucionTitulo"><i class="fas fa-check-circle"></i> Solución del Ticket <span id="solucionId"></span></h3>
+                <button class="solucion-close" id="solucionClose" aria-label="Cerrar">✕</button>
+            </div>
+            <div class="solucion-body" id="solucionBody"></div>
+        </div>
+    </div>
+
     <!-- Chat FAB (solicitante: solo Chat Global, sin IA) -->
     <button class="chat-fab" id="chatFab" aria-label="Abrir chat del equipo">
         <span class="fab-icon">

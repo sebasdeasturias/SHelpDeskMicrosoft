@@ -16,6 +16,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (cardHist) cardHist.addEventListener('click', () => {
         document.getElementById('historySection').scrollIntoView({ behavior: 'smooth' });
     });
+
+    initSolucionModal();
 });
 
 function initTheme() {
@@ -117,6 +119,7 @@ async function loadTickets() {
             
             const statusClass = 'status-' + String(ticket.estado || '').toLowerCase().replace(/[^a-z_]/g, '');
             const estadoTexto = ticket.estado.replace('_', ' ').charAt(0).toUpperCase() + ticket.estado.replace('_', ' ').slice(1);
+            const tieneSolucion = !!(ticket.solucion && String(ticket.solucion).trim());
             
             const item = document.createElement('div');
             item.className = 'ticket-item';
@@ -126,10 +129,19 @@ async function loadTickets() {
                     <span class="ticket-subject">${escHtml(ticket.asunto)}</span>
                     <span class="ticket-date"><i class="far fa-calendar-alt"></i> ${date} • ${escHtml(ticket.cat_nombre) || 'Sin categoría'}</span>
                 </div>
-                <div class="ticket-status ${statusClass}">
-                    ${escHtml(estadoTexto)}
+                <div class="ticket-actions">
+                    <div class="ticket-status ${statusClass}">
+                        ${escHtml(estadoTexto)}
+                    </div>
+                    ${tieneSolucion ? `<button class="btn-ver-solucion" type="button"><i class="fas fa-lightbulb"></i> Ver solución</button>` : ''}
                 </div>
             `;
+
+            const btnSolucion = item.querySelector('.btn-ver-solucion');
+            if (btnSolucion) {
+                btnSolucion.addEventListener('click', () => mostrarSolucion(ticket));
+            }
+
             listEl.appendChild(item);
         });
         
@@ -143,4 +155,30 @@ function logout() {
     localStorage.removeItem('token');
     sessionStorage.removeItem('token');
     window.location.href = 'login.html';
+}
+
+function initSolucionModal() {
+    const overlay = document.getElementById('solucionOverlay');
+    const closeBtn = document.getElementById('solucionClose');
+    if (!overlay) return;
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => overlay.classList.remove('open'));
+    }
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) overlay.classList.remove('open');
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') overlay.classList.remove('open');
+    });
+}
+
+function mostrarSolucion(ticket) {
+    const overlay = document.getElementById('solucionOverlay');
+    if (!overlay) return;
+    document.getElementById('solucionId').textContent = ticket ? '#' + ticket.id_solicitud : '';
+    const body = document.getElementById('solucionBody');
+    const solucion = ticket && ticket.solucion ? String(ticket.solucion).trim() : '';
+    body.textContent = solucion || 'Este ticket aún no tiene una solución registrada.';
+    if (!solucion) body.classList.add('solucion-empty'); else body.classList.remove('solucion-empty');
+    overlay.classList.add('open');
 }

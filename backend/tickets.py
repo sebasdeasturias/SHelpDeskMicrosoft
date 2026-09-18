@@ -141,6 +141,14 @@ async def update_ticket(ticket_id: int, data: dict, db: AsyncSession = Depends(g
     if not nuevo_estado:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El campo 'estado' es requerido")
 
+    # Comentario de solución (opcional): se guarda al cerrar el ticket.
+    # Solo cadenas no vacías; si viene vacío o ausente, no se toca el valor previo.
+    solucion = data.get("solucion")
+    if isinstance(solucion, str):
+        solucion = solucion.strip() or None
+    else:
+        solucion = None
+
     # Whitelist: nunca se acepta un estado fuera del catálogo (defensa contra
     # clientes desactualizados o peticiones manipuladas).
     if nuevo_estado not in ESTADOS_TICKET:
@@ -183,9 +191,12 @@ async def update_ticket(ticket_id: int, data: dict, db: AsyncSession = Depends(g
                 detail="Un agente no puede devolver un ticket al estado 'nuevo'"
             )
         result = await db.execute(text("""
-            UPDATE solicitud SET estado = :estado, fecha_actualizacion = NOW()
+            UPDATE solicitud
+            SET estado = :estado,
+                solucion = COALESCE(:solucion, solucion),
+                fecha_actualizacion = NOW()
             WHERE id_solicitud = :id AND id_agente_asignado = :user_id RETURNING id_solicitud
-        """), {"estado": nuevo_estado, "id": ticket_id, "user_id": user_id})
+        """), {"estado": nuevo_estado, "solucion": solucion, "id": ticket_id, "user_id": user_id})
         if not result.scalar():
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -194,9 +205,12 @@ async def update_ticket(ticket_id: int, data: dict, db: AsyncSession = Depends(g
     else:
         # Coordinador / administrador: potestad sobre cualquier ticket
         result = await db.execute(text("""
-            UPDATE solicitud SET estado = :estado, fecha_actualizacion = NOW()
+            UPDATE solicitud
+            SET estado = :estado,
+                solucion = COALESCE(:solucion, solucion),
+                fecha_actualizacion = NOW()
             WHERE id_solicitud = :id RETURNING id_solicitud
-        """), {"estado": nuevo_estado, "id": ticket_id})
+        """), {"estado": nuevo_estado, "solucion": solucion, "id": ticket_id})
         if not result.scalar():
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket no encontrado")
 
@@ -204,7 +218,12 @@ async def update_ticket(ticket_id: int, data: dict, db: AsyncSession = Depends(g
     # estados correctos). El trigger automático de la BD que duplicaba estas
     # filas se elimina en la migración 002 (ver database/migraciones/).
     if estado_anterior != nuevo_estado:
-        comentario = "Ticket archivado" if nuevo_estado == "archivado" else "Movido en tablero"
+        if solucion:
+            comentario = "Solución registrada: " + solucion
+        elif nuevo_estado == "archivado":
+            comentario = "Ticket archivado"
+        else:
+            comentario = "Movido en tablero"
         await db.execute(text("""
             INSERT INTO historial (estado_anterior, estado_nuevo, comentario, fecha, id_solicitud, id_usuario)
             VALUES (:anterior, :nuevo, :comentario, NOW(), :id, :user_id)
@@ -269,7 +288,8 @@ async def get_ticket_detail(ticket_id: int, db: AsyncSession = Depends(get_db), 
                c.nombre AS cat_nombre, p.nivel AS prio_nivel, p.color AS prio_color,
                sol.id_usuario, sol.nombre, sol.email, sol.area, sol.rol, sol.estado,
                sol.fecha_registro, sol.fecha_ultimo_acceso,
-               ag.id_usuario, ag.nombre, ag.email, ag.especialidad, ag.carga_trabajo
+               ag.id_usuario, ag.nombre, ag.email, ag.especialidad, ag.carga_trabajo,
+               s.solucion
         FROM solicitud s
         LEFT JOIN categoria c ON s.id_categoria = c.id_categoria
         LEFT JOIN prioridad p ON s.id_prioridad = p.id_prioridad
@@ -338,7 +358,8 @@ async def get_ticket_detail(ticket_id: int, db: AsyncSession = Depends(get_db), 
             "fecha_actualizacion": r[5].isoformat() if r[5] else None,
             "categoria": r[6],
             "prioridad": r[7],
-            "prioridad_color": r[8]
+            "prioridad_color": r[8],
+            "solucion": r[22]
         },
         "solicitante": {
             "id_usuario": r[9],
@@ -484,7 +505,8 @@ async def get_tickets(
         u.nombre as agente_nombre,
         c.nombre as cat_nombre,
         p.nivel as prio_nivel, p.color as prio_color,
-        ci.confianza, ci.prioridad_ia
+        ci.confianza, ci.prioridad_ia,
+        s.solucion
         FROM solicitud s
         LEFT JOIN usuarios u ON s.id_agente_asignado = u.id_usuario
         LEFT JOIN categoria c ON s.id_categoria = c.id_categoria
@@ -538,6 +560,7 @@ async def get_tickets(
             "prio_nivel": r[12],
             "prio_color": r[13],
             "confianza_ia": float(r[14]) if r[14] else None,
-            "prioridad_ia": r[15]
+            "prioridad_ia": r[15],
+            "solucion": r[16]
         })
     return tickets

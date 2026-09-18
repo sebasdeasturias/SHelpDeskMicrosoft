@@ -472,6 +472,29 @@ function initDragDrop() {
                 newStatus = Object.keys(COLUMN_MAP).find(k => COLUMN_MAP[k] === newColKey);
             }
 
+            // Columna "Completados" (estado 'cerrado'): pedir el comentario de
+            // solución ANTES de mover. Si cancela, la tarjeta vuelve a su columna.
+            let solucion = null;
+            if (newColKey === 'done') {
+                const tDone = state.tickets.find(t => t.id_solicitud == ticketId);
+                if (tDone && tDone.estado !== 'cerrado') {
+                    if (!window.KanbanSolucion) {
+                        console.error('kanban-solucion.js no está cargado');
+                    } else {
+                        const r = await window.KanbanSolucion.pedir(tDone);
+                        if (!r) {
+                            if (ph) ph.remove();
+                            dragged.classList.remove('dragging');
+                            dragged.style.opacity = '1';
+                            dragged = null;
+                            renderBoard();
+                            return;
+                        }
+                        solucion = r.solucion;
+                    }
+                }
+            }
+
             // Optimista: mueve la tarjeta YA a la columna destino (sin esperar al
             // servidor) para que el drag & drop se sienta inmediato.
             const el = dragged;
@@ -483,7 +506,7 @@ function initDragDrop() {
 
             if (newStatus) {
                 try {
-                    await updateTicketStatus(ticketId, newStatus);
+                    await updateTicketStatus(ticketId, newStatus, solucion);
                 } catch (error) {
                     console.error('Error al actualizar estado:', error);
                 }
@@ -505,24 +528,27 @@ function getAfterElement(container, y) {
     }, { offset: Number.NEGATIVE_INFINITY }).element;
 }
 
-async function updateTicketStatus(id, newStatus) {
+async function updateTicketStatus(id, newStatus, solucion) {
     const idx = state.tickets.findIndex(t => t.id_solicitud == id);
     const estadoPrevio = idx !== -1 ? state.tickets[idx].estado : null;
     // Optimista: aplica el cambio en el estado local de inmediato.
     if (idx !== -1) {
         state.tickets[idx].estado = newStatus;
         state.tickets[idx].fecha_actualizacion = new Date().toISOString();
+        if (solucion) state.tickets[idx].solucion = solucion;
     }
     updateCounts();
     mutando++;
     try {
+        const body = { estado: newStatus };
+        if (solucion) body.solucion = solucion;
         const response = await fetch(`${API}/tickets/${id}`, {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${state.authToken}`
             },
-            body: JSON.stringify({ estado: newStatus })
+            body: JSON.stringify(body)
         });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         // Sin re-render: el DOM ya se movió en el drop; el polling reconcilia.
@@ -1526,6 +1552,12 @@ function buildTicketDetailHTML(d) {
             <div class="detail-row"><span class="detail-key">Creado</span><span class="detail-val">${fecha(t.fecha_creacion)}</span></div>
             <div class="detail-row"><span class="detail-key">Actualizado</span><span class="detail-val">${fecha(t.fecha_actualizacion)}</span></div>
         </div>
+
+        ${t.solucion ? `
+        <div class="detail-section">
+            <h4>💡 Solución</h4>
+            <div class="detail-desc">${esc(t.solucion)}</div>
+        </div>` : ''}
 
         <div class="detail-section">
             <h4>👤 Solicitante</h4>
