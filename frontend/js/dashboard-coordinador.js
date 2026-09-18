@@ -449,12 +449,12 @@ function initDragDrop() {
             if (!dragged) { if (ph) ph.remove(); return; }
 
             // Referencias locales estables: el evento nativo 'dragend' se dispara
-            // justo después de 'drop' y pone dragged = null (además de borrar el
-            // placeholder). Por eso capturamos el elemento y su id ANTES de cualquier
-            // await, para que el modal de solución no rompa el movimiento.
+            // justo después de 'drop' y pone dragged = null. Capturamos el elemento
+            // y su id ANTES de cualquier await.
             const el = dragged;
             const ticketId = el.dataset.id;
             const newColKey = body.id.replace('col-', '');
+            dragged = null;
 
             // Columna 'Archivado': no es un estado más del tablero, dispara el
             // flujo de archivo (confirmación obligatoria; estado terminal).
@@ -462,7 +462,6 @@ function initDragDrop() {
                 if (ph) ph.remove();
                 el.style.opacity = '1';
                 el.classList.remove('dragging');
-                dragged = null;
                 await manejarArchivo(ticketId);
                 return;
             }
@@ -477,13 +476,19 @@ function initDragDrop() {
                 newStatus = Object.keys(COLUMN_MAP).find(k => COLUMN_MAP[k] === newColKey);
             }
 
-            // Columna "Completados" (estado 'cerrado'): pedir el comentario de
-            // solución ANTES de mover. Mientras el modal está abierto se pausa el
-            // polling (mutando) para que no re-renderice el tablero a media operación.
-            let solucion = null;
+            // Columna "Completados" (estado 'cerrado'): la tarjeta se queda YA en
+            // Completados mientras se pide el comentario. Si el agente cancela o no
+            // escribe nada, se devuelve a su columna (renderBoard).
             if (newColKey === 'done') {
                 const tDone = state.tickets.find(t => t.id_solicitud == ticketId);
                 if (tDone && tDone.estado !== 'cerrado') {
+                    el.style.opacity = '1';
+                    el.classList.remove('dragging');
+                    if (ph) ph.remove();
+                    body.appendChild(el);
+                    el.dataset.col = 'done';
+
+                    let solucion = null;
                     if (!window.KanbanSolucion) {
                         console.error('kanban-solucion.js no está cargado');
                     } else {
@@ -491,10 +496,7 @@ function initDragDrop() {
                         try {
                             const r = await window.KanbanSolucion.pedir(tDone);
                             if (!r) {
-                                el.style.opacity = '1';
-                                el.classList.remove('dragging');
-                                dragged = null;
-                                renderBoard();
+                                renderBoard(); // cancela -> devuelve a su columna
                                 return;
                             }
                             solucion = r.solucion;
@@ -502,20 +504,26 @@ function initDragDrop() {
                             mutando--;
                         }
                     }
+
+                    try {
+                        await updateTicketStatus(ticketId, newStatus, solucion);
+                    } catch (error) {
+                        console.error('Error al actualizar estado:', error);
+                    }
+                    return;
                 }
+                // Si ya estaba cerrado: reordenar dentro de Completados (flujo normal).
             }
 
-            // Optimista: mueve la tarjeta YA a la columna destino (sin esperar al
-            // servidor) para que el drag & drop se sienta inmediato.
+            // Flujo normal (resto de columnas / reordenar): mueve optimista y PATCH.
             el.style.opacity = '1';
             el.classList.remove('dragging');
             if (ph && ph.parentNode === body) { body.insertBefore(el, ph); ph.remove(); } else { body.appendChild(el); }
             el.dataset.col = newColKey;
-            dragged = null;
 
             if (newStatus) {
                 try {
-                    await updateTicketStatus(ticketId, newStatus, solucion);
+                    await updateTicketStatus(ticketId, newStatus, null);
                 } catch (error) {
                     console.error('Error al actualizar estado:', error);
                 }

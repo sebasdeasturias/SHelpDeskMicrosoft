@@ -95,11 +95,6 @@
             area.maxLength = 2000;
             modal.appendChild(area);
 
-            var err = document.createElement('div');
-            err.className = 'ks-error-msg';
-            err.textContent = 'Escribe una breve descripción de la solución antes de completar.';
-            modal.appendChild(err);
-
             var acciones = document.createElement('div');
             acciones.className = 'ks-acciones';
 
@@ -123,21 +118,12 @@
             btnPri.className = 'ks-btn ks-btn-primary';
             btnPri.textContent = 'Guardar y completar';
             btnPri.addEventListener('click', function () {
+                // Sin comentario (o vacío) se trata como cancelación: el ticket
+                // vuelve a su columna original.
                 var valor = area.value.trim();
-                if (!valor) {
-                    area.classList.add('ks-error');
-                    err.classList.add('ks-visible');
-                    area.focus();
-                    return;
-                }
-                cerrar({ solucion: valor });
+                cerrar(valor ? { solucion: valor } : null);
             });
             acciones.appendChild(btnPri);
-
-            area.addEventListener('input', function () {
-                area.classList.remove('ks-error');
-                err.classList.remove('ks-visible');
-            });
 
             modal.appendChild(acciones);
             backdrop.appendChild(modal);
