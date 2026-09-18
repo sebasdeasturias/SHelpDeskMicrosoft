@@ -448,15 +448,20 @@ function initDragDrop() {
             const ph = body.querySelector('.drop-placeholder');
             if (!dragged) { if (ph) ph.remove(); return; }
 
-            const ticketId = dragged.dataset.id;
+            // Referencias locales estables: el evento nativo 'dragend' se dispara
+            // justo después de 'drop' y pone dragged = null (además de borrar el
+            // placeholder). Por eso capturamos el elemento y su id ANTES de cualquier
+            // await, para que el modal de solución no rompa el movimiento.
+            const el = dragged;
+            const ticketId = el.dataset.id;
             const newColKey = body.id.replace('col-', '');
 
             // Columna 'Archivado': no es un estado más del tablero, dispara el
             // flujo de archivo (confirmación obligatoria; estado terminal).
             if (newColKey === 'archived') {
                 if (ph) ph.remove();
-                dragged.style.opacity = '1';
-                dragged.classList.remove('dragging');
+                el.style.opacity = '1';
+                el.classList.remove('dragging');
                 dragged = null;
                 await manejarArchivo(ticketId);
                 return;
@@ -473,7 +478,8 @@ function initDragDrop() {
             }
 
             // Columna "Completados" (estado 'cerrado'): pedir el comentario de
-            // solución ANTES de mover. Si cancela, la tarjeta vuelve a su columna.
+            // solución ANTES de mover. Mientras el modal está abierto se pausa el
+            // polling (mutando) para que no re-renderice el tablero a media operación.
             let solucion = null;
             if (newColKey === 'done') {
                 const tDone = state.tickets.find(t => t.id_solicitud == ticketId);
@@ -481,26 +487,29 @@ function initDragDrop() {
                     if (!window.KanbanSolucion) {
                         console.error('kanban-solucion.js no está cargado');
                     } else {
-                        const r = await window.KanbanSolucion.pedir(tDone);
-                        if (!r) {
-                            if (ph) ph.remove();
-                            dragged.classList.remove('dragging');
-                            dragged.style.opacity = '1';
-                            dragged = null;
-                            renderBoard();
-                            return;
+                        mutando++;
+                        try {
+                            const r = await window.KanbanSolucion.pedir(tDone);
+                            if (!r) {
+                                el.style.opacity = '1';
+                                el.classList.remove('dragging');
+                                dragged = null;
+                                renderBoard();
+                                return;
+                            }
+                            solucion = r.solucion;
+                        } finally {
+                            mutando--;
                         }
-                        solucion = r.solucion;
                     }
                 }
             }
 
             // Optimista: mueve la tarjeta YA a la columna destino (sin esperar al
             // servidor) para que el drag & drop se sienta inmediato.
-            const el = dragged;
             el.style.opacity = '1';
             el.classList.remove('dragging');
-            if (ph) { body.insertBefore(el, ph); ph.remove(); } else { body.appendChild(el); }
+            if (ph && ph.parentNode === body) { body.insertBefore(el, ph); ph.remove(); } else { body.appendChild(el); }
             el.dataset.col = newColKey;
             dragged = null;
 
