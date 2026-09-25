@@ -17,7 +17,7 @@ const groupEmail = document.getElementById('groupEmail');
 const groupPassword = document.getElementById('groupPassword');
 let mfaToken = null;
 
-// Toggle password visibility
+// Activar o desactivar visibilidad de la contraseña
 togglePasswordBtn.addEventListener('click', () => {
     const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
     passwordInput.setAttribute('type', type);
