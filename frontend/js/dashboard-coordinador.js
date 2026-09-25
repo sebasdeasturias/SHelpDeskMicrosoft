@@ -624,7 +624,7 @@ function initChat() {
     const chatClose = document.getElementById('chatClose');
 
     if (!chatInput || !chatSendBtn) {
-        console.error('⚠️ Elementos del chat no encontrados');
+        console.error(' Elementos del chat no encontrados');
         return;
     }
 
@@ -883,7 +883,7 @@ function initCoordinatorModules() {
             const select = row.querySelector('.glass-select-mini');
             const agenteId = select ? select.value : null;
             if (!ticketId || !agenteId) {
-                mostrarToast('⚠️ Selecciona un agente para asignar el ticket');
+                mostrarToast(' Selecciona un agente para asignar el ticket');
                 return;
             }
             await asignarTicket(ticketId, agenteId);
@@ -956,11 +956,11 @@ async function exportarReporteCSV() {
     try {
         tickets = await obtenerTicketsFiltrados();
     } catch (e) {
-        mostrarToast(`⚠️ Error al obtener reporte: ${esc(e.message)}`);
+        mostrarToast(` Error al obtener reporte: ${esc(e.message)}`);
         return;
     }
     if (tickets.length === 0) {
-        mostrarToast('⚠️ No hay tickets que coincidan con los filtros');
+        mostrarToast(' No hay tickets que coincidan con los filtros');
         return;
     }
 
@@ -992,11 +992,11 @@ async function exportarReportePDF() {
     try {
         tickets = await obtenerTicketsFiltrados();
     } catch (e) {
-        mostrarToast(`⚠️ Error al obtener reporte: ${esc(e.message)}`);
+        mostrarToast(` Error al obtener reporte: ${esc(e.message)}`);
         return;
     }
     if (tickets.length === 0) {
-        mostrarToast('⚠️ No hay tickets que coincidan con los filtros');
+        mostrarToast(' No hay tickets que coincidan con los filtros');
         return;
     }
 
@@ -1015,7 +1015,7 @@ async function exportarReportePDF() {
     const coordinador = state.userData?.nombre || 'Coordinador';
     const w = window.open('', '_blank');
     if (!w) {
-        mostrarToast('⚠️ El navegador bloqueó la ventana de impresión');
+        mostrarToast(' El navegador bloqueó la ventana de impresión');
         return;
     }
 
@@ -1349,7 +1349,7 @@ async function loadSupervisar() {
 async function guardarPermisos() {
     const rows = document.querySelectorAll('#supervisarBody tr[data-agente-id]');
     if (rows.length === 0) {
-        mostrarToast('⚠️ No hay agentes para guardar');
+        mostrarToast(' No hay agentes para guardar');
         return;
     }
     let guardados = 0;
@@ -1389,7 +1389,7 @@ async function loadSLA() {
         });
     } catch (e) {
         console.error('Error cargando SLA:', e);
-        mostrarToast(`⚠️ Error al cargar SLA: ${esc(e.message)}`);
+        mostrarToast(` Error al cargar SLA: ${esc(e.message)}`);
     }
 }
 
@@ -1409,7 +1409,7 @@ async function guardarSLA() {
         });
     });
     if (items.length === 0) {
-        mostrarToast('⚠️ No hay políticas SLA para guardar');
+        mostrarToast(' No hay políticas SLA para guardar');
         return;
     }
     try {
@@ -1430,7 +1430,7 @@ async function buscarRAG() {
     const q = document.getElementById('ragSearchInput')?.value.trim();
     const list = document.getElementById('ragResultsList');
     if (!q) {
-        mostrarToast('⚠️ Escribe una consulta para buscar en RAG');
+        mostrarToast(' Escribe una consulta para buscar en RAG');
         return;
     }
     if (list) list.innerHTML = '<div style="color:var(--text-placeholder);text-align:center;padding:20px;"><span class="spinner-ring"></span> Buscando...</div>';

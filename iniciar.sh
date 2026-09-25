@@ -35,27 +35,27 @@ say "🚀 Iniciando HelpDesk (Contenedores + Backend)..."
 # 0. REQUISITOS PREVIOS (Docker + .env)
 # ============================================
 if ! command -v docker >/dev/null 2>&1; then
-    err "❌ Docker no está instalado o no está en el PATH."
+    err " Docker no está instalado o no está en el PATH."
     exit 1
 fi
 
 if ! docker info >/dev/null 2>&1; then
-    err "❌ El demonio de Docker no está corriendo. Arranca Docker y vuelve a intentarlo."
+    err " El demonio de Docker no está corriendo. Arranca Docker y vuelve a intentarlo."
     exit 1
 fi
 
 if ! docker compose version >/dev/null 2>&1; then
-    err "❌ No se encontró el plugin 'docker compose'. Instala Docker Compose v2."
+    err " No se encontró el plugin 'docker compose'. Instala Docker Compose v2."
     exit 1
 fi
 
 if [ ! -f "$COMPOSE_FILE" ]; then
-    err "❌ No se encontró el compose en: $COMPOSE_FILE"
+    err " No se encontró el compose en: $COMPOSE_FILE"
     exit 1
 fi
 
 if [ ! -f "$ENV_FILE" ]; then
-    err "❌ No se encontró el archivo .env en: $ENV_FILE"
+    err " No se encontró el archivo .env en: $ENV_FILE"
     warn "   Es obligatorio: contiene las credenciales (POSTGRES_*, JWT_SECRET_KEY, N8N_*)."
     exit 1
 fi
@@ -65,7 +65,7 @@ for var in POSTGRES_USER POSTGRES_PASSWORD POSTGRES_DB APP_DB_USER APP_DB_PASSWO
     grep -qE "^[[:space:]]*${var}[[:space:]]*=" "$ENV_FILE" || faltan="$faltan $var"
 done
 if [ -n "$faltan" ]; then
-    err "❌ Faltan variables obligatorias en .env:$faltan"
+    err " Faltan variables obligatorias en .env:$faltan"
     exit 1
 fi
 
@@ -80,7 +80,7 @@ say "🐳 Levantando servicios base (postgres, ollama)..."
 # Solo servicios base: n8n/backend/streamlit se levantan DESPUÉS de configurar la BD.
 docker compose "${COMPOSE_ARGS[@]}" up -d postgres ollama
 if [ $? -ne 0 ]; then
-    err "❌ Error al iniciar los contenedores base"
+    err " Error al iniciar los contenedores base"
     exit 1
 fi
 
@@ -102,7 +102,7 @@ while [ "$pg_ready" = false ] && [ "$attempt" -lt "$max_attempts" ]; do
 done
 
 if [ "$pg_ready" = false ]; then
-    err "❌ PostgreSQL no respondió después de $((max_attempts * 2)) segundos"
+    err " PostgreSQL no respondió después de $((max_attempts * 2)) segundos"
     warn "📋 Revisa los logs con: docker logs helpdesk-db"
     exit 1
 fi
@@ -119,11 +119,11 @@ PG_DB="$(grep -E '^POSTGRES_DB=' "$ENV_FILE" | head -n1 | cut -d= -f2- | tr -d '
 PG_DB="${PG_DB:-helpdesk_db}"
 
 if [ -z "$APP_PASS" ]; then
-    err "❌ APP_DB_PASSWORD está vacía en .env"
+    err " APP_DB_PASSWORD está vacía en .env"
     exit 1
 fi
 if ! [[ "$APP_USER" =~ ^[a-z_][a-z0-9_]*$ ]] || ! [[ "$PG_DB" =~ ^[a-z_][a-z0-9_]*$ ]]; then
-    err "❌ APP_DB_USER y POSTGRES_DB deben ser solo minúsculas/números/guion bajo"
+    err " APP_DB_USER y POSTGRES_DB deben ser solo minúsculas/números/guion bajo"
     exit 1
 fi
 
@@ -137,13 +137,13 @@ schema_ok="$(docker exec helpdesk-db psql -tA -U "$PG_USER" -d "$PG_DB" \
     -c "SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='usuarios'" 2>/dev/null || true)"
 if [ "$schema_ok" != "1" ]; then
     if [ ! -f "$SCHEMA_FILE" ]; then
-        err "❌ No se encontró db_logic.sql en: $SCHEMA_FILE"
+        err " No se encontró db_logic.sql en: $SCHEMA_FILE"
         exit 1
     fi
     dim "   Esquema vacío; aplicando db_logic.sql..."
     cat "$SCHEMA_FILE" | docker exec -i helpdesk-db psql -v ON_ERROR_STOP=1 -U "$PG_USER" -d "$PG_DB" >/dev/null
     if [ $? -ne 0 ]; then
-        err "❌ Error aplicando db_logic.sql"
+        err " Error aplicando db_logic.sql"
         exit 1
     fi
     ok "✅ Esquema (db_logic.sql) aplicado"
@@ -168,7 +168,7 @@ if [ -d "$MIGRACIONES_DIR" ] && ls "$MIGRACIONES_DIR"/*.sql >/dev/null 2>&1; the
             docker exec -i helpdesk-db psql -v ON_ERROR_STOP=1 -U "$PG_USER" -d "$PG_DB" -c "INSERT INTO schema_migrations (version) VALUES ('${nombre%.sql}') ON CONFLICT (version) DO NOTHING;" >/dev/null 2>&1
             ok "   ✅ $nombre"
         else
-            err "   ❌ Error aplicando $nombre"
+            err "    Error aplicando $nombre"
             exit 1
         fi
     done
@@ -226,7 +226,7 @@ SQL="${SQL//__DB__/$PG_DB}"
 
 printf '%s\n' "$SQL" | docker exec -i helpdesk-db psql -v ON_ERROR_STOP=1 -U "$PG_USER" -d "$PG_DB" >/dev/null
 if [ $? -ne 0 ]; then
-    err "❌ Error configurando el rol $APP_USER en PostgreSQL"
+    err " Error configurando el rol $APP_USER en PostgreSQL"
     exit 1
 fi
 ok "✅ Usuario '$APP_USER' listo (rol + permisos sobre las tablas de la app)"
@@ -242,7 +242,7 @@ N8N_DB="${N8N_DB:-n8n_db}"
 N8N_PASS="$(grep -E '^N8N_DB_PASSWORD=' "$ENV_FILE" | head -n1 | cut -d= -f2- | tr -d ' \t\r\"')"
 
 if [ -z "$N8N_PASS" ]; then
-    warn "⚠️ N8N_DB_PASSWORD no está en .env; se omite la BD dedicada de n8n"
+    warn " N8N_DB_PASSWORD no está en .env; se omite la BD dedicada de n8n"
 else
     say "🧩 Configurando la base de datos dedicada de n8n ($N8N_DB)..."
     N8N_PASS_ESC="${N8N_PASS//$q/$q$q}"
@@ -262,13 +262,13 @@ SQLEOF
     N8N_ROLE_SQL="${N8N_ROLE_SQL//__N8NPASS__/$N8N_PASS_ESC}"
     printf '%s\n' "$N8N_ROLE_SQL" | docker exec -i helpdesk-db psql -v ON_ERROR_STOP=1 -U "$PG_USER" -d postgres >/dev/null
     if [ $? -ne 0 ]; then
-        err "❌ Error creando el rol $N8N_USER"
+        err " Error creando el rol $N8N_USER"
         exit 1
     fi
     if [ "$(docker exec helpdesk-db psql -tA -U "$PG_USER" -d postgres -c "SELECT 1 FROM pg_database WHERE datname='$N8N_DB'")" != "1" ]; then
         docker exec helpdesk-db psql -v ON_ERROR_STOP=1 -U "$PG_USER" -d postgres -c "CREATE DATABASE $N8N_DB OWNER $N8N_USER" >/dev/null
         if [ $? -ne 0 ]; then
-            err "❌ No se pudo crear la BD $N8N_DB"
+            err " No se pudo crear la BD $N8N_DB"
             exit 1
         fi
         printf '%s\n' "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"; CREATE EXTENSION IF NOT EXISTS \"pgcrypto\"; ALTER SCHEMA public OWNER TO $N8N_USER; GRANT ALL ON SCHEMA public TO $N8N_USER;" | docker exec -i helpdesk-db psql -v ON_ERROR_STOP=1 -U "$PG_USER" -d "$N8N_DB" >/dev/null
@@ -281,11 +281,11 @@ fi
 #     Idempotente: sincroniza los usuarios de prueba (password123).
 # ============================================
 if [ ! -f "$SEED_FILE" ]; then
-    warn "⚠️ No se encontró seed_usuarios.sql; se omiten los usuarios de prueba"
+    warn " No se encontró seed_usuarios.sql; se omiten los usuarios de prueba"
 else
     cat "$SEED_FILE" | docker exec -i helpdesk-db psql -v ON_ERROR_STOP=1 -U "$PG_USER" -d "$PG_DB" >/dev/null
     if [ $? -ne 0 ]; then
-        err "❌ Error aplicando seed_usuarios.sql"
+        err " Error aplicando seed_usuarios.sql"
         exit 1
     fi
     ok "✅ Usuarios de prueba sincronizados (contraseña: password123)"
@@ -299,14 +299,14 @@ fi
 say "🐳 Levantando n8n..."
 docker compose "${COMPOSE_ARGS[@]}" up -d n8n
 if [ $? -ne 0 ]; then
-    err "❌ Error al iniciar n8n"
+    err " Error al iniciar n8n"
     exit 1
 fi
 
 say "🐳 Construyendo y levantando backend y streamlit..."
 docker compose "${COMPOSE_ARGS[@]}" up -d --build backend streamlit
 if [ $? -ne 0 ]; then
-    err "❌ Error al iniciar backend/streamlit"
+    err " Error al iniciar backend/streamlit"
     exit 1
 fi
 
@@ -317,7 +317,7 @@ if grep -qE '^[[:space:]]*CLOUDFLARE_TUNNEL_TOKEN=[^[:space:]]' "$ENV_FILE"; the
     if [ $? -eq 0 ]; then
         ok "✅ cloudflared arriba (api.sistemahelpdesk.online -> backend:8000)"
     else
-        warn "⚠️ No se pudo iniciar cloudflared; revisa CLOUDFLARE_TUNNEL_TOKEN"
+        warn " No se pudo iniciar cloudflared; revisa CLOUDFLARE_TUNNEL_TOKEN"
     fi
 fi
 
@@ -347,14 +347,14 @@ say "⏳ Esperando al backend (FastAPI :8000)..."
 if wait_http_ok "http://localhost:8000/api/health" "Backend"; then
     ok "✅ Backend respondiendo en :8000"
 else
-    warn "⚠️ El backend no respondió a tiempo; revisa: docker logs helpdesk-backend"
+    warn " El backend no respondió a tiempo; revisa: docker logs helpdesk-backend"
 fi
 
 say "⏳ Esperando a Streamlit (:8501)..."
 if wait_http_ok "http://localhost:8501" "Streamlit"; then
     ok "✅ Streamlit respondiendo en :8501"
 else
-    warn "⚠️ Streamlit no respondió a tiempo; revisa: docker logs helpdesk-streamlit"
+    warn " Streamlit no respondió a tiempo; revisa: docker logs helpdesk-streamlit"
 fi
 
 # ============================================

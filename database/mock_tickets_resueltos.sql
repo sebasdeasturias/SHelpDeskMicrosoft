@@ -1,7 +1,7 @@
 -- ============================================================
 -- mock_tickets_resueltos.sql — SHelpDesk Microsoft
 -- Corpus de evaluación para el RAG (búsqueda semántica bge-m3 + pgvector)
--- Inserta 40 tickets hipotéticos YA RESUELTOS/CERRADOS con su historial
+-- Inserta 60 tickets hipotéticos YA RESUELTOS/CERRADOS con su historial
 -- completo, descripciones realistas (síntoma + solución aplicada) y fechas
 -- repartidas en los últimos ~60 días.
 --
@@ -78,7 +78,27 @@ BEGIN
         'El proyector de la sala de juntas no detecta el portátil',
         'Windows pide activación tras el cambio de placa base',
         'El correo corporativo llega con retraso de horas al celular',
-        'Solicitud de monitor adicional para estación de diseño'
+        'Solicitud de monitor adicional para estación de diseño',
+        'El portátil se queda sin batería muy rápido',
+        'No puedo acceder al portal de proveedores desde la oficina',
+        'El servidor de archivos está lleno y no permite guardar',
+        'Teams no carga el historial de chats',
+        'La impresora multifunción no escanea a correo',
+        'Solicitud de alta de correo para práctica',
+        'El ratón inalámbrico se desconecta intermitentemente',
+        'La base de datos reporta lentitud en horario pico',
+        'No se puede iniciar sesión en Windows por error de perfil',
+        'El certificado de la web interna está caducado',
+        'El repositorio Git corporativo rechaza el push',
+        'La VPN se desconecta cada 30 minutos',
+        'El escáner de huellas no valida el acceso',
+        'Los informes de Power BI no se actualizan',
+        'El teléfono IP no marca tono',
+        'Solicitud de segundo monitor para analista',
+        'El antivirus bloquea un ejecutable del sistema de gestión',
+        'La carpeta de red tarda en abrir desde la sucursal',
+        'El teclado del portátil tiene teclas que no responden',
+        'Fallo al imprimir la nómina mensual por desbordamiento'
     );
 
     -- ---------- Corpus de tickets resueltos/cerrados ----------
@@ -203,7 +223,67 @@ BEGIN
              2, 4, 'resuelto', 2, 1, 4),
             ('Solicitud de monitor adicional para estación de diseño',
              'El área de diseño solicita un monitor adicional para trabajar con doble pantalla en las maquetas. Se cotizó el modelo compatible con la estación, se instaló en la salida DisplayPort, se configuró la resolución nativa y se actualizó el inventario de activos. Estación con doble pantalla operativa.',
-             1, 4, 'cerrado', 1, 1, 2)
+             1, 4, 'cerrado', 1, 1, 2),
+            ('El portátil se queda sin batería muy rápido',
+             'La batería del portátil apenas dura 40 minutos tras un año de uso y avisa de carga baja constantemente. Se midió el desgaste con la herramienta del fabricante y la salud estaba al 45 por ciento. Se ajustó el plan de energía, se actualizó el firmware de gestión y se sustituyó la batería por una nueva. Autonomía de 4 horas verificada.',
+             1, 3, 'resuelto', 1, 1, 64),
+            ('No puedo acceder al portal de proveedores desde la oficina',
+             'El portal web de proveedores no carga desde la red corporativa aunque sí desde el móvil. El proxy web tenía un certificado SSL caducado que rompía la validación. Se renovó el certificado del proxy, se actualizó la lista de exclusión y se verificó el acceso desde varios puestos.',
+             3, 3, 'resuelto', 2, 1, 62),
+            ('El servidor de archivos está lleno y no permite guardar',
+             'Los usuarios no pueden guardar documentos porque el volumen de datos alcanzó el 100 por ciento. Se archivaron 400 GB de proyectos antiguos a almacenamiento frío, se amplió el volumen en 1 TB y se configuró una alerta al 85 por ciento de uso.',
+             2, 2, 'resuelto', 1, 1, 59),
+            ('Teams no carga el historial de chats',
+             'Microsoft Teams no muestra el historial de conversaciones y se queda en la pantalla de carga. Se limpió la caché de la aplicación, se cerró la sesión y se volvió a iniciar, y se actualizó el cliente. El historial apareció completo.',
+             2, 4, 'resuelto', 1, 1, 57),
+            ('La impresora multifunción no escanea a correo',
+             'La multifunción de Dirección escanea pero los correos nunca llegan al destino. La cuenta SMTP configurada tenía la contraseña caducada. Se actualizó la credencial en el panel de la impresora, se probó el envío y se documentó la rotación de la contraseña del buzón de servicio.',
+             1, 3, 'cerrado', 2, 1, 54),
+            ('Solicitud de alta de correo para práctica',
+             'Se solicita el alta de correo corporativo para un estudiante en prácticas de Marketing con vigencia de tres meses. Se creó la cuenta con buzón reducido, acceso a la carpeta compartida del área y una tarea programada para su baja automática al finalizar el periodo.',
+             4, 4, 'cerrado', 1, 1, 51),
+            ('El ratón inalámbrico se desconecta intermitentemente',
+             'El ratón inalámbrico pierde la conexión cada pocos minutos y el puntero da saltos. Se cambió la pila por una alcalina nueva, se reubicó el receptor USB con un alargador para evitar interferencias del monitor y se actualizó el driver. Uso estable.',
+             1, 4, 'resuelto', 1, 1, 49),
+            ('La base de datos reporta lentitud en horario pico',
+             'La aplicación de gestión consulta muy lento entre las 9 y las 11 de la mañana. Se detectó falta de índices en las consultas más frecuentes y estadísticas desactualizadas. Se crearon dos índices, se ejecutó el mantenimiento de estadísticas y se verificó la mejora con el plan de ejecución.',
+             2, 2, 'resuelto', 2, 1, 46),
+            ('No se puede iniciar sesión en Windows por error de perfil',
+             'Al iniciar sesión Windows informa de que el perfil de usuario no se puede cargar. Se reparó el perfil dañado con una cuenta temporal, se copiaron los datos del perfil corrupto y se recreó el perfil de dominio. El usuario ya inicia sesión con normalidad.',
+             2, 3, 'resuelto', 1, 1, 44),
+            ('El certificado de la web interna está caducado',
+             'La intranet interna muestra un aviso de certificado caducado y los navegadores bloquean el acceso. Se renovó el certificado wildcard del servidor web, se instaló la cadena completa y se reinició el servicio. Acceso seguro restablecido sin avisos.',
+             3, 2, 'cerrado', 2, 1, 41),
+            ('El repositorio Git corporativo rechaza el push',
+             'El desarrollador no puede subir cambios porque el push al repositorio interno falla con un error de autenticación. La clave SSH había sido revocada al cambiar de equipo. Se generó un nuevo par de claves, se registró la clave pública en el servidor Git y se probó un push de prueba.',
+             2, 3, 'resuelto', 1, 1, 38),
+            ('La VPN se desconecta cada 30 minutos',
+             'La conexión VPN se corta cada media hora y obliga a reconectar. El router doméstico aplicaba un tiempo de inactividad bajo. Se amplió el tiempo de concesión del cliente, se habilitó el keepalive en la configuración y se actualizó el cliente VPN. Sesión estable durante toda la jornada.',
+             3, 3, 'resuelto', 2, 1, 36),
+            ('El escáner de huellas no valida el acceso',
+             'El lector biométrico de la entrada no valida las huellas y obliga a usar tarjeta. Se limpió el sensor con el kit homologado, se actualizó el firmware y se volvieron a enrolar las plantillas de los usuarios afectados. Validación biométrica restablecida.',
+             1, 3, 'resuelto', 1, 1, 33),
+            ('Los informes de Power BI no se actualizan',
+             'Los paneles de Power BI muestran datos antiguos porque la actualización programada falla por credenciales caducadas del origen de datos. Se actualizaron las credenciales en el gateway de datos corporativo y se relanzó la actualización programada. Datos al día verificados.',
+             2, 3, 'cerrado', 2, 1, 30),
+            ('El teléfono IP no marca tono',
+             'El teléfono IP de recepción no marca tono ni recibe llamadas aunque la pantalla enciende. Se verificó el cableado PoE, se reasignó la extensión en la centralita y se reinició el teléfono. Llamadas entrantes y salientes funcionando.',
+             3, 4, 'resuelto', 1, 1, 27),
+            ('Solicitud de segundo monitor para analista',
+             'Un analista de datos solicita un segundo monitor para revisar tableros complejos. Se verificó la salida de video disponible, se instaló el monitor configurado a la resolución nativa y se registró en el inventario de activos. Puesto con doble pantalla operativo.',
+             1, 4, 'cerrado', 1, 1, 24),
+            ('El antivirus bloquea un ejecutable del sistema de gestión',
+             'El antivirus pone en cuarentena un componente del sistema de gestión y la aplicación deja de abrir. La firma del nuevo parche coincidía con un falso positivo. Se añadió una exclusión firmada por el fabricante, se restauró el archivo desde la cuarentena y se documentó el cambio.',
+             2, 2, 'resuelto', 2, 1, 21),
+            ('La carpeta de red tarda en abrir desde la sucursal',
+             'Abrir la carpeta compartida desde la sucursal tarda más de un minuto por el enlace WAN saturado en horario laboral. Se habilitó el almacenamiento en caché sin conexión en los equipos de la sucursal y se priorizó el tráfico SMB en el QoS del router. Apertura casi instantánea.',
+             3, 3, 'resuelto', 1, 1, 17),
+            ('El teclado del portátil tiene teclas que no responden',
+             'Varias teclas del portátil no responden correctamente después de un derrame leve de líquido. Se usó un teclado USB externo como solución temporal y, tras confirmar el daño del teclado integrado, se reemplazó el módulo. Escritura restablecida.',
+             1, 3, 'resuelto', 2, 1, 12),
+            ('Fallo al imprimir la nómina mensual por desbordamiento',
+             'El proceso de impresión de la nómina mensual falla a mitad por falta de memoria en el servidor de impresión. Se amplió el spooler, se dividió el lote en tandas y se programó la impresión fuera del horario pico. Nómina impresa completa y verificada.',
+             2, 1, 'cerrado', 1, 1, 8)
         -- agente: 1 = agente base, 2 = coordinador | soli: 1 = solicitante del seed
         ) AS t(asunto, descripcion, cat, prio, estado, agente, soli, dias)
     LOOP

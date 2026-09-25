@@ -446,7 +446,7 @@ function initChat() {
 
     // Verificar que los elementos existan antes de agregar listeners
     if (!chatInput || !chatSendBtn) {
-        console.error('⚠️ Elementos del chat no encontrados en el HTML');
+        console.error(' Elementos del chat no encontrados en el HTML');
         return;
     }
 

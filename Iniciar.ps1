@@ -26,29 +26,29 @@ Write-Host "`n🚀 Iniciando HelpDesk (Contenedores + Backend)..." -ForegroundCo
 # 0. REQUISITOS PREVIOS (Docker + .env)
 # ============================================
 if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
-    Write-Host "❌ Docker no está instalado o no está en el PATH." -ForegroundColor Red
+    Write-Host " Docker no está instalado o no está en el PATH." -ForegroundColor Red
     exit 1
 }
 
 $dockerOk = ((Invoke-DockerQuiet info) -eq 0)
 if (-not $dockerOk) {
-    Write-Host "❌ El demonio de Docker no está corriendo. Abre Docker Desktop e inténtalo de nuevo." -ForegroundColor Red
+    Write-Host " El demonio de Docker no está corriendo. Abre Docker Desktop e inténtalo de nuevo." -ForegroundColor Red
     exit 1
 }
 
 # Plugin docker compose (v2)
 if ((Invoke-DockerQuiet compose version) -ne 0) {
-    Write-Host "❌ No se encontró el plugin 'docker compose' (v2). Instálalo y vuelve a intentarlo." -ForegroundColor Red
+    Write-Host " No se encontró el plugin 'docker compose' (v2). Instálalo y vuelve a intentarlo." -ForegroundColor Red
     exit 1
 }
 
 if (-not (Test-Path $ComposeFile)) {
-    Write-Host "❌ No se encontró el compose en: $ComposeFile" -ForegroundColor Red
+    Write-Host " No se encontró el compose en: $ComposeFile" -ForegroundColor Red
     exit 1
 }
 
 if (-not (Test-Path $EnvFile)) {
-    Write-Host "❌ No se encontró el archivo .env en: $EnvFile" -ForegroundColor Red
+    Write-Host " No se encontró el archivo .env en: $EnvFile" -ForegroundColor Red
     Write-Host "   Es obligatorio: contiene las credenciales (POSTGRES_*, JWT_SECRET_KEY, N8N_*)." -ForegroundColor Yellow
     exit 1
 }
@@ -62,7 +62,7 @@ $requiredVars = @("POSTGRES_USER", "POSTGRES_PASSWORD", "POSTGRES_DB",
                   "JWT_SECRET_KEY")
 $faltan = $requiredVars | Where-Object { $envContent -notmatch "(?m)^\s*$_\s*=" }
 if ($faltan) {
-    Write-Host "❌ Faltan variables obligatorias en .env: $($faltan -join ', ')" -ForegroundColor Red
+    Write-Host " Faltan variables obligatorias en .env: $($faltan -join ', ')" -ForegroundColor Red
     exit 1
 }
 
@@ -77,7 +77,7 @@ Write-Host "`n🐳 Levantando servicios base (postgres, ollama)..." -ForegroundC
 # Solo servicios base: n8n/backend/streamlit se levantan DESPUÉS de configurar la BD.
 docker compose -f $ComposeFile --env-file $EnvFile up -d postgres ollama
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "❌ Error al iniciar los contenedores base" -ForegroundColor Red
+    Write-Host " Error al iniciar los contenedores base" -ForegroundColor Red
     exit 1
 }
 
@@ -102,7 +102,7 @@ while (-not $pgReady -and $attempt -lt $maxAttempts) {
 }
 
 if (-not $pgReady) {
-    Write-Host "`n❌ PostgreSQL no respondió después de $($maxAttempts * 2) segundos" -ForegroundColor Red
+    Write-Host "`n PostgreSQL no respondió después de $($maxAttempts * 2) segundos" -ForegroundColor Red
     Write-Host "📋 Revisa los logs con: docker logs helpdesk-db" -ForegroundColor Yellow
     exit 1
 }
@@ -124,11 +124,11 @@ $PgDb = "helpdesk_db"
 if ($envContent -match "(?m)^\s*POSTGRES_DB\s*=\s*(.+?)\s*$") { $PgDb = $Matches[1] }
 
 if ([string]::IsNullOrWhiteSpace($AppPass)) {
-    Write-Host "❌ APP_DB_PASSWORD está vacía en .env" -ForegroundColor Red
+    Write-Host " APP_DB_PASSWORD está vacía en .env" -ForegroundColor Red
     exit 1
 }
 if ($AppUser -notmatch "^[a-z_][a-z0-9_]*$" -or $PgDb -notmatch "^[a-z_][a-z0-9_]*$") {
-    Write-Host "❌ APP_DB_USER y POSTGRES_DB deben ser solo minúsculas/números/guion bajo" -ForegroundColor Red
+    Write-Host " APP_DB_USER y POSTGRES_DB deben ser solo minúsculas/números/guion bajo" -ForegroundColor Red
     exit 1
 }
 
@@ -142,19 +142,19 @@ Write-Host "`n🗄️ Verificando esquema de la BD..." -ForegroundColor Cyan
 $SchemaAplicado = (docker exec helpdesk-db psql -tA -U $PgUser -d $PgDb -c `
     "SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='usuarios'") -eq "1"
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "❌ No se pudo consultar el esquema de la BD" -ForegroundColor Red
+    Write-Host " No se pudo consultar el esquema de la BD" -ForegroundColor Red
     exit 1
 }
 
 if (-not $SchemaAplicado) {
     if (-not (Test-Path $SchemaFile)) {
-        Write-Host "❌ No se encontró db_logic.sql en: $SchemaFile" -ForegroundColor Red
+        Write-Host " No se encontró db_logic.sql en: $SchemaFile" -ForegroundColor Red
         exit 1
     }
     Write-Host "   Esquema vacío; aplicando db_logic.sql..." -ForegroundColor DarkGray
-    if ((Invoke-DockerQuiet cp $SchemaFile "helpdesk-db:/tmp/db_logic.sql") -ne 0) { Write-Host "❌ No se pudo copiar db_logic.sql al contenedor" -ForegroundColor Red; exit 1 }
+    if ((Invoke-DockerQuiet cp $SchemaFile "helpdesk-db:/tmp/db_logic.sql") -ne 0) { Write-Host " No se pudo copiar db_logic.sql al contenedor" -ForegroundColor Red; exit 1 }
     if ((Invoke-DockerQuiet exec helpdesk-db psql -v ON_ERROR_STOP=1 -U $PgUser -d $PgDb -f /tmp/db_logic.sql) -ne 0) {
-        Write-Host "❌ Error aplicando db_logic.sql. Revisa: docker exec helpdesk-db psql -U $PgUser -d $PgDb -f /tmp/db_logic.sql" -ForegroundColor Red
+        Write-Host " Error aplicando db_logic.sql. Revisa: docker exec helpdesk-db psql -U $PgUser -d $PgDb -f /tmp/db_logic.sql" -ForegroundColor Red
         exit 1
     }
     docker exec helpdesk-db rm -f /tmp/db_logic.sql
@@ -181,11 +181,11 @@ if ($Migraciones.Count -eq 0) {
 } else {
     foreach ($m in $Migraciones) {
         if ((Invoke-DockerQuiet cp $m.FullName "helpdesk-db:/tmp/helpdesk_mig.sql") -ne 0) {
-            Write-Host "❌ No se pudo copiar la migración $($m.Name)" -ForegroundColor Red
+            Write-Host " No se pudo copiar la migración $($m.Name)" -ForegroundColor Red
             exit 1
         }
         if ((Invoke-DockerQuiet exec helpdesk-db psql -v ON_ERROR_STOP=1 -U $PgUser -d $PgDb -f /tmp/helpdesk_mig.sql) -ne 0) {
-            Write-Host "❌ Error aplicando la migración $($m.Name)" -ForegroundColor Red
+            Write-Host " Error aplicando la migración $($m.Name)" -ForegroundColor Red
             exit 1
         }
         docker exec helpdesk-db rm -f /tmp/helpdesk_mig.sql
@@ -262,9 +262,9 @@ $N8nPass = ""
 if ($envContent -match "(?m)^\s*N8N_DB_PASSWORD\s*=\s*(.+?)\s*$") { $N8nPass = $Matches[1] }
 
 if ([string]::IsNullOrWhiteSpace($N8nPass)) {
-    Write-Host "⚠️ N8N_DB_PASSWORD no está en .env; se omite la BD dedicada de n8n" -ForegroundColor Yellow
+    Write-Host " N8N_DB_PASSWORD no está en .env; se omite la BD dedicada de n8n" -ForegroundColor Yellow
 } elseif ($N8nUser -notmatch "^[a-z_][a-z0-9_]*$" -or $N8nDb -notmatch "^[a-z_][a-z0-9_]*$") {
-    Write-Host "❌ N8N_DB_USER y N8N_DB_NAME deben ser minúsculas/números/guion bajo" -ForegroundColor Red
+    Write-Host " N8N_DB_USER y N8N_DB_NAME deben ser minúsculas/números/guion bajo" -ForegroundColor Red
     exit 1
 } else {
     Write-Host "`n🧩 Configurando la base de datos dedicada de n8n ($N8nDb)..." -ForegroundColor Cyan
@@ -295,7 +295,7 @@ $$;
     $dbExists = docker exec helpdesk-db psql -tA -U $PgUser -d postgres -c "SELECT 1 FROM pg_database WHERE datname='$N8nDb'"
     if ("$dbExists".Trim() -ne "1") {
         docker exec helpdesk-db psql -v ON_ERROR_STOP=1 -U $PgUser -d postgres -c "CREATE DATABASE $N8nDb OWNER $N8nUser"
-        if ($LASTEXITCODE -ne 0) { Write-Host "❌ No se pudo crear la BD $N8nDb" -ForegroundColor Red; exit 1 }
+        if ($LASTEXITCODE -ne 0) { Write-Host " No se pudo crear la BD $N8nDb" -ForegroundColor Red; exit 1 }
         $extSql = "CREATE EXTENSION IF NOT EXISTS `"uuid-ossp`"; CREATE EXTENSION IF NOT EXISTS `"pgcrypto`"; ALTER SCHEMA public OWNER TO $N8nUser; GRANT ALL ON SCHEMA public TO $N8nUser;"
         docker exec helpdesk-db psql -v ON_ERROR_STOP=1 -U $PgUser -d $N8nDb -c $extSql
     }
@@ -307,11 +307,11 @@ $$;
 #     Idempotente: sincroniza los usuarios de prueba (password123).
 # ============================================
 if (-not (Test-Path $SeedFile)) {
-    Write-Host "⚠️ No se encontró seed_usuarios.sql; se omiten los usuarios de prueba" -ForegroundColor Yellow
+    Write-Host " No se encontró seed_usuarios.sql; se omiten los usuarios de prueba" -ForegroundColor Yellow
 } else {
-    if ((Invoke-DockerQuiet cp $SeedFile "helpdesk-db:/tmp/seed_usuarios.sql") -ne 0) { Write-Host "❌ No se pudo copiar seed_usuarios.sql al contenedor" -ForegroundColor Red; exit 1 }
+    if ((Invoke-DockerQuiet cp $SeedFile "helpdesk-db:/tmp/seed_usuarios.sql") -ne 0) { Write-Host " No se pudo copiar seed_usuarios.sql al contenedor" -ForegroundColor Red; exit 1 }
     if ((Invoke-DockerQuiet exec helpdesk-db psql -v ON_ERROR_STOP=1 -U $PgUser -d $PgDb -f /tmp/seed_usuarios.sql) -ne 0) {
-        Write-Host "❌ Error aplicando seed_usuarios.sql" -ForegroundColor Red
+        Write-Host " Error aplicando seed_usuarios.sql" -ForegroundColor Red
         exit 1
     }
     docker exec helpdesk-db rm -f /tmp/seed_usuarios.sql
@@ -324,7 +324,7 @@ if (-not (Test-Path $SeedFile)) {
 Write-Host "`n🐳 Levantando n8n..." -ForegroundColor Cyan
 docker compose -f $ComposeFile --env-file $EnvFile up -d n8n
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "❌ Error al iniciar n8n" -ForegroundColor Red
+    Write-Host " Error al iniciar n8n" -ForegroundColor Red
     exit 1
 }
 
@@ -334,7 +334,7 @@ if ($LASTEXITCODE -ne 0) {
 Write-Host "`n🐳 Construyendo/actualizando el backend dentro de Docker..." -ForegroundColor Cyan
 docker compose -f $ComposeFile --env-file $EnvFile up -d --build backend
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "❌ Error al iniciar el contenedor del backend" -ForegroundColor Red
+    Write-Host " Error al iniciar el contenedor del backend" -ForegroundColor Red
     exit 1
 }
 
@@ -344,7 +344,7 @@ if ($LASTEXITCODE -ne 0) {
 Write-Host "`n🐳 Construyendo/actualizando Streamlit dentro de Docker..." -ForegroundColor Cyan
 docker compose -f $ComposeFile --env-file $EnvFile up -d --build streamlit
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "❌ Error al iniciar el contenedor de Streamlit" -ForegroundColor Red
+    Write-Host " Error al iniciar el contenedor de Streamlit" -ForegroundColor Red
     exit 1
 }
 
@@ -356,7 +356,7 @@ if ($envContent -match "(?m)^\s*CLOUDFLARE_TUNNEL_TOKEN\s*=\s*\S") {
     Write-Host "`n☁️  Levantando el conector Cloudflare Tunnel..." -ForegroundColor Cyan
     docker compose -f $ComposeFile --env-file $EnvFile up -d cloudflared
     if ($LASTEXITCODE -ne 0) {
-        Write-Host "⚠️ No se pudo iniciar cloudflared; revisa CLOUDFLARE_TUNNEL_TOKEN" -ForegroundColor Yellow
+        Write-Host " No se pudo iniciar cloudflared; revisa CLOUDFLARE_TUNNEL_TOKEN" -ForegroundColor Yellow
     } else {
         Write-Host "✅ cloudflared arriba (api.sistemahelpdesk.online -> backend:8000)" -ForegroundColor Green
     }
@@ -381,14 +381,14 @@ Write-Host "`n⏳ Esperando al backend (FastAPI :8000)..." -ForegroundColor Yell
 if (Wait-HttpOk -Url "http://localhost:8000/api/health" -Nombre "Backend") {
     Write-Host "✅ Backend respondiendo en :8000" -ForegroundColor Green
 } else {
-    Write-Host "⚠️ El backend no respondió a tiempo; revisa: docker logs helpdesk-backend" -ForegroundColor Yellow
+    Write-Host " El backend no respondió a tiempo; revisa: docker logs helpdesk-backend" -ForegroundColor Yellow
 }
 
 Write-Host "⏳ Esperando a Streamlit (:8501)..." -ForegroundColor Yellow
 if (Wait-HttpOk -Url "http://localhost:8501" -Nombre "Streamlit") {
     Write-Host "✅ Streamlit respondiendo en :8501" -ForegroundColor Green
 } else {
-    Write-Host "⚠️ Streamlit no respondió a tiempo; revisa: docker logs helpdesk-streamlit" -ForegroundColor Yellow
+    Write-Host " Streamlit no respondió a tiempo; revisa: docker logs helpdesk-streamlit" -ForegroundColor Yellow
 }
 
 # ============================================

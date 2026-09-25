@@ -7,7 +7,8 @@ from typing import Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, text
+from sqlalchemy import select
+from sqlalchemy import text
 import os
 import io
 import base64
@@ -154,8 +155,6 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 async def authenticate_user(db: AsyncSession, email: str, password: str):
-
-    from sqlalchemy import text
     
     query = text("SELECT id_usuario, nombre, email, contraseña, rol FROM usuarios WHERE email = :email AND estado = 'activo'")
     result = await db.execute(query, {"email": email})
