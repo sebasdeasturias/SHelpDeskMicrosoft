@@ -388,3 +388,13 @@ function showError(msg) { errorText.textContent = msg; errorMessage.style.displa
 function showSuccess(msg) { successText.textContent = msg; successMessage.style.display = 'flex'; errorMessage.style.display = 'none'; }
 function showLoading() { loadingMessage.style.display = 'flex'; errorMessage.style.display = 'none'; successMessage.style.display = 'none'; loadingMessage.innerHTML = '<span class="spinner-ring"></span> Procesando...'; }
 function hideLoading() { loadingMessage.style.display = 'none'; }
+
+
+
+// ████ █████ ████   ███   ████  ███   ████ █████ ████  █████  ███    
+//█ ░░░░█░░░░░█░░░█ █ ░░█ █ ░░░░█ ░░█ █ ░░░░ ░█░░░█░░░█ █░░░░░█ ░░█   
+// ███░░████░░████░░█████░ ███░░█████░ ███░░░ █░░░████░░████░░█████░  
+//  ░░█ █░░░░ █░░░█ █░░░█░░ ░░█ █░░░█░░ ░░█   █░░ █░░█░ █░░░░ █░░░█░░ 
+//████░░█████░████░░█░░░█░████░░█░░░█░████░░  █░░ █░░░█░█████░█░░░█░░ 
+// ░░░░ ░░░░░░ ░░░░ ░░░  ░░░░░░ ░░░  ░░░░░░ ░  ░░  ░░  ░ ░░░░░ ░░  ░░ 
+//  ░░░░  ░░░░░ ░░░░  ░   ░ ░░░░  ░   ░ ░░░░    ░   ░   ░ ░░░░░ ░   ░ 

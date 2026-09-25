@@ -1268,3 +1268,20 @@ async def toggle_workflow(workflow_id: str, data: dict, db: AsyncSession = Depen
             return {"status": "ok", "id": workflow_id, "activo": activo}
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=f"Error actualizando workflow: {e}")
+
+
+
+
+
+
+
+
+
+
+# ████ █████ ████   ███   ████  ███   ████ █████ ████  █████  ███    
+#█ ░░░░█░░░░░█░░░█ █ ░░█ █ ░░░░█ ░░█ █ ░░░░ ░█░░░█░░░█ █░░░░░█ ░░█   
+# ███░░████░░████░░█████░ ███░░█████░ ███░░░ █░░░████░░████░░█████░  
+#  ░░█ █░░░░ █░░░█ █░░░█░░ ░░█ █░░░█░░ ░░█   █░░ █░░█░ █░░░░ █░░░█░░ 
+#████░░█████░████░░█░░░█░████░░█░░░█░████░░  █░░ █░░░█░█████░█░░░█░░ 
+# ░░░░ ░░░░░░ ░░░░ ░░░  ░░░░░░ ░░░  ░░░░░░ ░  ░░  ░░  ░ ░░░░░ ░░  ░░ 
+#  ░░░░  ░░░░░ ░░░░  ░   ░ ░░░░  ░   ░ ░░░░    ░   ░   ░ ░░░░░ ░   ░ 
