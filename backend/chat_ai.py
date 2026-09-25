@@ -241,7 +241,7 @@ async def log_ai_interaction(
         })
         await db.commit()
     except Exception as e:
-        print(f"⚠️ Error guardando log IA: {e}")
+        print(f"Error guardando log IA: {e}")
 
 
 # ============================================

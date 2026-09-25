@@ -432,7 +432,7 @@ async def asignar_ticket(ticket_id: int, data: dict, db: AsyncSession = Depends(
 
 
 # ============================================================
-# SLAs
+# SLAs (Service Level Agreement) por prioridad
 # ============================================================
 @router.get("/sla")
 async def get_sla(db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
