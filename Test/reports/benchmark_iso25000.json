@@ -1,0 +1,2172 @@
+{
+  "fecha_utc": "2026-10-14T22:38:48Z",
+  "raiz": "/home/sebastian/Descargas/JSProjects/SHelpDeskMicrosoft",
+  "metodo": {
+    "familia_normas": [
+      "ISO/IEC 25000:2014 (SQuaRE — guía)",
+      "ISO/IEC 25010:2023 (modelo de calidad de producto)",
+      "ISO/IEC 25012:2008 (calidad de datos)",
+      "ISO/IEC 25023:2016 (métricas de producto)",
+      "ISO/IEC 25040:2011 (proceso de evaluación)"
+    ],
+    "principio": "Benchmark de runtime con usuarios mock sobre los contenedores montados con iniciar.sh. Sin auto-declaraciones: todas las métricas se miden.",
+    "umbrales": {
+      "lectura_p95_bien_ms": 300,
+      "lectura_p95_aceptable_ms": 800,
+      "escritura_p95_bien_ms": 500,
+      "escritura_p95_aceptable_ms": 1500,
+      "disponibilidad_objetivo": 0.995,
+      "tasa_error_objetivo": 0.01
+    },
+    "usuarios_mock": 23,
+    "tokens_emitidos": 23
+  },
+  "familia_iso_25000": {
+    "ISO_IEC_25000": {
+      "norma": "ISO/IEC 25000:2014 (SQuaRE — guía de la familia)",
+      "score": 93.7,
+      "veredicto": "CUMPLE",
+      "nota": "Roll-up de los módulos evaluados con 25010/25012/25023."
+    },
+    "ISO_IEC_25010": {
+      "norma": "ISO/IEC 25010:2023 (modelo de calidad de producto)",
+      "score": 91.8,
+      "veredicto": "CUMPLE",
+      "caracteristicas": {
+        "idoneidad_funcional": 100.0,
+        "eficiencia_desempeno": 94.4,
+        "confiabilidad": 100.0,
+        "seguridad": 86.5,
+        "mantenibilidad": 90.0,
+        "compatibilidad": 88.9,
+        "usabilidad": 75.0,
+        "flexibilidad": 100.0
+      }
+    },
+    "ISO_IEC_25012": {
+      "norma": "ISO/IEC 25012:2008 (calidad de datos)",
+      "score": 100.0,
+      "veredicto": "CUMPLE",
+      "checks": {
+        "exactitud_huerfanos_historial": true,
+        "exactitud_estados_historial": true,
+        "exactitud_estados_solicitud": true,
+        "consistencia_fechas": true,
+        "credibilidad_passwords": true,
+        "trazabilidad_auditoria": true,
+        "integridad_referencial": true,
+        "restricciones_dominio": true
+      }
+    },
+    "ISO_IEC_25023": {
+      "norma": "ISO/IEC 25023:2016 (métricas de calidad del producto)",
+      "score": 93.7,
+      "veredicto": "CUMPLE",
+      "umbrales_aplicados": {
+        "lectura_p95_bien_ms": 300,
+        "lectura_p95_aceptable_ms": 800,
+        "escritura_p95_bien_ms": 500,
+        "escritura_p95_aceptable_ms": 1500,
+        "disponibilidad_objetivo": 0.995,
+        "tasa_error_objetivo": 0.01
+      }
+    },
+    "ISO_IEC_25040": {
+      "norma": "ISO/IEC 25040:2011 (proceso de evaluación)",
+      "score": 100.0,
+      "veredicto": "CUMPLE",
+      "etapas": {
+        "preparacion": true,
+        "seleccion": true,
+        "planificacion": true,
+        "ejecucion": true,
+        "recopilacion": true,
+        "analisis": true,
+        "reporte": true
+      },
+      "muestras_totales": 528
+    }
+  },
+  "modulos": {
+    "infraestructura": {
+      "modulo": "infraestructura",
+      "iso_25010_caracteristicas": {
+        "idoneidad_funcional": {
+          "score": 100.0,
+          "evidencia": "22/22 respuestas dentro del contrato esperado"
+        },
+        "eficiencia_desempeno": {
+          "score": 100.0,
+          "evidencia": "2/2 escenarios en objetivo de tiempo; P95 medio 36 ms"
+        },
+        "confiabilidad": {
+          "score": 100.0,
+          "evidencia": "disponibilidad medida=100.00% (22/22); errores 5xx=0/22 (tasa 0.00%)"
+        },
+        "seguridad": {
+          "score": 85.0,
+          "evidencia": "controles transversales (JWT+RBAC+rate-limit) aplican al módulo"
+        },
+        "mantenibilidad": {
+          "score": 90.0,
+          "evidencia": "CC media=5.29, CC máx=37, densidad comentarios=0.1074, SQL parametrizado=0.9913"
+        },
+        "compatibilidad": {
+          "score": 90.0,
+          "evidencia": "API JSON/REST homogénea; CORS configurable por entorno"
+        },
+        "usabilidad": {
+          "score": 75.0,
+          "evidencia": "flujos con roles diferenciados; API documentada en /docs"
+        },
+        "flexibilidad": {
+          "score": 100,
+          "evidencia": "6/6 mecanismos de configuración por entorno detectados"
+        }
+      },
+      "iso_25023_mediciones": [
+        {
+          "escenario": "health_backend",
+          "tipo": "lectura",
+          "p50_ms": 52.7,
+          "p95_ms": 70.07,
+          "p99_ms": 72.82,
+          "throughput_rps": 74.74,
+          "tasa_error": 0.0,
+          "n": 12,
+          "clasificacion_tiempo": "bien"
+        },
+        {
+          "escenario": "raiz_api",
+          "tipo": "lectura",
+          "p50_ms": 2.29,
+          "p95_ms": 2.8,
+          "p99_ms": 2.91,
+          "throughput_rps": 1585.47,
+          "tasa_error": 0.0,
+          "n": 10,
+          "clasificacion_tiempo": "bien"
+        }
+      ],
+      "score_modulo": 92.5,
+      "veredicto": "CUMPLE"
+    },
+    "auth": {
+      "modulo": "auth",
+      "iso_25010_caracteristicas": {
+        "idoneidad_funcional": {
+          "score": 100.0,
+          "evidencia": "94/94 respuestas dentro del contrato esperado"
+        },
+        "eficiencia_desempeno": {
+          "score": 100.0,
+          "evidencia": "3/3 escenarios en objetivo de tiempo; P95 medio 75 ms"
+        },
+        "confiabilidad": {
+          "score": 100.0,
+          "evidencia": "disponibilidad medida=100.00% (94/94); errores 5xx=0/94 (tasa 0.00%)"
+        },
+        "seguridad": {
+          "score": 85.0,
+          "evidencia": "controles transversales (JWT+RBAC+rate-limit) aplican al módulo"
+        },
+        "mantenibilidad": {
+          "score": 90.0,
+          "evidencia": "CC media=5.29, CC máx=37, densidad comentarios=0.1074, SQL parametrizado=0.9913"
+        },
+        "compatibilidad": {
+          "score": 90.0,
+          "evidencia": "API JSON/REST homogénea; CORS configurable por entorno"
+        },
+        "usabilidad": {
+          "score": 75.0,
+          "evidencia": "flujos con roles diferenciados; API documentada en /docs"
+        },
+        "flexibilidad": {
+          "score": 100,
+          "evidencia": "6/6 mecanismos de configuración por entorno detectados"
+        }
+      },
+      "iso_25023_mediciones": [
+        {
+          "escenario": "whoami_me",
+          "tipo": "lectura",
+          "p50_ms": 4.71,
+          "p95_ms": 30.27,
+          "p99_ms": 42.34,
+          "throughput_rps": 567.35,
+          "tasa_error": 0.0,
+          "n": 40,
+          "clasificacion_tiempo": "bien"
+        },
+        {
+          "escenario": "me_solicitante",
+          "tipo": "lectura",
+          "p50_ms": 4.25,
+          "p95_ms": 8.08,
+          "p99_ms": 15.69,
+          "throughput_rps": 1109.09,
+          "tasa_error": 0.0,
+          "n": 30,
+          "clasificacion_tiempo": "bien"
+        },
+        {
+          "escenario": "login_mock_rotando",
+          "tipo": "escritura",
+          "p50_ms": 185.14,
+          "p95_ms": 188.09,
+          "p99_ms": 190.11,
+          "throughput_rps": 0,
+          "tasa_error": 0.0,
+          "n": 24,
+          "clasificacion_tiempo": "bien"
+        }
+      ],
+      "score_modulo": 92.5,
+      "veredicto": "CUMPLE"
+    },
+    "tickets": {
+      "modulo": "tickets",
+      "iso_25010_caracteristicas": {
+        "idoneidad_funcional": {
+          "score": 100.0,
+          "evidencia": "128/128 respuestas dentro del contrato esperado"
+        },
+        "eficiencia_desempeno": {
+          "score": 100.0,
+          "evidencia": "4/4 escenarios en objetivo de tiempo; P95 medio 28 ms"
+        },
+        "confiabilidad": {
+          "score": 100.0,
+          "evidencia": "disponibilidad medida=100.00% (128/128); errores 5xx=0/128 (tasa 0.00%)"
+        },
+        "seguridad": {
+          "score": 85.0,
+          "evidencia": "controles transversales (JWT+RBAC+rate-limit) aplican al módulo"
+        },
+        "mantenibilidad": {
+          "score": 90.0,
+          "evidencia": "CC media=5.29, CC máx=37, densidad comentarios=0.1074, SQL parametrizado=0.9913"
+        },
+        "compatibilidad": {
+          "score": 90.0,
+          "evidencia": "API JSON/REST homogénea; CORS configurable por entorno"
+        },
+        "usabilidad": {
+          "score": 75.0,
+          "evidencia": "flujos con roles diferenciados; API documentada en /docs"
+        },
+        "flexibilidad": {
+          "score": 100,
+          "evidencia": "6/6 mecanismos de configuración por entorno detectados"
+        }
+      },
+      "iso_25023_mediciones": [
+        {
+          "escenario": "listado_coordinador",
+          "tipo": "lectura",
+          "p50_ms": 24.53,
+          "p95_ms": 67.62,
+          "p99_ms": 73.54,
+          "throughput_rps": 256.74,
+          "tasa_error": 0.0,
+          "n": 40,
+          "clasificacion_tiempo": "bien"
+        },
+        {
+          "escenario": "listado_solicitante",
+          "tipo": "lectura",
+          "p50_ms": 8.31,
+          "p95_ms": 23.34,
+          "p99_ms": 29.83,
+          "throughput_rps": 747.61,
+          "tasa_error": 0.0,
+          "n": 40,
+          "clasificacion_tiempo": "bien"
+        },
+        {
+          "escenario": "listado_agente",
+          "tipo": "lectura",
+          "p50_ms": 5.78,
+          "p95_ms": 8.02,
+          "p99_ms": 19.05,
+          "throughput_rps": 834.24,
+          "tasa_error": 0.0,
+          "n": 30,
+          "clasificacion_tiempo": "bien"
+        },
+        {
+          "escenario": "crear_ticket_solicitante",
+          "tipo": "escritura",
+          "p50_ms": 9.14,
+          "p95_ms": 13.75,
+          "p99_ms": 14.76,
+          "throughput_rps": 0,
+          "tasa_error": 0.0,
+          "n": 18,
+          "clasificacion_tiempo": "bien"
+        }
+      ],
+      "score_modulo": 92.5,
+      "veredicto": "CUMPLE"
+    },
+    "adjuntos": {
+      "modulo": "adjuntos",
+      "iso_25010_caracteristicas": {
+        "idoneidad_funcional": {
+          "score": 100.0,
+          "evidencia": "25/25 respuestas dentro del contrato esperado"
+        },
+        "eficiencia_desempeno": {
+          "score": 100.0,
+          "evidencia": "2/2 escenarios en objetivo de tiempo; P95 medio 8 ms"
+        },
+        "confiabilidad": {
+          "score": 100.0,
+          "evidencia": "disponibilidad medida=100.00% (25/25); errores 5xx=0/25 (tasa 0.00%)"
+        },
+        "seguridad": {
+          "score": 85.0,
+          "evidencia": "controles transversales (JWT+RBAC+rate-limit) aplican al módulo"
+        },
+        "mantenibilidad": {
+          "score": 90.0,
+          "evidencia": "CC media=5.29, CC máx=37, densidad comentarios=0.1074, SQL parametrizado=0.9913"
+        },
+        "compatibilidad": {
+          "score": 90.0,
+          "evidencia": "API JSON/REST homogénea; CORS configurable por entorno"
+        },
+        "usabilidad": {
+          "score": 75.0,
+          "evidencia": "flujos con roles diferenciados; API documentada en /docs"
+        },
+        "flexibilidad": {
+          "score": 100,
+          "evidencia": "6/6 mecanismos de configuración por entorno detectados"
+        }
+      },
+      "iso_25023_mediciones": [
+        {
+          "escenario": "subir_png_128kb",
+          "tipo": "escritura",
+          "p50_ms": 4.17,
+          "p95_ms": 6.33,
+          "p99_ms": 6.67,
+          "throughput_rps": 213.71,
+          "tasa_error": 0.0,
+          "n": 5,
+          "clasificacion_tiempo": "bien"
+        },
+        {
+          "escenario": "listar_adjuntos",
+          "tipo": "lectura",
+          "p50_ms": 4.84,
+          "p95_ms": 9.73,
+          "p99_ms": 10.4,
+          "throughput_rps": 653.52,
+          "tasa_error": 0.0,
+          "n": 20,
+          "clasificacion_tiempo": "bien"
+        }
+      ],
+      "score_modulo": 92.5,
+      "veredicto": "CUMPLE"
+    },
+    "chat_global": {
+      "modulo": "chat_global",
+      "iso_25010_caracteristicas": {
+        "idoneidad_funcional": {
+          "score": 100.0,
+          "evidencia": "64/64 respuestas dentro del contrato esperado"
+        },
+        "eficiencia_desempeno": {
+          "score": 100.0,
+          "evidencia": "2/2 escenarios en objetivo de tiempo; P95 medio 23 ms"
+        },
+        "confiabilidad": {
+          "score": 100.0,
+          "evidencia": "disponibilidad medida=100.00% (64/64); errores 5xx=0/64 (tasa 0.00%)"
+        },
+        "seguridad": {
+          "score": 85.0,
+          "evidencia": "controles transversales (JWT+RBAC+rate-limit) aplican al módulo"
+        },
+        "mantenibilidad": {
+          "score": 90.0,
+          "evidencia": "CC media=5.29, CC máx=37, densidad comentarios=0.1074, SQL parametrizado=0.9913"
+        },
+        "compatibilidad": {
+          "score": 90.0,
+          "evidencia": "API JSON/REST homogénea; CORS configurable por entorno"
+        },
+        "usabilidad": {
+          "score": 75.0,
+          "evidencia": "flujos con roles diferenciados; API documentada en /docs"
+        },
+        "flexibilidad": {
+          "score": 100,
+          "evidencia": "6/6 mecanismos de configuración por entorno detectados"
+        }
+      },
+      "iso_25023_mediciones": [
+        {
+          "escenario": "historial",
+          "tipo": "lectura",
+          "p50_ms": 11.4,
+          "p95_ms": 38.02,
+          "p99_ms": 42.72,
+          "throughput_rps": 540.1,
+          "tasa_error": 0.0,
+          "n": 40,
+          "clasificacion_tiempo": "bien"
+        },
+        {
+          "escenario": "enviar_mensaje",
+          "tipo": "escritura",
+          "p50_ms": 6.04,
+          "p95_ms": 8.32,
+          "p99_ms": 9.68,
+          "throughput_rps": 609.12,
+          "tasa_error": 0.0,
+          "n": 24,
+          "clasificacion_tiempo": "bien"
+        }
+      ],
+      "score_modulo": 92.5,
+      "veredicto": "CUMPLE"
+    },
+    "chat_privado": {
+      "modulo": "chat_privado",
+      "iso_25010_caracteristicas": {
+        "idoneidad_funcional": {
+          "score": 100.0,
+          "evidencia": "60/60 respuestas dentro del contrato esperado"
+        },
+        "eficiencia_desempeno": {
+          "score": 100.0,
+          "evidencia": "2/2 escenarios en objetivo de tiempo; P95 medio 9 ms"
+        },
+        "confiabilidad": {
+          "score": 100.0,
+          "evidencia": "disponibilidad medida=100.00% (60/60); errores 5xx=0/60 (tasa 0.00%)"
+        },
+        "seguridad": {
+          "score": 85.0,
+          "evidencia": "controles transversales (JWT+RBAC+rate-limit) aplican al módulo"
+        },
+        "mantenibilidad": {
+          "score": 90.0,
+          "evidencia": "CC media=5.29, CC máx=37, densidad comentarios=0.1074, SQL parametrizado=0.9913"
+        },
+        "compatibilidad": {
+          "score": 90.0,
+          "evidencia": "API JSON/REST homogénea; CORS configurable por entorno"
+        },
+        "usabilidad": {
+          "score": 75.0,
+          "evidencia": "flujos con roles diferenciados; API documentada en /docs"
+        },
+        "flexibilidad": {
+          "score": 100,
+          "evidencia": "6/6 mecanismos de configuración por entorno detectados"
+        }
+      },
+      "iso_25023_mediciones": [
+        {
+          "escenario": "contactos",
+          "tipo": "lectura",
+          "p50_ms": 6.37,
+          "p95_ms": 10.53,
+          "p99_ms": 20.47,
+          "throughput_rps": 762.2,
+          "tasa_error": 0.0,
+          "n": 30,
+          "clasificacion_tiempo": "bien"
+        },
+        {
+          "escenario": "no_leidos",
+          "tipo": "lectura",
+          "p50_ms": 6.09,
+          "p95_ms": 7.83,
+          "p99_ms": 17.66,
+          "throughput_rps": 853.02,
+          "tasa_error": 0.0,
+          "n": 30,
+          "clasificacion_tiempo": "bien"
+        }
+      ],
+      "score_modulo": 92.5,
+      "veredicto": "CUMPLE"
+    },
+    "chat_ia": {
+      "modulo": "chat_ia",
+      "iso_25010_caracteristicas": {
+        "idoneidad_funcional": {
+          "score": 100.0,
+          "evidencia": "14/14 respuestas dentro del contrato esperado"
+        },
+        "eficiencia_desempeno": {
+          "score": 50.0,
+          "evidencia": "1/2 escenarios en objetivo de tiempo; P95 medio 17439 ms"
+        },
+        "confiabilidad": {
+          "score": 100.0,
+          "evidencia": "disponibilidad medida=100.00% (14/14); errores 5xx=0/14 (tasa 0.00%)"
+        },
+        "seguridad": {
+          "score": 85.0,
+          "evidencia": "controles transversales (JWT+RBAC+rate-limit) aplican al módulo"
+        },
+        "mantenibilidad": {
+          "score": 90.0,
+          "evidencia": "CC media=5.29, CC máx=37, densidad comentarios=0.1074, SQL parametrizado=0.9913"
+        },
+        "compatibilidad": {
+          "score": 90.0,
+          "evidencia": "API JSON/REST homogénea; CORS configurable por entorno"
+        },
+        "usabilidad": {
+          "score": 75.0,
+          "evidencia": "flujos con roles diferenciados; API documentada en /docs"
+        },
+        "flexibilidad": {
+          "score": 100,
+          "evidencia": "6/6 mecanismos de configuración por entorno detectados"
+        }
+      },
+      "iso_25023_mediciones": [
+        {
+          "escenario": "health_n8n",
+          "tipo": "lectura",
+          "p50_ms": 12.5,
+          "p95_ms": 16.41,
+          "p99_ms": 16.53,
+          "throughput_rps": 150.73,
+          "tasa_error": 0.0,
+          "n": 8,
+          "clasificacion_tiempo": "bien"
+        },
+        {
+          "escenario": "mensaje_ia",
+          "tipo": "escritura",
+          "p50_ms": 19016.03,
+          "p95_ms": 34860.86,
+          "p99_ms": 38592.8,
+          "throughput_rps": 0,
+          "tasa_error": 0.0,
+          "n": 6,
+          "clasificacion_tiempo": "lento"
+        }
+      ],
+      "score_modulo": 86.2,
+      "veredicto": "CUMPLE"
+    },
+    "coordinador": {
+      "modulo": "coordinador",
+      "iso_25010_caracteristicas": {
+        "idoneidad_funcional": {
+          "score": 100.0,
+          "evidencia": "111/111 respuestas dentro del contrato esperado"
+        },
+        "eficiencia_desempeno": {
+          "score": 100.0,
+          "evidencia": "10/10 escenarios en objetivo de tiempo; P95 medio 17 ms"
+        },
+        "confiabilidad": {
+          "score": 100.0,
+          "evidencia": "disponibilidad medida=100.00% (111/111); errores 5xx=0/111 (tasa 0.00%)"
+        },
+        "seguridad": {
+          "score": 85.0,
+          "evidencia": "controles transversales (JWT+RBAC+rate-limit) aplican al módulo"
+        },
+        "mantenibilidad": {
+          "score": 90.0,
+          "evidencia": "CC media=5.29, CC máx=37, densidad comentarios=0.1074, SQL parametrizado=0.9913"
+        },
+        "compatibilidad": {
+          "score": 90.0,
+          "evidencia": "API JSON/REST homogénea; CORS configurable por entorno"
+        },
+        "usabilidad": {
+          "score": 75.0,
+          "evidencia": "flujos con roles diferenciados; API documentada en /docs"
+        },
+        "flexibilidad": {
+          "score": 100,
+          "evidencia": "6/6 mecanismos de configuración por entorno detectados"
+        }
+      },
+      "iso_25023_mediciones": [
+        {
+          "escenario": "estadisticas",
+          "tipo": "lectura",
+          "p50_ms": 8.8,
+          "p95_ms": 14.37,
+          "p99_ms": 15.07,
+          "throughput_rps": 379.17,
+          "tasa_error": 0.0,
+          "n": 12,
+          "clasificacion_tiempo": "bien"
+        },
+        {
+          "escenario": "reportes",
+          "tipo": "lectura",
+          "p50_ms": 7.93,
+          "p95_ms": 11.4,
+          "p99_ms": 12.63,
+          "throughput_rps": 417.38,
+          "tasa_error": 0.0,
+          "n": 12,
+          "clasificacion_tiempo": "bien"
+        },
+        {
+          "escenario": "agentes",
+          "tipo": "lectura",
+          "p50_ms": 4.6,
+          "p95_ms": 5.52,
+          "p99_ms": 5.82,
+          "throughput_rps": 744.25,
+          "tasa_error": 0.0,
+          "n": 12,
+          "clasificacion_tiempo": "bien"
+        },
+        {
+          "escenario": "asignacion",
+          "tipo": "lectura",
+          "p50_ms": 7.57,
+          "p95_ms": 9.51,
+          "p99_ms": 10.1,
+          "throughput_rps": 468.47,
+          "tasa_error": 0.0,
+          "n": 12,
+          "clasificacion_tiempo": "bien"
+        },
+        {
+          "escenario": "sla",
+          "tipo": "lectura",
+          "p50_ms": 4.01,
+          "p95_ms": 5.58,
+          "p99_ms": 5.63,
+          "throughput_rps": 852.84,
+          "tasa_error": 0.0,
+          "n": 12,
+          "clasificacion_tiempo": "bien"
+        },
+        {
+          "escenario": "usuarios",
+          "tipo": "lectura",
+          "p50_ms": 5.73,
+          "p95_ms": 7.32,
+          "p99_ms": 7.44,
+          "throughput_rps": 583.6,
+          "tasa_error": 0.0,
+          "n": 12,
+          "clasificacion_tiempo": "bien"
+        },
+        {
+          "escenario": "bd_tablas",
+          "tipo": "lectura",
+          "p50_ms": 3.91,
+          "p95_ms": 6.52,
+          "p99_ms": 6.71,
+          "throughput_rps": 757.16,
+          "tasa_error": 0.0,
+          "n": 12,
+          "clasificacion_tiempo": "bien"
+        },
+        {
+          "escenario": "ia_config",
+          "tipo": "lectura",
+          "p50_ms": 27.44,
+          "p95_ms": 30.92,
+          "p99_ms": 31.1,
+          "throughput_rps": 140.33,
+          "tasa_error": 0.0,
+          "n": 12,
+          "clasificacion_tiempo": "bien"
+        },
+        {
+          "escenario": "n8n_workflows",
+          "tipo": "lectura",
+          "p50_ms": 44.31,
+          "p95_ms": 68.68,
+          "p99_ms": 69.21,
+          "throughput_rps": 76.36,
+          "tasa_error": 0.0,
+          "n": 12,
+          "clasificacion_tiempo": "bien"
+        },
+        {
+          "escenario": "asignar_ticket",
+          "tipo": "escritura",
+          "p50_ms": 4.58,
+          "p95_ms": 6.63,
+          "p99_ms": 6.81,
+          "throughput_rps": 0,
+          "tasa_error": 0.0,
+          "n": 3,
+          "clasificacion_tiempo": "bien"
+        }
+      ],
+      "score_modulo": 92.5,
+      "veredicto": "CUMPLE"
+    },
+    "streamlit": {
+      "modulo": "streamlit",
+      "iso_25010_caracteristicas": {
+        "idoneidad_funcional": {
+          "score": 100.0,
+          "evidencia": "10/10 respuestas dentro del contrato esperado"
+        },
+        "eficiencia_desempeno": {
+          "score": 100.0,
+          "evidencia": "1/1 escenarios en objetivo de tiempo; P95 medio 4 ms"
+        },
+        "confiabilidad": {
+          "score": 100.0,
+          "evidencia": "disponibilidad medida=100.00% (10/10); errores 5xx=0/10 (tasa 0.00%)"
+        },
+        "seguridad": {
+          "score": 85.0,
+          "evidencia": "controles transversales (JWT+RBAC+rate-limit) aplican al módulo"
+        },
+        "mantenibilidad": {
+          "score": 90.0,
+          "evidencia": "CC media=5.29, CC máx=37, densidad comentarios=0.1074, SQL parametrizado=0.9913"
+        },
+        "compatibilidad": {
+          "score": 80.0,
+          "evidencia": "consumo de API JSON; HTML/Streamlit multi-navegador"
+        },
+        "usabilidad": {
+          "score": 75.0,
+          "evidencia": "flujos con roles diferenciados; API documentada en /docs"
+        },
+        "flexibilidad": {
+          "score": 100,
+          "evidencia": "6/6 mecanismos de configuración por entorno detectados"
+        }
+      },
+      "iso_25023_mediciones": [
+        {
+          "escenario": "panel_admin",
+          "tipo": "lectura",
+          "p50_ms": 1.78,
+          "p95_ms": 3.82,
+          "p99_ms": 3.87,
+          "throughput_rps": 1127.74,
+          "tasa_error": 0.0,
+          "n": 10,
+          "clasificacion_tiempo": "bien"
+        }
+      ],
+      "score_modulo": 91.2,
+      "veredicto": "CUMPLE"
+    },
+    "seguridad": {
+      "modulo": "seguridad",
+      "iso_25010_caracteristicas": {
+        "seguridad": {
+          "score": 100.0,
+          "evidencia": "6/6 controles de seguridad validados en runtime"
+        }
+      },
+      "controles_runtime": {
+        "jwt_invalido_401": true,
+        "sin_token_rechazado": true,
+        "rbac_solicitante_bloqueado": true,
+        "rbac_chat_ia_solo_staff": true,
+        "login_malo_status": [
+          401,
+          401,
+          401,
+          429,
+          429,
+          429
+        ],
+        "lockout_tras_5_fallos": true,
+        "tickets_sin_token_401": true
+      },
+      "score_modulo": 100.0,
+      "veredicto": "CUMPLE",
+      "nota": "Módulo transversal: su puntuación son los controles ejecutados en runtime (JWT, RBAC, rate-limit, lockout)."
+    },
+    "auditoria": {
+      "modulo": "auditoria",
+      "iso_25012": {
+        "veredicto": "CUMPLE",
+        "score": 100.0,
+        "checks": {
+          "exactitud_huerfanos_historial": true,
+          "exactitud_estados_historial": true,
+          "exactitud_estados_solicitud": true,
+          "consistencia_fechas": true,
+          "credibilidad_passwords": true,
+          "trazabilidad_auditoria": true,
+          "integridad_referencial": true,
+          "restricciones_dominio": true
+        },
+        "totales": {
+          "historial_filas": 302,
+          "log_filas": 160,
+          "fk": 26,
+          "check_constraints": 7
+        }
+      },
+      "score_modulo": 100.0,
+      "veredicto": "CUMPLE"
+    },
+    "ia_externa": {
+      "modulo": "ia_externa",
+      "detalles": {
+        "ollama": {
+          "status_code": 200,
+          "latencia_ms": 1.48,
+          "disponible": true
+        },
+        "n8n": {
+          "status_code": 200,
+          "latencia_ms": 1.12,
+          "disponible": true
+        },
+        "backend_chat_health": {
+          "status_code": 200,
+          "latencia_ms": 7.07,
+          "disponible": true
+        }
+      },
+      "score_modulo": 100.0,
+      "veredicto": "CUMPLE",
+      "nota": "Dependencias externas del módulo IA (Ollama/n8n); su caída degrada el chat IA pero no el servicio core."
+    }
+  },
+  "resultados_crudos": {
+    "infraestructura": [
+      {
+        "modulo": "infraestructura",
+        "escenario": "health_backend",
+        "metodo": "GET",
+        "path": "/api/health",
+        "esperado": [
+          200,
+          503
+        ],
+        "status_counts": {
+          "200": 12
+        },
+        "muestreo": 12,
+        "concurrencia": 4,
+        "ok": 12,
+        "errores": [],
+        "tasa_ok": 1.0,
+        "tasa_error": 0.0,
+        "duracion_s": 0.161,
+        "throughput_rps": 74.74,
+        "latencia": {
+          "n": 12,
+          "min_ms": 30.58,
+          "p50_ms": 52.7,
+          "p90_ms": 66.75,
+          "p95_ms": 70.07,
+          "p99_ms": 72.82,
+          "max_ms": 73.51,
+          "mean_ms": 50.57,
+          "stdev_ms": 13.61
+        }
+      },
+      {
+        "modulo": "infraestructura",
+        "escenario": "raiz_api",
+        "metodo": "GET",
+        "path": "/",
+        "esperado": [
+          200
+        ],
+        "status_counts": {
+          "200": 10
+        },
+        "muestreo": 10,
+        "concurrencia": 4,
+        "ok": 10,
+        "errores": [],
+        "tasa_ok": 1.0,
+        "tasa_error": 0.0,
+        "duracion_s": 0.006,
+        "throughput_rps": 1585.47,
+        "latencia": {
+          "n": 10,
+          "min_ms": 0.98,
+          "p50_ms": 2.29,
+          "p90_ms": 2.67,
+          "p95_ms": 2.8,
+          "p99_ms": 2.91,
+          "max_ms": 2.93,
+          "mean_ms": 1.99,
+          "stdev_ms": 0.69
+        }
+      }
+    ],
+    "auth": [
+      {
+        "modulo": "auth",
+        "escenario": "whoami_me",
+        "metodo": "GET",
+        "path": "/api/auth/me",
+        "esperado": [
+          200
+        ],
+        "status_counts": {
+          "200": 40
+        },
+        "muestreo": 40,
+        "concurrencia": 6,
+        "ok": 40,
+        "errores": [],
+        "tasa_ok": 1.0,
+        "tasa_error": 0.0,
+        "duracion_s": 0.071,
+        "throughput_rps": 567.35,
+        "latencia": {
+          "n": 40,
+          "min_ms": 2.7,
+          "p50_ms": 4.71,
+          "p90_ms": 29.88,
+          "p95_ms": 30.27,
+          "p99_ms": 42.34,
+          "max_ms": 49.58,
+          "mean_ms": 10.15,
+          "stdev_ms": 10.86
+        }
+      },
+      {
+        "modulo": "auth",
+        "escenario": "me_solicitante",
+        "metodo": "GET",
+        "path": "/api/auth/me",
+        "esperado": [
+          200
+        ],
+        "status_counts": {
+          "200": 30
+        },
+        "muestreo": 30,
+        "concurrencia": 6,
+        "ok": 30,
+        "errores": [],
+        "tasa_ok": 1.0,
+        "tasa_error": 0.0,
+        "duracion_s": 0.027,
+        "throughput_rps": 1109.09,
+        "latencia": {
+          "n": 30,
+          "min_ms": 2.48,
+          "p50_ms": 4.25,
+          "p90_ms": 5.81,
+          "p95_ms": 8.08,
+          "p99_ms": 15.69,
+          "max_ms": 18.6,
+          "mean_ms": 4.86,
+          "stdev_ms": 2.81
+        }
+      },
+      {
+        "modulo": "auth",
+        "escenario": "login_mock_rotando",
+        "metodo": "POST",
+        "path": "/api/auth/login",
+        "esperado": [
+          200
+        ],
+        "status_counts": {
+          "200": 24
+        },
+        "muestreo": 24,
+        "concurrencia": 1,
+        "ok": 24,
+        "errores": [],
+        "tasa_ok": 1.0,
+        "tasa_error": 0.0,
+        "duracion_s": 0,
+        "throughput_rps": 0,
+        "latencia": {
+          "n": 24,
+          "min_ms": 183.26,
+          "p50_ms": 185.14,
+          "p90_ms": 187.35,
+          "p95_ms": 188.09,
+          "p99_ms": 190.11,
+          "max_ms": 190.68,
+          "mean_ms": 185.29,
+          "stdev_ms": 1.83
+        }
+      }
+    ],
+    "tickets": [
+      {
+        "modulo": "tickets",
+        "escenario": "listado_coordinador",
+        "metodo": "GET",
+        "path": "/api/tickets",
+        "esperado": [
+          200
+        ],
+        "status_counts": {
+          "200": 40
+        },
+        "muestreo": 40,
+        "concurrencia": 8,
+        "ok": 40,
+        "errores": [],
+        "tasa_ok": 1.0,
+        "tasa_error": 0.0,
+        "duracion_s": 0.156,
+        "throughput_rps": 256.74,
+        "latencia": {
+          "n": 40,
+          "min_ms": 10.92,
+          "p50_ms": 24.53,
+          "p90_ms": 39.9,
+          "p95_ms": 67.62,
+          "p99_ms": 73.54,
+          "max_ms": 74.4,
+          "mean_ms": 28.4,
+          "stdev_ms": 14.02
+        }
+      },
+      {
+        "modulo": "tickets",
+        "escenario": "listado_solicitante",
+        "metodo": "GET",
+        "path": "/api/tickets",
+        "esperado": [
+          200
+        ],
+        "status_counts": {
+          "200": 40
+        },
+        "muestreo": 40,
+        "concurrencia": 8,
+        "ok": 40,
+        "errores": [],
+        "tasa_ok": 1.0,
+        "tasa_error": 0.0,
+        "duracion_s": 0.054,
+        "throughput_rps": 747.61,
+        "latencia": {
+          "n": 40,
+          "min_ms": 5.6,
+          "p50_ms": 8.31,
+          "p90_ms": 10.95,
+          "p95_ms": 23.34,
+          "p99_ms": 29.83,
+          "max_ms": 31.01,
+          "mean_ms": 9.83,
+          "stdev_ms": 5.28
+        }
+      },
+      {
+        "modulo": "tickets",
+        "escenario": "listado_agente",
+        "metodo": "GET",
+        "path": "/api/tickets",
+        "esperado": [
+          200
+        ],
+        "status_counts": {
+          "200": 30
+        },
+        "muestreo": 30,
+        "concurrencia": 6,
+        "ok": 30,
+        "errores": [],
+        "tasa_ok": 1.0,
+        "tasa_error": 0.0,
+        "duracion_s": 0.036,
+        "throughput_rps": 834.24,
+        "latencia": {
+          "n": 30,
+          "min_ms": 4.26,
+          "p50_ms": 5.78,
+          "p90_ms": 7.35,
+          "p95_ms": 8.02,
+          "p99_ms": 19.05,
+          "max_ms": 23.4,
+          "mean_ms": 6.51,
+          "stdev_ms": 3.27
+        }
+      },
+      {
+        "modulo": "tickets",
+        "escenario": "crear_ticket_solicitante",
+        "metodo": "POST",
+        "path": "/api/tickets",
+        "esperado": [
+          201
+        ],
+        "status_counts": {
+          "201": 18
+        },
+        "muestreo": 18,
+        "concurrencia": 1,
+        "ok": 18,
+        "errores": [],
+        "tasa_ok": 1.0,
+        "tasa_error": 0.0,
+        "duracion_s": 0,
+        "throughput_rps": 0,
+        "latencia": {
+          "n": 18,
+          "min_ms": 5.04,
+          "p50_ms": 9.14,
+          "p90_ms": 11.63,
+          "p95_ms": 13.75,
+          "p99_ms": 14.76,
+          "max_ms": 15.01,
+          "mean_ms": 9.38,
+          "stdev_ms": 2.13
+        },
+        "tickets_creados": [
+          276,
+          277,
+          278,
+          279,
+          280,
+          281,
+          282,
+          283,
+          284,
+          285,
+          286,
+          287,
+          288,
+          289,
+          290,
+          291,
+          292,
+          293
+        ]
+      }
+    ],
+    "chat_global": [
+      {
+        "modulo": "chat_global",
+        "escenario": "historial",
+        "metodo": "GET",
+        "path": "/api/chat-global/mensajes?limit=50",
+        "esperado": [
+          200
+        ],
+        "status_counts": {
+          "200": 40
+        },
+        "muestreo": 40,
+        "concurrencia": 8,
+        "ok": 40,
+        "errores": [],
+        "tasa_ok": 1.0,
+        "tasa_error": 0.0,
+        "duracion_s": 0.074,
+        "throughput_rps": 540.1,
+        "latencia": {
+          "n": 40,
+          "min_ms": 5.99,
+          "p50_ms": 11.4,
+          "p90_ms": 16.58,
+          "p95_ms": 38.02,
+          "p99_ms": 42.72,
+          "max_ms": 44.55,
+          "mean_ms": 13.56,
+          "stdev_ms": 8.2
+        }
+      },
+      {
+        "modulo": "chat_global",
+        "escenario": "enviar_mensaje",
+        "metodo": "POST",
+        "path": "/api/chat-global/mensajes",
+        "esperado": [
+          201
+        ],
+        "status_counts": {
+          "201": 24
+        },
+        "muestreo": 24,
+        "concurrencia": 4,
+        "ok": 24,
+        "errores": [],
+        "tasa_ok": 1.0,
+        "tasa_error": 0.0,
+        "duracion_s": 0.039,
+        "throughput_rps": 609.12,
+        "latencia": {
+          "n": 24,
+          "min_ms": 4.64,
+          "p50_ms": 6.04,
+          "p90_ms": 8.2,
+          "p95_ms": 8.32,
+          "p99_ms": 9.68,
+          "max_ms": 10.08,
+          "mean_ms": 6.31,
+          "stdev_ms": 1.32
+        }
+      }
+    ],
+    "chat_privado": [
+      {
+        "modulo": "chat_privado",
+        "escenario": "contactos",
+        "metodo": "GET",
+        "path": "/api/chat-privado/contactos",
+        "esperado": [
+          200
+        ],
+        "status_counts": {
+          "200": 30
+        },
+        "muestreo": 30,
+        "concurrencia": 6,
+        "ok": 30,
+        "errores": [],
+        "tasa_ok": 1.0,
+        "tasa_error": 0.0,
+        "duracion_s": 0.039,
+        "throughput_rps": 762.2,
+        "latencia": {
+          "n": 30,
+          "min_ms": 3.82,
+          "p50_ms": 6.37,
+          "p90_ms": 8.6,
+          "p95_ms": 10.53,
+          "p99_ms": 20.47,
+          "max_ms": 23.92,
+          "mean_ms": 7.17,
+          "stdev_ms": 3.47
+        }
+      },
+      {
+        "modulo": "chat_privado",
+        "escenario": "no_leidos",
+        "metodo": "GET",
+        "path": "/api/chat-privado/no-leidos",
+        "esperado": [
+          200
+        ],
+        "status_counts": {
+          "200": 30
+        },
+        "muestreo": 30,
+        "concurrencia": 6,
+        "ok": 30,
+        "errores": [],
+        "tasa_ok": 1.0,
+        "tasa_error": 0.0,
+        "duracion_s": 0.035,
+        "throughput_rps": 853.02,
+        "latencia": {
+          "n": 30,
+          "min_ms": 3.41,
+          "p50_ms": 6.09,
+          "p90_ms": 7.63,
+          "p95_ms": 7.83,
+          "p99_ms": 17.66,
+          "max_ms": 21.66,
+          "mean_ms": 6.41,
+          "stdev_ms": 3.03
+        }
+      }
+    ],
+    "chat_ia": [
+      {
+        "modulo": "chat_ia",
+        "escenario": "health_n8n",
+        "metodo": "GET",
+        "path": "/api/chat/health",
+        "esperado": [
+          200
+        ],
+        "status_counts": {
+          "200": 8
+        },
+        "muestreo": 8,
+        "concurrencia": 2,
+        "ok": 8,
+        "errores": [],
+        "tasa_ok": 1.0,
+        "tasa_error": 0.0,
+        "duracion_s": 0.053,
+        "throughput_rps": 150.73,
+        "latencia": {
+          "n": 8,
+          "min_ms": 11.08,
+          "p50_ms": 12.5,
+          "p90_ms": 16.25,
+          "p95_ms": 16.41,
+          "p99_ms": 16.53,
+          "max_ms": 16.57,
+          "mean_ms": 13.09,
+          "stdev_ms": 2.06
+        }
+      },
+      {
+        "modulo": "chat_ia",
+        "escenario": "mensaje_ia",
+        "metodo": "POST",
+        "path": "/api/chat",
+        "esperado": [
+          200,
+          429
+        ],
+        "status_counts": {
+          "200": 6
+        },
+        "muestreo": 6,
+        "concurrencia": 1,
+        "ok": 6,
+        "errores": [],
+        "tasa_ok": 1.0,
+        "tasa_error": 0.0,
+        "duracion_s": 0,
+        "throughput_rps": 0,
+        "latencia": {
+          "n": 6,
+          "min_ms": 12111.79,
+          "p50_ms": 19016.03,
+          "p90_ms": 30195.94,
+          "p95_ms": 34860.86,
+          "p99_ms": 38592.8,
+          "max_ms": 39525.79,
+          "mean_ms": 21267.22,
+          "stdev_ms": 8671.8
+        }
+      }
+    ],
+    "coordinador": [
+      {
+        "modulo": "coordinador",
+        "escenario": "estadisticas",
+        "metodo": "GET",
+        "path": "/api/coordinator/estadisticas",
+        "esperado": [
+          200
+        ],
+        "status_counts": {
+          "200": 12
+        },
+        "muestreo": 12,
+        "concurrencia": 4,
+        "ok": 12,
+        "errores": [],
+        "tasa_ok": 1.0,
+        "tasa_error": 0.0,
+        "duracion_s": 0.032,
+        "throughput_rps": 379.17,
+        "latencia": {
+          "n": 12,
+          "min_ms": 5.83,
+          "p50_ms": 8.8,
+          "p90_ms": 13.63,
+          "p95_ms": 14.37,
+          "p99_ms": 15.07,
+          "max_ms": 15.25,
+          "mean_ms": 9.72,
+          "stdev_ms": 3.2
+        }
+      },
+      {
+        "modulo": "coordinador",
+        "escenario": "reportes",
+        "metodo": "GET",
+        "path": "/api/coordinator/reportes",
+        "esperado": [
+          200
+        ],
+        "status_counts": {
+          "200": 12
+        },
+        "muestreo": 12,
+        "concurrencia": 4,
+        "ok": 12,
+        "errores": [],
+        "tasa_ok": 1.0,
+        "tasa_error": 0.0,
+        "duracion_s": 0.029,
+        "throughput_rps": 417.38,
+        "latencia": {
+          "n": 12,
+          "min_ms": 5.63,
+          "p50_ms": 7.93,
+          "p90_ms": 10.13,
+          "p95_ms": 11.4,
+          "p99_ms": 12.63,
+          "max_ms": 12.94,
+          "mean_ms": 8.52,
+          "stdev_ms": 2.03
+        }
+      },
+      {
+        "modulo": "coordinador",
+        "escenario": "agentes",
+        "metodo": "GET",
+        "path": "/api/coordinator/agentes",
+        "esperado": [
+          200
+        ],
+        "status_counts": {
+          "200": 12
+        },
+        "muestreo": 12,
+        "concurrencia": 4,
+        "ok": 12,
+        "errores": [],
+        "tasa_ok": 1.0,
+        "tasa_error": 0.0,
+        "duracion_s": 0.016,
+        "throughput_rps": 744.25,
+        "latencia": {
+          "n": 12,
+          "min_ms": 4.04,
+          "p50_ms": 4.6,
+          "p90_ms": 5.19,
+          "p95_ms": 5.52,
+          "p99_ms": 5.82,
+          "max_ms": 5.89,
+          "mean_ms": 4.65,
+          "stdev_ms": 0.5
+        }
+      },
+      {
+        "modulo": "coordinador",
+        "escenario": "asignacion",
+        "metodo": "GET",
+        "path": "/api/coordinator/asignacion",
+        "esperado": [
+          200
+        ],
+        "status_counts": {
+          "200": 12
+        },
+        "muestreo": 12,
+        "concurrencia": 4,
+        "ok": 12,
+        "errores": [],
+        "tasa_ok": 1.0,
+        "tasa_error": 0.0,
+        "duracion_s": 0.026,
+        "throughput_rps": 468.47,
+        "latencia": {
+          "n": 12,
+          "min_ms": 5.78,
+          "p50_ms": 7.57,
+          "p90_ms": 8.9,
+          "p95_ms": 9.51,
+          "p99_ms": 10.1,
+          "max_ms": 10.24,
+          "mean_ms": 7.55,
+          "stdev_ms": 1.29
+        }
+      },
+      {
+        "modulo": "coordinador",
+        "escenario": "sla",
+        "metodo": "GET",
+        "path": "/api/coordinator/sla",
+        "esperado": [
+          200
+        ],
+        "status_counts": {
+          "200": 12
+        },
+        "muestreo": 12,
+        "concurrencia": 4,
+        "ok": 12,
+        "errores": [],
+        "tasa_ok": 1.0,
+        "tasa_error": 0.0,
+        "duracion_s": 0.014,
+        "throughput_rps": 852.84,
+        "latencia": {
+          "n": 12,
+          "min_ms": 2.8,
+          "p50_ms": 4.01,
+          "p90_ms": 5.48,
+          "p95_ms": 5.58,
+          "p99_ms": 5.63,
+          "max_ms": 5.64,
+          "mean_ms": 3.99,
+          "stdev_ms": 0.97
+        }
+      },
+      {
+        "modulo": "coordinador",
+        "escenario": "usuarios",
+        "metodo": "GET",
+        "path": "/api/coordinator/usuarios",
+        "esperado": [
+          200
+        ],
+        "status_counts": {
+          "200": 12
+        },
+        "muestreo": 12,
+        "concurrencia": 4,
+        "ok": 12,
+        "errores": [],
+        "tasa_ok": 1.0,
+        "tasa_error": 0.0,
+        "duracion_s": 0.021,
+        "throughput_rps": 583.6,
+        "latencia": {
+          "n": 12,
+          "min_ms": 5.22,
+          "p50_ms": 5.73,
+          "p90_ms": 7.19,
+          "p95_ms": 7.32,
+          "p99_ms": 7.44,
+          "max_ms": 7.47,
+          "mean_ms": 6.02,
+          "stdev_ms": 0.74
+        }
+      },
+      {
+        "modulo": "coordinador",
+        "escenario": "bd_tablas",
+        "metodo": "GET",
+        "path": "/api/coordinator/bd/tablas",
+        "esperado": [
+          200
+        ],
+        "status_counts": {
+          "200": 12
+        },
+        "muestreo": 12,
+        "concurrencia": 4,
+        "ok": 12,
+        "errores": [],
+        "tasa_ok": 1.0,
+        "tasa_error": 0.0,
+        "duracion_s": 0.016,
+        "throughput_rps": 757.16,
+        "latencia": {
+          "n": 12,
+          "min_ms": 3.1,
+          "p50_ms": 3.91,
+          "p90_ms": 6.3,
+          "p95_ms": 6.52,
+          "p99_ms": 6.71,
+          "max_ms": 6.76,
+          "mean_ms": 4.67,
+          "stdev_ms": 1.33
+        }
+      },
+      {
+        "modulo": "coordinador",
+        "escenario": "ia_config",
+        "metodo": "GET",
+        "path": "/api/coordinator/ia",
+        "esperado": [
+          200
+        ],
+        "status_counts": {
+          "200": 12
+        },
+        "muestreo": 12,
+        "concurrencia": 4,
+        "ok": 12,
+        "errores": [],
+        "tasa_ok": 1.0,
+        "tasa_error": 0.0,
+        "duracion_s": 0.086,
+        "throughput_rps": 140.33,
+        "latencia": {
+          "n": 12,
+          "min_ms": 24.33,
+          "p50_ms": 27.44,
+          "p90_ms": 30.71,
+          "p95_ms": 30.92,
+          "p99_ms": 31.1,
+          "max_ms": 31.15,
+          "mean_ms": 27.82,
+          "stdev_ms": 2.26
+        }
+      },
+      {
+        "modulo": "coordinador",
+        "escenario": "n8n_workflows",
+        "metodo": "GET",
+        "path": "/api/coordinator/n8n/workflows",
+        "esperado": [
+          200
+        ],
+        "status_counts": {
+          "200": 12
+        },
+        "muestreo": 12,
+        "concurrencia": 4,
+        "ok": 12,
+        "errores": [],
+        "tasa_ok": 1.0,
+        "tasa_error": 0.0,
+        "duracion_s": 0.157,
+        "throughput_rps": 76.36,
+        "latencia": {
+          "n": 12,
+          "min_ms": 29.28,
+          "p50_ms": 44.31,
+          "p90_ms": 68.03,
+          "p95_ms": 68.68,
+          "p99_ms": 69.21,
+          "max_ms": 69.34,
+          "mean_ms": 48.08,
+          "stdev_ms": 14.64
+        }
+      },
+      {
+        "modulo": "coordinador",
+        "escenario": "asignar_ticket",
+        "metodo": "POST",
+        "path": "/api/coordinator/asignar/{id}",
+        "esperado": [
+          200,
+          400
+        ],
+        "status_counts": {
+          "200": 3
+        },
+        "muestreo": 3,
+        "concurrencia": 1,
+        "ok": 3,
+        "errores": [],
+        "tasa_ok": 1.0,
+        "tasa_error": 0.0,
+        "duracion_s": 0,
+        "throughput_rps": 0,
+        "latencia": {
+          "n": 3,
+          "min_ms": 4.45,
+          "p50_ms": 4.58,
+          "p90_ms": 6.4,
+          "p95_ms": 6.63,
+          "p99_ms": 6.81,
+          "max_ms": 6.86,
+          "mean_ms": 5.3,
+          "stdev_ms": 1.1
+        }
+      }
+    ],
+    "streamlit": [
+      {
+        "modulo": "streamlit",
+        "escenario": "panel_admin",
+        "metodo": "GET",
+        "path": "http://127.0.0.1:8501/",
+        "esperado": [
+          200
+        ],
+        "status_counts": {
+          "200": 10
+        },
+        "muestreo": 10,
+        "concurrencia": 3,
+        "ok": 10,
+        "errores": [],
+        "tasa_ok": 1.0,
+        "tasa_error": 0.0,
+        "duracion_s": 0.009,
+        "throughput_rps": 1127.74,
+        "latencia": {
+          "n": 10,
+          "min_ms": 1.38,
+          "p50_ms": 1.78,
+          "p90_ms": 3.76,
+          "p95_ms": 3.82,
+          "p99_ms": 3.87,
+          "max_ms": 3.88,
+          "mean_ms": 2.29,
+          "stdev_ms": 1.0
+        }
+      }
+    ],
+    "adjuntos": [
+      {
+        "modulo": "adjuntos",
+        "escenario": "subir_png_128kb",
+        "metodo": "POST",
+        "path": "/api/tickets/288/adjuntos",
+        "esperado": [
+          201
+        ],
+        "status_counts": {
+          "201": 5
+        },
+        "muestreo": 5,
+        "concurrencia": 1,
+        "ok": 5,
+        "errores": [],
+        "tasa_ok": 1.0,
+        "tasa_error": 0.0,
+        "duracion_s": 0.023,
+        "throughput_rps": 213.71,
+        "latencia": {
+          "n": 5,
+          "min_ms": 3.77,
+          "p50_ms": 4.17,
+          "p90_ms": 5.89,
+          "p95_ms": 6.33,
+          "p99_ms": 6.67,
+          "max_ms": 6.76,
+          "mean_ms": 4.61,
+          "stdev_ms": 1.12
+        }
+      },
+      {
+        "modulo": "adjuntos",
+        "escenario": "listar_adjuntos",
+        "metodo": "GET",
+        "path": "/api/tickets/293/adjuntos",
+        "esperado": [
+          200
+        ],
+        "status_counts": {
+          "200": 20
+        },
+        "muestreo": 20,
+        "concurrencia": 4,
+        "ok": 20,
+        "errores": [],
+        "tasa_ok": 1.0,
+        "tasa_error": 0.0,
+        "duracion_s": 0.031,
+        "throughput_rps": 653.52,
+        "latencia": {
+          "n": 20,
+          "min_ms": 3.57,
+          "p50_ms": 4.84,
+          "p90_ms": 9.6,
+          "p95_ms": 9.73,
+          "p99_ms": 10.4,
+          "max_ms": 10.57,
+          "mean_ms": 5.7,
+          "stdev_ms": 2.05
+        }
+      }
+    ]
+  },
+  "verificaciones_custom": {
+    "seguridad_auth": {
+      "jwt_invalido_401": true,
+      "sin_token_rechazado": true,
+      "rbac_solicitante_bloqueado": true,
+      "rbac_chat_ia_solo_staff": true,
+      "login_malo_status": [
+        401,
+        401,
+        401,
+        429,
+        429,
+        429
+      ],
+      "lockout_tras_5_fallos": true,
+      "tickets_sin_token_401": true
+    },
+    "base_datos": {
+      "consultas": {
+        "count_solicitudes": {
+          "latencia": {
+            "n": 15,
+            "min_ms": 127.6,
+            "p50_ms": 129.07,
+            "p90_ms": 129.82,
+            "p95_ms": 130.2,
+            "p99_ms": 130.91,
+            "max_ms": 131.09,
+            "mean_ms": 129.07,
+            "stdev_ms": 0.81
+          },
+          "fallos": 0
+        },
+        "listado_tickets_joins": {
+          "latencia": {
+            "n": 15,
+            "min_ms": 128.45,
+            "p50_ms": 130.94,
+            "p90_ms": 132.57,
+            "p95_ms": 132.72,
+            "p99_ms": 132.79,
+            "max_ms": 132.8,
+            "mean_ms": 130.78,
+            "stdev_ms": 1.41
+          },
+          "fallos": 0
+        },
+        "kpi_sla": {
+          "latencia": {
+            "n": 15,
+            "min_ms": 128.8,
+            "p50_ms": 129.85,
+            "p90_ms": 130.89,
+            "p95_ms": 131.18,
+            "p99_ms": 131.61,
+            "max_ms": 131.71,
+            "mean_ms": 129.9,
+            "stdev_ms": 0.79
+          },
+          "fallos": 0
+        },
+        "historial_por_ticket": {
+          "latencia": {
+            "n": 15,
+            "min_ms": 128.66,
+            "p50_ms": 130.33,
+            "p90_ms": 131.46,
+            "p95_ms": 131.85,
+            "p99_ms": 132.42,
+            "max_ms": 132.57,
+            "mean_ms": 130.39,
+            "stdev_ms": 1.01
+          },
+          "fallos": 0
+        },
+        "insert_log_bench": {
+          "latencia": {
+            "n": 5,
+            "min_ms": 65.25,
+            "p50_ms": 65.91,
+            "p90_ms": 66.37,
+            "p95_ms": 66.45,
+            "p99_ms": 66.52,
+            "max_ms": 66.53,
+            "mean_ms": 65.94,
+            "stdev_ms": 0.42
+          },
+          "fallos": 0
+        }
+      },
+      "nota": "Medido con psql sobre el contenedor helpdesk-db (incluye overhead del shell/docker exec)."
+    },
+    "auditoria": {
+      "historial_huerfanos": 0,
+      "historial_estados_invalidos": 0,
+      "solicitud_estados_invalidos": 0,
+      "fechas_inconsistentes": 0,
+      "usuarios_password_vacia": 0,
+      "log_benchmark_registrado": 160,
+      "historial_total": 302,
+      "log_total": 160
+    },
+    "infraestructura": {
+      "containers": {
+        "helpdesk-backend": "Up 3 minutes (healthy)",
+        "helpdesk-streamlit": "Up 4 minutes",
+        "helpdesk-socket-proxy": "Up 51 minutes",
+        "n8n": "Up 18 minutes",
+        "helpdesk-db": "Up 54 minutes (healthy)",
+        "ollama": "Up 54 minutes"
+      },
+      "health_status_code": 200,
+      "health_body": {
+        "status": "healthy",
+        "checks": {
+          "database": "ok",
+          "ollama": "ok",
+          "n8n": "ok"
+        }
+      }
+    },
+    "frontend": {
+      "archivos": 29,
+      "peso_total_bytes": 578025,
+      "peso_total_kb": 564.5,
+      "mayor_archivo": {
+        "file": "frontend/js/dashboard-coordinador.js",
+        "bytes": 71537
+      },
+      "paginas_html": 8,
+      "handlers_inline": 0,
+      "scripts_inline": 0
+    },
+    "ia_externa": {
+      "ollama": {
+        "status_code": 200,
+        "latencia_ms": 1.48,
+        "disponible": true
+      },
+      "n8n": {
+        "status_code": 200,
+        "latencia_ms": 1.12,
+        "disponible": true
+      },
+      "backend_chat_health": {
+        "status_code": 200,
+        "latencia_ms": 7.07,
+        "disponible": true
+      }
+    }
+  },
+  "metricas_estaticas": {
+    "size": {
+      "files": 75,
+      "loc": 21443,
+      "by_ext": {
+        ".yml": {
+          "files": 6,
+          "loc": 747
+        },
+        ".ps1": {
+          "files": 1,
+          "loc": 365
+        },
+        ".sh": {
+          "files": 1,
+          "loc": 338
+        },
+        ".json": {
+          "files": 3,
+          "loc": 448
+        },
+        ".py": {
+          "files": 22,
+          "loc": 4951
+        },
+        ".html": {
+          "files": 8,
+          "loc": 1863
+        },
+        ".sql": {
+          "files": 13,
+          "loc": 1002
+        },
+        ".js": {
+          "files": 13,
+          "loc": 5137
+        },
+        ".css": {
+          "files": 8,
+          "loc": 6592
+        }
+      },
+      "has_backend": true,
+      "has_frontend": true,
+      "has_docker": true,
+      "has_streamlit": true,
+      "has_ai": true
+    },
+    "python": {
+      "py_files": 22,
+      "loc": 4471,
+      "total_lines": 5809,
+      "comment_lines": 480,
+      "comment_density": 0.1074,
+      "functions": 170,
+      "avg_cc": 5.29,
+      "max_cc": 37,
+      "cc_gt_10": 25,
+      "cc_gt_20": 3,
+      "try_blocks": 58,
+      "http_exceptions": 144,
+      "routers": 8,
+      "sql_text_calls": 115,
+      "sql_fstring_calls": 1,
+      "sql_param_ratio": 0.9913,
+      "top_complex": [
+        {
+          "file": "streamlit_app/views/admin.py",
+          "name": "_usuarios",
+          "cc": 37,
+          "lineno": 73
+        },
+        {
+          "file": "streamlit_app/views/estadisticas.py",
+          "name": "render",
+          "cc": 28,
+          "lineno": 12
+        },
+        {
+          "file": "backend/chat_ai.py",
+          "name": "chat_with_ai",
+          "cc": 26,
+          "lineno": 263
+        },
+        {
+          "file": "backend/tickets.py",
+          "name": "update_ticket",
+          "cc": 19,
+          "lineno": 135
+        },
+        {
+          "file": "backend/tickets.py",
+          "name": "get_ticket_detail",
+          "cc": 19,
+          "lineno": 257
+        },
+        {
+          "file": "backend/coordinator.py",
+          "name": "actualizar_usuario",
+          "cc": 17,
+          "lineno": 798
+        },
+        {
+          "file": "streamlit_app/views/admin.py",
+          "name": "_respaldos",
+          "cc": 17,
+          "lineno": 208
+        },
+        {
+          "file": "streamlit_app/views/admin.py",
+          "name": "_ia",
+          "cc": 15,
+          "lineno": 373
+        }
+      ],
+      "imports": {
+        "sqlalchemy": 21,
+        "os": 13,
+        "fastapi": 12,
+        "httpx": 11,
+        "database": 9,
+        "auth": 7,
+        "passlib": 6,
+        "jose": 6,
+        "ratelimit": 5,
+        "time": 5,
+        "pydantic": 4,
+        "streamlit": 4,
+        "asyncio": 3,
+        "re": 3,
+        "datetime": 3,
+        "typing": 3,
+        "dotenv": 3,
+        "json": 3,
+        "db": 3,
+        "theme": 3
+      }
+    },
+    "schema": {
+      "sql_files": 13,
+      "tables": [
+        "IF",
+        "adjunto",
+        "categoria",
+        "clasificacion_ia",
+        "comentario",
+        "configuracion_ia",
+        "embedding_vector",
+        "historial",
+        "log",
+        "log_ia",
+        "mensaje_chat_global",
+        "mensaje_chat_privado",
+        "prioridad",
+        "schema_migrations",
+        "sla",
+        "solicitud",
+        "sugerencia_rag",
+        "usuarios"
+      ],
+      "table_count": 18,
+      "checks": 7,
+      "foreign_keys": 26,
+      "primary_keys": 20,
+      "uniques": 4,
+      "not_null": 56,
+      "indexes": 29,
+      "triggers": 2,
+      "views": 3,
+      "has_historial": true,
+      "has_sla": true,
+      "has_log": true,
+      "has_embedding": true,
+      "has_pgvector": true
+    },
+    "endpoints": {
+      "count": 53,
+      "by_method": {
+        "get": 23,
+        "post": 25,
+        "put": 0,
+        "patch": 3,
+        "delete": 2
+      },
+      "paths": [
+        "POST /{ticket_id}/adjuntos",
+        "GET /{ticket_id}/adjuntos",
+        "POST /login",
+        "POST /register",
+        "POST /mfa/verify",
+        "POST /mfa/setup",
+        "POST /mfa/enable",
+        "POST /mfa/disable",
+        "POST /logout",
+        "GET /me",
+        "GET /health",
+        "POST ",
+        "GET /mensajes",
+        "POST /mensajes",
+        "GET /contactos",
+        "GET /no-leidos",
+        "GET /conversacion/{otro_id}",
+        "POST /conversacion/{otro_id}",
+        "GET /estadisticas",
+        "GET /reportes",
+        "GET /agentes",
+        "POST /agentes/{usuario_id}/permisos",
+        "GET /asignacion",
+        "POST /asignar/{ticket_id}",
+        "GET /sla",
+        "POST /sla",
+        "GET /rag",
+        "POST /rag/indexar",
+        "GET /usuarios",
+        "POST /usuarios",
+        "PATCH /usuarios/{usuario_id}",
+        "PATCH /usuarios/{usuario_id}/rol",
+        "DELETE /usuarios/{usuario_id}",
+        "GET /logs/{contenedor}",
+        "GET /respaldos",
+        "POST /respaldos",
+        "GET /respaldos/{nombre}/descargar",
+        "GET /respaldos/{nombre}/verificar",
+        "DELETE /respaldos/{nombre}",
+        "POST /respaldos/{nombre}/restaurar",
+        "GET /bd/tablas",
+        "GET /ia",
+        "POST /ia/modelo",
+        "POST /ia/pull",
+        "POST /ia/probar",
+        "POST /ia/params",
+        "GET /n8n/workflows",
+        "POST /n8n/workflows/{workflow_id}/toggle",
+        "POST ",
+        "PATCH /{ticket_id}",
+        "GET /{ticket_id}",
+        "POST /{ticket_id}/ai-analysis",
+        "GET "
+      ],
+      "health": true,
+      "login": true
+    },
+    "auth": {
+      "jwt": true,
+      "bcrypt": true,
+      "oauth2": true,
+      "rate_limit": true,
+      "cors": true,
+      "env_jwt": true,
+      "env_db": true,
+      "fail_closed_ai": true,
+      "magic_bytes": true,
+      "uuid_uploads": true,
+      "password_min_8": true,
+      "trust_proxy": true,
+      "docker_sock": true,
+      "cors_default_star": true,
+      "jwt_24h": true,
+      "hardcoded_password": true,
+      "no_password_in_ticket": true,
+      "gitignore_env": true,
+      "bind_params": true,
+      "roles": true
+    }
+  }
+}

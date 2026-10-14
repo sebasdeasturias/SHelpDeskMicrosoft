@@ -1,0 +1,1685 @@
+{
+  "fecha_utc": "2026-09-09T00:34:05Z",
+  "raiz": "/home/sebastian/Descargas/JSProjects/SHelpDeskMicrosoft",
+  "metodo": {
+    "normas": [
+      "ITIL 4",
+      "ISO 9000",
+      "ISO 9001",
+      "ISO 9004",
+      "ISO 19011",
+      "ISO/IEC 25000",
+      "ISO/IEC 25010",
+      "ISO/IEC 25012",
+      "ISO/IEC 25023",
+      "ISO/IEC 25040",
+      "ISO/IEC 12207",
+      "ISO/IEC 15504",
+      "ISO/IEC 33000",
+      "ISO/IEC/IEEE 29119-1",
+      "ISO/IEC/IEEE 29119-2",
+      "ISO/IEC/IEEE 29119-3",
+      "ISO/IEC/IEEE 29119-4",
+      "ISO/IEC 27001",
+      "ISO/IEC 20000-1",
+      "ISO 13485",
+      "IATF 16949",
+      "AS9100",
+      "ISO 22000",
+      "ISO/IEC 17025"
+    ],
+    "tecnicas_29119_4": [
+      "particion_equivalencia",
+      "valores_limite",
+      "tabla_decision",
+      "transicion_estados",
+      "analisis_estatico"
+    ],
+    "principio": "Solo evidencia presente en el código y el esquema. Sin inventar certificaciones."
+  },
+  "metricas": {
+    "size": {
+      "files": 66,
+      "loc": 19843,
+      "by_ext": {
+        ".yml": {
+          "files": 4,
+          "loc": 542
+        },
+        ".sh": {
+          "files": 2,
+          "loc": 825
+        },
+        ".ps1": {
+          "files": 3,
+          "loc": 1007
+        },
+        ".json": {
+          "files": 3,
+          "loc": 431
+        },
+        ".py": {
+          "files": 20,
+          "loc": 4152
+        },
+        ".html": {
+          "files": 8,
+          "loc": 1758
+        },
+        ".sql": {
+          "files": 8,
+          "loc": 812
+        },
+        ".js": {
+          "files": 11,
+          "loc": 4093
+        },
+        ".css": {
+          "files": 7,
+          "loc": 6223
+        }
+      },
+      "has_backend": true,
+      "has_frontend": true,
+      "has_docker": true,
+      "has_streamlit": true,
+      "has_ai": true
+    },
+    "python": {
+      "py_files": 20,
+      "loc": 3878,
+      "total_lines": 4776,
+      "comment_lines": 274,
+      "comment_density": 0.0707,
+      "functions": 149,
+      "avg_cc": 5.24,
+      "max_cc": 37,
+      "cc_gt_10": 23,
+      "cc_gt_20": 3,
+      "try_blocks": 52,
+      "http_exceptions": 104,
+      "routers": 6,
+      "sql_text_calls": 89,
+      "sql_fstring_calls": 1,
+      "sql_param_ratio": 0.9888,
+      "top_complex": [
+        {
+          "file": "streamlit_app/views/admin.py",
+          "name": "_usuarios",
+          "cc": 37,
+          "lineno": 78
+        },
+        {
+          "file": "streamlit_app/views/estadisticas.py",
+          "name": "render",
+          "cc": 28,
+          "lineno": 12
+        },
+        {
+          "file": "backend/chat_ai.py",
+          "name": "chat_with_ai",
+          "cc": 22,
+          "lineno": 255
+        },
+        {
+          "file": "backend/coordinator.py",
+          "name": "actualizar_usuario",
+          "cc": 17,
+          "lineno": 717
+        },
+        {
+          "file": "backend/tickets.py",
+          "name": "update_ticket",
+          "cc": 17,
+          "lineno": 128
+        },
+        {
+          "file": "streamlit_app/views/admin.py",
+          "name": "_respaldos",
+          "cc": 17,
+          "lineno": 213
+        },
+        {
+          "file": "backend/adjuntos.py",
+          "name": "subir_adjuntos",
+          "cc": 16,
+          "lineno": 52
+        },
+        {
+          "file": "backend/tickets.py",
+          "name": "get_ticket_detail",
+          "cc": 15,
+          "lineno": 234
+        }
+      ],
+      "imports": {
+        "sqlalchemy": 16,
+        "fastapi": 11,
+        "os": 10,
+        "httpx": 10,
+        "passlib": 6,
+        "jose": 6,
+        "database": 6,
+        "auth": 6,
+        "time": 4,
+        "json": 4,
+        "streamlit": 4,
+        "asyncio": 3,
+        "pydantic": 3,
+        "ratelimit": 3,
+        "re": 3,
+        "datetime": 3,
+        "typing": 3,
+        "dotenv": 3,
+        "db": 3,
+        "theme": 3
+      }
+    },
+    "schema": {
+      "sql_files": 8,
+      "tables": [
+        "IF",
+        "adjunto",
+        "categoria",
+        "clasificacion_ia",
+        "comentario",
+        "configuracion_ia",
+        "embedding_vector",
+        "historial",
+        "log",
+        "log_ia",
+        "prioridad",
+        "sla",
+        "solicitud",
+        "sugerencia_rag",
+        "usuarios"
+      ],
+      "table_count": 15,
+      "checks": 7,
+      "foreign_keys": 21,
+      "primary_keys": 15,
+      "uniques": 4,
+      "not_null": 35,
+      "indexes": 23,
+      "triggers": 2,
+      "views": 3,
+      "has_historial": true,
+      "has_sla": true,
+      "has_log": true,
+      "has_embedding": true,
+      "has_pgvector": true
+    },
+    "endpoints": {
+      "count": 43,
+      "by_method": {
+        "get": 19,
+        "post": 19,
+        "put": 0,
+        "patch": 3,
+        "delete": 2
+      },
+      "paths": [
+        "GET /mensajes",
+        "POST /mensajes",
+        "POST /{ticket_id}/adjuntos",
+        "GET /{ticket_id}/adjuntos",
+        "POST /login",
+        "POST /register",
+        "GET /me",
+        "GET /health",
+        "POST ",
+        "GET /estadisticas",
+        "GET /reportes",
+        "GET /agentes",
+        "POST /agentes/{usuario_id}/permisos",
+        "GET /asignacion",
+        "POST /asignar/{ticket_id}",
+        "GET /sla",
+        "POST /sla",
+        "GET /rag",
+        "POST /rag/indexar",
+        "GET /usuarios",
+        "POST /usuarios",
+        "PATCH /usuarios/{usuario_id}",
+        "PATCH /usuarios/{usuario_id}/rol",
+        "DELETE /usuarios/{usuario_id}",
+        "GET /logs/{contenedor}",
+        "GET /respaldos",
+        "POST /respaldos",
+        "GET /respaldos/{nombre}/descargar",
+        "DELETE /respaldos/{nombre}",
+        "POST /respaldos/{nombre}/restaurar",
+        "GET /bd/tablas",
+        "GET /ia",
+        "POST /ia/modelo",
+        "POST /ia/pull",
+        "POST /ia/probar",
+        "POST /ia/params",
+        "GET /n8n/workflows",
+        "POST /n8n/workflows/{workflow_id}/toggle",
+        "POST ",
+        "PATCH /{ticket_id}",
+        "GET /{ticket_id}",
+        "POST /{ticket_id}/ai-analysis",
+        "GET "
+      ],
+      "health": true,
+      "login": true
+    },
+    "auth": {
+      "jwt": true,
+      "bcrypt": true,
+      "oauth2": true,
+      "rate_limit": true,
+      "cors": true,
+      "env_jwt": true,
+      "env_db": true,
+      "fail_closed_ai": true,
+      "magic_bytes": true,
+      "uuid_uploads": true,
+      "password_min_8": true,
+      "trust_proxy": true,
+      "docker_sock": true,
+      "cors_default_star": true,
+      "jwt_24h": true,
+      "hardcoded_password": true,
+      "no_password_in_ticket": true,
+      "gitignore_env": true,
+      "bind_params": true,
+      "roles": true
+    }
+  },
+  "itil": {
+    "norma": "ITIL 4",
+    "cumple_mesa_servicio": true,
+    "cumple_itil_completo": false,
+    "score_nucleo": 100.0,
+    "score_complementarias": 100.0,
+    "score_producto_helpdesk": 100.0,
+    "score_itil4_34_practicas": 60.9,
+    "veredicto": "CUMPLE ITIL como mesa de servicio (incidentes, peticiones, SLA, conocimiento, medición)",
+    "nota": "SHelpDesk está alineado con las prácticas ITIL de mesa de servicio. No es una implementación ITIL 4 completa ni un SGSI/SGSTI certificable: faltan Problemas, Cambios, CMDB, Activos, Catálogo, Proveedores y Riesgo.",
+    "practicas": [
+      {
+        "id": "incident_management",
+        "nombre": "Gestión de incidentes",
+        "grupo": "nucleo_mesa_servicio",
+        "esperado": "Un helpdesk ITIL debe registrar, clasificar, asignar, escalar, resolver y cerrar incidentes con historial.",
+        "nivel_evidencia": "completa",
+        "estado": "cumple",
+        "evidencias": [
+          "ESTADOS_TICKET",
+          "escalado",
+          "INSERT INTO historial",
+          "create_ticket",
+          "en_proceso",
+          "resuelto"
+        ],
+        "faltantes": [],
+        "puntos": 1.0
+      },
+      {
+        "id": "service_request",
+        "nombre": "Gestión de peticiones de servicio",
+        "grupo": "nucleo_mesa_servicio",
+        "esperado": "El usuario reporta solicitudes/incidentes por canal formal con categoría y prioridad.",
+        "nivel_evidencia": "completa",
+        "estado": "cumple",
+        "evidencias": [
+          "formulario-ticket",
+          "id_categoria",
+          "solicitante",
+          "CREATE TABLE solicitud"
+        ],
+        "faltantes": [],
+        "puntos": 1.0
+      },
+      {
+        "id": "service_desk",
+        "nombre": "Mesa de servicio",
+        "grupo": "nucleo_mesa_servicio",
+        "esperado": "Punto único de contacto con vistas por rol.",
+        "nivel_evidencia": "completa",
+        "estado": "cumple",
+        "evidencias": [
+          "dashboard-agente",
+          "dashboard-coordinador",
+          "dashboard-solicitante",
+          "dashboard-admin"
+        ],
+        "faltantes": [],
+        "puntos": 1.0
+      },
+      {
+        "id": "service_level",
+        "nombre": "Gestión de niveles de servicio (SLA)",
+        "grupo": "nucleo_mesa_servicio",
+        "esperado": "SLA por prioridad, medición de cumplimiento y configuración.",
+        "nivel_evidencia": "completa",
+        "estado": "cumple",
+        "evidencias": [
+          "CREATE TABLE sla",
+          "tiempo_solucion_min",
+          "cumplimiento_sla",
+          "tiempo_respuesta_min",
+          "/sla"
+        ],
+        "faltantes": [],
+        "puntos": 1.0
+      },
+      {
+        "id": "knowledge",
+        "nombre": "Gestión del conocimiento",
+        "grupo": "nucleo_mesa_servicio",
+        "esperado": "Reutilización de soluciones (RAG sobre tickets resueltos).",
+        "nivel_evidencia": "completa",
+        "estado": "cumple",
+        "evidencias": [
+          "embedding_vector",
+          "indexar_ticket",
+          "search_rag",
+          "bge-m3"
+        ],
+        "faltantes": [],
+        "puntos": 1.0
+      },
+      {
+        "id": "measurement",
+        "nombre": "Medición e informes",
+        "grupo": "nucleo_mesa_servicio",
+        "esperado": "KPIs operativos y reportes filtrados.",
+        "nivel_evidencia": "completa",
+        "estado": "cumple",
+        "evidencias": [
+          "get_estadisticas",
+          "cumplimiento_sla",
+          "tiempo_medio",
+          "get_reportes"
+        ],
+        "faltantes": [],
+        "puntos": 1.0
+      },
+      {
+        "id": "monitoring",
+        "nombre": "Supervisión y gestión de eventos",
+        "grupo": "complementaria",
+        "esperado": "Salud de servicios, logs y observabilidad.",
+        "nivel_evidencia": "completa",
+        "estado": "cumple",
+        "evidencias": [
+          "health_check",
+          "/logs/",
+          "docker_api"
+        ],
+        "faltantes": [],
+        "puntos": 1.0
+      },
+      {
+        "id": "continual_improvement",
+        "nombre": "Mejora continua",
+        "grupo": "complementaria",
+        "esperado": "Uso de datos e IA para mejorar clasificación y rendimiento.",
+        "nivel_evidencia": "completa",
+        "estado": "cumple",
+        "evidencias": [
+          "clasificacion_ia",
+          "confianza",
+          "vista_estadisticas_agentes",
+          "revision_manual"
+        ],
+        "faltantes": [],
+        "puntos": 1.0
+      },
+      {
+        "id": "information_security",
+        "nombre": "Gestión de la seguridad de la información",
+        "grupo": "complementaria",
+        "esperado": "Controles técnicos de autenticación, cifrado de secretos y abuso.",
+        "nivel_evidencia": "completa",
+        "estado": "cumple",
+        "evidencias": [
+          "OAuth2PasswordBearer",
+          "bcrypt",
+          "SlidingWindowLimiter",
+          "JWT_SECRET_KEY"
+        ],
+        "faltantes": [],
+        "puntos": 1.0
+      },
+      {
+        "id": "deployment",
+        "nombre": "Gestión de implantación",
+        "grupo": "complementaria",
+        "esperado": "Despliegue reproducible (dev/prod) con salud.",
+        "nivel_evidencia": "completa",
+        "estado": "cumple",
+        "evidencias": [
+          "docker-compose",
+          "docker-compose.prod.yml",
+          "healthcheck"
+        ],
+        "faltantes": [],
+        "puntos": 1.0
+      },
+      {
+        "id": "capacity",
+        "nombre": "Gestión de capacidad y rendimiento",
+        "grupo": "complementaria",
+        "esperado": "Control de carga de agentes y cupo diario.",
+        "nivel_evidencia": "completa",
+        "estado": "cumple",
+        "evidencias": [
+          "carga_trabajo",
+          "MAX_TICKETS_AGENTE_DIA",
+          "asignados_hoy"
+        ],
+        "faltantes": [],
+        "puntos": 1.0
+      },
+      {
+        "id": "continuity",
+        "nombre": "Continuidad del servicio",
+        "grupo": "complementaria",
+        "esperado": "Respaldos y restauración de la BD.",
+        "nivel_evidencia": "completa",
+        "estado": "cumple",
+        "evidencias": [
+          "pg_dump",
+          "pg_restore",
+          "crear_respaldo",
+          "db_backups"
+        ],
+        "faltantes": [],
+        "puntos": 1.0
+      },
+      {
+        "id": "workforce",
+        "nombre": "Gestión de personal y talento (soporte)",
+        "grupo": "complementaria",
+        "esperado": "Roles, especialidad, permisos y jerarquía.",
+        "nivel_evidencia": "completa",
+        "estado": "cumple",
+        "evidencias": [
+          "especialidad",
+          "permisos_supervision",
+          "cambiar_rol",
+          "nivel_jerarquia"
+        ],
+        "faltantes": [],
+        "puntos": 1.0
+      },
+      {
+        "id": "availability",
+        "nombre": "Gestión de la disponibilidad",
+        "grupo": "complementaria",
+        "esperado": "Reinicio automático y comprobaciones de salud.",
+        "nivel_evidencia": "completa",
+        "estado": "cumple",
+        "evidencias": [
+          "restart:",
+          "health_check",
+          "healthcheck"
+        ],
+        "faltantes": [],
+        "puntos": 1.0
+      },
+      {
+        "id": "problem_management",
+        "nombre": "Gestión de problemas",
+        "grupo": "fuera_de_alcance_tipico",
+        "esperado": "Registro de problemas, causa raíz y errores conocidos (no tickets).",
+        "nivel_evidencia": "ninguna",
+        "estado": "no_implementada",
+        "evidencias": [],
+        "faltantes": [
+          "CREATE TABLE problema",
+          "causa_raiz",
+          "error_conocido",
+          "known_error"
+        ],
+        "puntos": 0.0
+      },
+      {
+        "id": "change_enablement",
+        "nombre": "Habilitación del cambio",
+        "grupo": "fuera_de_alcance_tipico",
+        "esperado": "RFC, evaluación de riesgo y aprobación de cambios.",
+        "nivel_evidencia": "ninguna",
+        "estado": "no_implementada",
+        "evidencias": [],
+        "faltantes": [
+          "CREATE TABLE cambio",
+          "CAB",
+          "change_advisory",
+          "ventana_cambio"
+        ],
+        "puntos": 0.0
+      },
+      {
+        "id": "configuration",
+        "nombre": "Gestión de la configuración (CMDB)",
+        "grupo": "fuera_de_alcance_tipico",
+        "esperado": "Inventario de CIs y relaciones.",
+        "nivel_evidencia": "ninguna",
+        "estado": "no_implementada",
+        "evidencias": [],
+        "faltantes": [
+          "CREATE TABLE ci ",
+          "cmdb",
+          "elemento_configuracion",
+          "configuration_item"
+        ],
+        "puntos": 0.0
+      },
+      {
+        "id": "release",
+        "nombre": "Gestión de versiones",
+        "grupo": "fuera_de_alcance_tipico",
+        "esperado": "Plan de release y paquete de versión.",
+        "nivel_evidencia": "ninguna",
+        "estado": "no_implementada",
+        "evidencias": [],
+        "faltantes": [
+          "CREATE TABLE release",
+          "release_management",
+          "versionado_servicio"
+        ],
+        "puntos": 0.0
+      },
+      {
+        "id": "asset",
+        "nombre": "Gestión de activos de TI",
+        "grupo": "fuera_de_alcance_tipico",
+        "esperado": "Ciclo de vida de activos TI.",
+        "nivel_evidencia": "ninguna",
+        "estado": "no_implementada",
+        "evidencias": [],
+        "faltantes": [
+          "CREATE TABLE activo",
+          "it_asset",
+          "inventario_hardware"
+        ],
+        "puntos": 0.0
+      },
+      {
+        "id": "catalogue",
+        "nombre": "Gestión del catálogo de servicios",
+        "grupo": "fuera_de_alcance_tipico",
+        "esperado": "Catálogo publicado de servicios.",
+        "nivel_evidencia": "ninguna",
+        "estado": "no_implementada",
+        "evidencias": [],
+        "faltantes": [
+          "CREATE TABLE catalogo_servicio",
+          "service_catalogue",
+          "oferta_servicio"
+        ],
+        "puntos": 0.0
+      },
+      {
+        "id": "supplier",
+        "nombre": "Gestión de proveedores",
+        "grupo": "fuera_de_alcance_tipico",
+        "esperado": "Contratos y proveedores.",
+        "nivel_evidencia": "ninguna",
+        "estado": "no_implementada",
+        "evidencias": [],
+        "faltantes": [
+          "CREATE TABLE proveedor",
+          "supplier_management"
+        ],
+        "puntos": 0.0
+      },
+      {
+        "id": "financial",
+        "nombre": "Gestión financiera de servicios",
+        "grupo": "fuera_de_alcance_tipico",
+        "esperado": "Coste y presupuestación del servicio.",
+        "nivel_evidencia": "ninguna",
+        "estado": "no_implementada",
+        "evidencias": [],
+        "faltantes": [
+          "CREATE TABLE coste",
+          "chargeback",
+          "presupuesto_ti"
+        ],
+        "puntos": 0.0
+      },
+      {
+        "id": "risk",
+        "nombre": "Gestión del riesgo",
+        "grupo": "fuera_de_alcance_tipico",
+        "esperado": "Registro y tratamiento de riesgos.",
+        "nivel_evidencia": "ninguna",
+        "estado": "no_implementada",
+        "evidencias": [],
+        "faltantes": [
+          "CREATE TABLE riesgo",
+          "risk_register",
+          "matriz_riesgo"
+        ],
+        "puntos": 0.0
+      }
+    ],
+    "resumen": {
+      "nucleo_ok": 6,
+      "nucleo_total": 6,
+      "complementarias_ok": 8,
+      "complementarias_total": 8,
+      "fuera_no_implementadas": 9,
+      "fuera_total": 9
+    },
+    "tiene_chat_ia": true,
+    "tiene_kanban": true
+  },
+  "iso": {
+    "ISO_IEC_25000": {
+      "norma": "ISO/IEC 25000 (SQuaRE — guía de familia)",
+      "aplicable": true,
+      "score": 97.3,
+      "veredicto": "CUMPLE",
+      "partes": {
+        "25010_producto": 95.8,
+        "25012_datos": 93.3,
+        "25023_metricas": 100.0,
+        "25040_proceso": 100.0
+      },
+      "nota": "Familia SQuaRE aplicada al producto HelpDesk. No es certificación."
+    },
+    "ISO_IEC_25010": {
+      "norma": "ISO/IEC 25010:2023 (SQuaRE — modelo de calidad del producto)",
+      "aplicable": true,
+      "score": 95.8,
+      "veredicto": "CUMPLE",
+      "caracteristicas": [
+        {
+          "caracteristica": "Adecuación funcional",
+          "score": 100.0,
+          "criterios": [
+            {
+              "id": "FS.1",
+              "nombre": "Completitud funcional (ciclo de ticket)",
+              "estado": "cumple",
+              "evidencia": "Estados: nuevo, asignado, en_proceso, escalado, resuelto, cerrado, archivado",
+              "hallazgo": ""
+            },
+            {
+              "id": "FS.2",
+              "nombre": "Corrección funcional (RBAC + máquina de estados)",
+              "estado": "cumple",
+              "evidencia": "Roles, reglas de archivo y asignación por coordinador",
+              "hallazgo": ""
+            },
+            {
+              "id": "FS.3",
+              "nombre": "Pertinencia (4 paneles por rol)",
+              "estado": "cumple",
+              "evidencia": "dashboard-solicitante/agente/coordinador/admin",
+              "hallazgo": ""
+            }
+          ]
+        },
+        {
+          "caracteristica": "Eficiencia de desempeño",
+          "score": 100.0,
+          "criterios": [
+            {
+              "id": "PE.1",
+              "nombre": "Comportamiento temporal (timeouts HTTP)",
+              "estado": "cumple",
+              "evidencia": "httpx AsyncClient con timeout",
+              "hallazgo": ""
+            },
+            {
+              "id": "PE.2",
+              "nombre": "Utilización de recursos (índices + HNSW)",
+              "estado": "cumple",
+              "evidencia": "Índices SQL=23, pgvector HNSW",
+              "hallazgo": ""
+            },
+            {
+              "id": "PE.3",
+              "nombre": "Capacidad (rate limit + cupo diario)",
+              "estado": "cumple",
+              "evidencia": "SlidingWindowLimiter y MAX_TICKETS_AGENTE_DIA",
+              "hallazgo": ""
+            }
+          ]
+        },
+        {
+          "caracteristica": "Compatibilidad",
+          "score": 100.0,
+          "criterios": [
+            {
+              "id": "CO.1",
+              "nombre": "Coexistencia (Compose + red interna)",
+              "estado": "cumple",
+              "evidencia": "docker-compose, helpdesk-network",
+              "hallazgo": ""
+            },
+            {
+              "id": "CO.2",
+              "nombre": "Interoperabilidad (REST, JWT, n8n, pgvector)",
+              "estado": "cumple",
+              "evidencia": "43 endpoints, webhooks n8n, embeddings",
+              "hallazgo": ""
+            }
+          ]
+        },
+        {
+          "caracteristica": "Usabilidad",
+          "score": 87.5,
+          "criterios": [
+            {
+              "id": "US.1",
+              "nombre": "Reconocibilidad (UI en español, roles)",
+              "estado": "cumple",
+              "evidencia": "Interfaces HTML/Streamlit en español",
+              "hallazgo": ""
+            },
+            {
+              "id": "US.2",
+              "nombre": "Operabilidad (Kanban, formularios, KPIs)",
+              "estado": "cumple",
+              "evidencia": "Tablero Kanban y panel Streamlit",
+              "hallazgo": ""
+            },
+            {
+              "id": "US.3",
+              "nombre": "Protección contra errores de usuario",
+              "estado": "cumple",
+              "evidencia": "HTTPException=104, validación Pydantic",
+              "hallazgo": ""
+            },
+            {
+              "id": "US.4",
+              "nombre": "Accesibilidad WCAG",
+              "estado": "parcial",
+              "evidencia": "Hay labels en formularios; no hay evidencia de auditoría WCAG 2.2",
+              "hallazgo": ""
+            }
+          ]
+        },
+        {
+          "caracteristica": "Fiabilidad",
+          "score": 100.0,
+          "criterios": [
+            {
+              "id": "RE.1",
+              "nombre": "Madurez (historial, constraints)",
+              "estado": "cumple",
+              "evidencia": "historial + CHECK=7",
+              "hallazgo": ""
+            },
+            {
+              "id": "RE.2",
+              "nombre": "Disponibilidad (health + restart prod)",
+              "estado": "cumple",
+              "evidencia": "/api/health y healthchecks en compose prod",
+              "hallazgo": ""
+            },
+            {
+              "id": "RE.3",
+              "nombre": "Tolerancia a fallos (n8n/RAG no bloquean)",
+              "estado": "cumple",
+              "evidencia": "Notificación n8n y RAG con try/except",
+              "hallazgo": ""
+            },
+            {
+              "id": "RE.4",
+              "nombre": "Recuperabilidad (pg_dump/pg_restore)",
+              "estado": "cumple",
+              "evidencia": "Respaldos desde panel admin",
+              "hallazgo": ""
+            }
+          ]
+        },
+        {
+          "caracteristica": "Seguridad",
+          "score": 91.7,
+          "criterios": [
+            {
+              "id": "SE.1",
+              "nombre": "Confidencialidad (JWT + bcrypt + .env)",
+              "estado": "cumple",
+              "evidencia": "HS256, passlib bcrypt, .env ignorado",
+              "hallazgo": ""
+            },
+            {
+              "id": "SE.2",
+              "nombre": "Integridad (SQL parametrizado + CHECK)",
+              "estado": "cumple",
+              "evidencia": "ratio parametrizado=0.9888, 1 f-string con columnas fijas",
+              "hallazgo": ""
+            },
+            {
+              "id": "SE.3",
+              "nombre": "No repudio / trazabilidad",
+              "estado": "cumple",
+              "evidencia": "Tabla historial con usuario y estados",
+              "hallazgo": ""
+            },
+            {
+              "id": "SE.4",
+              "nombre": "Autenticidad y accountability",
+              "estado": "cumple",
+              "evidencia": "OAuth2 bearer + rol en JWT",
+              "hallazgo": ""
+            },
+            {
+              "id": "SE.5",
+              "nombre": "Resistencia (rate limit, magic bytes, UUID)",
+              "estado": "cumple",
+              "evidencia": "Límite login/registro, firma PNG/JPG, nombres UUID",
+              "hallazgo": ""
+            },
+            {
+              "id": "SE.6",
+              "nombre": "Endurecimiento de despliegue",
+              "estado": "parcial",
+              "evidencia": "Hallazgo: socket Docker montado en backend; CORS por defecto '*'; JWT 24h",
+              "hallazgo": "A.8 ISO 27001: docker.sock es privilegio excesivo"
+            }
+          ]
+        },
+        {
+          "caracteristica": "Mantenibilidad",
+          "score": 87.5,
+          "criterios": [
+            {
+              "id": "MA.1",
+              "nombre": "Modularidad (routers FastAPI)",
+              "estado": "cumple",
+              "evidencia": "APIRouter=6",
+              "hallazgo": ""
+            },
+            {
+              "id": "MA.2",
+              "nombre": "Analizabilidad (CC media)",
+              "estado": "cumple",
+              "evidencia": "CC media=5.24, máx=37, funciones CC>10=23",
+              "hallazgo": ""
+            },
+            {
+              "id": "MA.3",
+              "nombre": "Modificabilidad (config por entorno)",
+              "estado": "cumple",
+              "evidencia": "JWT_SECRET_KEY y DATABASE_URL obligatorios",
+              "hallazgo": ""
+            },
+            {
+              "id": "MA.4",
+              "nombre": "Capacidad para ser probado",
+              "estado": "parcial",
+              "evidencia": "Antes casi sin pruebas; este paquete Test cubre métricas estáticas y unitarias aisladas",
+              "hallazgo": ""
+            }
+          ]
+        },
+        {
+          "caracteristica": "Portabilidad",
+          "score": 100.0,
+          "criterios": [
+            {
+              "id": "PO.1",
+              "nombre": "Adaptabilidad (env + compose)",
+              "estado": "cumple",
+              "evidencia": "docker-compose.yml / prod / cloudflared",
+              "hallazgo": ""
+            },
+            {
+              "id": "PO.2",
+              "nombre": "Instalabilidad",
+              "estado": "cumple",
+              "evidencia": "iniciar.sh / Iniciar.ps1 / Compose",
+              "hallazgo": ""
+            },
+            {
+              "id": "PO.3",
+              "nombre": "Reemplazabilidad (API REST)",
+              "estado": "cumple",
+              "evidencia": "Frontend desacoplado del backend (Vercel + API)",
+              "hallazgo": ""
+            }
+          ]
+        }
+      ],
+      "nota": "Modelo de calidad de producto de software. Aplicable y medible sobre el código real."
+    },
+    "ISO_IEC_25012": {
+      "norma": "ISO/IEC 25012:2008 (calidad de datos)",
+      "aplicable": true,
+      "score": 93.3,
+      "veredicto": "CUMPLE",
+      "caracteristicas": [
+        {
+          "id": "ACC",
+          "nombre": "Exactitud",
+          "estado": "cumple",
+          "evidencia": "CHECK=7 (rol, estado, confianza 0-1, prioridad)",
+          "hallazgo": ""
+        },
+        {
+          "id": "COM",
+          "nombre": "Completitud",
+          "estado": "cumple",
+          "evidencia": "NOT NULL=35",
+          "hallazgo": ""
+        },
+        {
+          "id": "CON",
+          "nombre": "Consistencia",
+          "estado": "cumple",
+          "evidencia": "FK=21, PK=15",
+          "hallazgo": ""
+        },
+        {
+          "id": "CRE",
+          "nombre": "Credibilidad",
+          "estado": "cumple",
+          "evidencia": "Historial de estados con usuario",
+          "hallazgo": ""
+        },
+        {
+          "id": "CUR",
+          "nombre": "Actualidad",
+          "estado": "cumple",
+          "evidencia": "TIMESTAMPTZ en creación/actualización + trigger fecha",
+          "hallazgo": ""
+        },
+        {
+          "id": "ACC2",
+          "nombre": "Accesibilidad",
+          "estado": "parcial",
+          "evidencia": "RBAC por rol; no hay cifrado de columna ni enmascaramiento",
+          "hallazgo": ""
+        },
+        {
+          "id": "CNF",
+          "nombre": "Confidencialidad",
+          "estado": "cumple",
+          "evidencia": "Detalle de ticket declara no exponer contraseña; bcrypt",
+          "hallazgo": ""
+        },
+        {
+          "id": "EFF",
+          "nombre": "Eficiencia",
+          "estado": "cumple",
+          "evidencia": "Índices=23 + HNSW",
+          "hallazgo": ""
+        },
+        {
+          "id": "PRE",
+          "nombre": "Precisión",
+          "estado": "cumple",
+          "evidencia": "Tiempos SLA en minutos/interval",
+          "hallazgo": ""
+        },
+        {
+          "id": "TRA",
+          "nombre": "Trazabilidad",
+          "estado": "cumple",
+          "evidencia": "historial + log + log_ia",
+          "hallazgo": ""
+        },
+        {
+          "id": "UND",
+          "nombre": "Comprensibilidad",
+          "estado": "cumple",
+          "evidencia": "Nombres de tabla/columna en dominio de negocio",
+          "hallazgo": ""
+        },
+        {
+          "id": "AVA",
+          "nombre": "Disponibilidad",
+          "estado": "cumple",
+          "evidencia": "PostgreSQL 16 + extensión vector",
+          "hallazgo": ""
+        },
+        {
+          "id": "POR",
+          "nombre": "Portabilidad",
+          "estado": "cumple",
+          "evidencia": "SQL estándar PostgreSQL en database/",
+          "hallazgo": ""
+        },
+        {
+          "id": "REC",
+          "nombre": "Recuperabilidad",
+          "estado": "cumple",
+          "evidencia": "pg_dump -Fc / pg_restore",
+          "hallazgo": ""
+        },
+        {
+          "id": "CPL",
+          "nombre": "Cumplimiento",
+          "estado": "parcial",
+          "evidencia": "Constraints de dominio; no hay retención/borrado RGPD explícito",
+          "hallazgo": ""
+        }
+      ],
+      "esquema": {
+        "tablas": [
+          "IF",
+          "adjunto",
+          "categoria",
+          "clasificacion_ia",
+          "comentario",
+          "configuracion_ia",
+          "embedding_vector",
+          "historial",
+          "log",
+          "log_ia",
+          "prioridad",
+          "sla",
+          "solicitud",
+          "sugerencia_rag",
+          "usuarios"
+        ],
+        "table_count": 15,
+        "checks": 7,
+        "fks": 21,
+        "indexes": 23
+      }
+    },
+    "ISO_IEC_25023": {
+      "norma": "ISO/IEC 25023:2016 (métricas de calidad del producto)",
+      "aplicable": true,
+      "score": 100.0,
+      "veredicto": "CUMPLE",
+      "metricas": {
+        "X.FUC.1.1_completitud_funcional": {
+          "valor": 1.0,
+          "unidad": "ratio",
+          "descripcion": "Endpoints implementados / endpoints detectados (inventario real)",
+          "dato": 43
+        },
+        "X.FUC.2.1_correccion_sql_parametrizado": {
+          "valor": 0.9888,
+          "unidad": "ratio",
+          "descripcion": "Llamadas SQL con bind params / total text()",
+          "dato": {
+            "text": 89,
+            "fstring": 1
+          }
+        },
+        "X.PTE.1.1_complejidad_ciclomatica_media": {
+          "valor": 5.24,
+          "unidad": "McCabe",
+          "descripcion": "Complejidad ciclomática media por función (AST)",
+          "dato": {
+            "max": 37,
+            "gt10": 23
+          }
+        },
+        "X.PTE.2.1_densidad_comentarios": {
+          "valor": 0.0707,
+          "unidad": "ratio",
+          "descripcion": "Líneas de comentario / LOC Python"
+        },
+        "X.URE.1.1_manejo_errores_http": {
+          "valor": 104,
+          "unidad": "count",
+          "descripcion": "Uso de HTTPException como protección de operación"
+        },
+        "X.FRE.1.1_bloques_try": {
+          "valor": 52,
+          "unidad": "count",
+          "descripcion": "Bloques try/except (tolerancia)"
+        },
+        "X.FSC.1.1_controles_autenticacion": {
+          "valor": 4,
+          "unidad": "controles/4",
+          "descripcion": "JWT + bcrypt + OAuth2 + rate limit"
+        },
+        "X.FSC.2.1_ratio_integridad_datos": {
+          "valor": 43,
+          "unidad": "count",
+          "descripcion": "CHECK + FK + PK en el esquema"
+        },
+        "X.MNT.1.1_modularidad_routers": {
+          "valor": 6,
+          "unidad": "count",
+          "descripcion": "Módulos APIRouter"
+        },
+        "X.MNT.2.1_funciones_complejas": {
+          "valor": 0.1544,
+          "unidad": "ratio",
+          "descripcion": "Funciones con CC>10 / total funciones"
+        },
+        "X.POR.1.1_artefactos_despliegue": {
+          "valor": 3,
+          "unidad": "count/3",
+          "descripcion": "Compose + backend + frontend"
+        },
+        "X.DAT.1.1_tablas_nucleo": {
+          "valor": 15,
+          "unidad": "count",
+          "descripcion": "Tablas del esquema"
+        },
+        "LOC_producto": {
+          "valor": 19843,
+          "unidad": "líneas no vacías",
+          "descripcion": "Tamaño del producto (sin Test/)"
+        },
+        "archivos_fuente": {
+          "valor": 66,
+          "unidad": "count",
+          "descripcion": "Archivos fuente contabilizados"
+        }
+      },
+      "umbrales": {
+        "sql_param_ok": true,
+        "cc_media_ok": true,
+        "auth_ok": true,
+        "schema_ok": true
+      },
+      "nota": "Valores medidos sobre el árbol de código, no estimados."
+    },
+    "ISO_IEC_25040": {
+      "norma": "ISO/IEC 25040:2011 (proceso de evaluación SQuaRE)",
+      "aplicable": true,
+      "score": 100.0,
+      "veredicto": "CUMPLE (proceso de evaluación, no el producto)",
+      "etapas": [
+        {
+          "etapa": "Establecer requisitos de evaluación",
+          "hecho": true,
+          "evidencia": "ITIL mesa de servicio + SQuaRE 25010/25023/25012"
+        },
+        {
+          "etapa": "Especificar la evaluación",
+          "hecho": true,
+          "evidencia": "Criterios, umbrales y técnicas ISO 29119-4 en Test/"
+        },
+        {
+          "etapa": "Diseñar la evaluación",
+          "hecho": true,
+          "evidencia": "Análisis estático AST, evidencia textual, pruebas unitarias"
+        },
+        {
+          "etapa": "Ejecutar la evaluación",
+          "hecho": true,
+          "evidencia": "run_evaluation.py + pytest"
+        },
+        {
+          "etapa": "Concluir la evaluación",
+          "hecho": true,
+          "evidencia": "Test/reports/informe.json y veredictos por norma"
+        }
+      ],
+      "entradas": {
+        "iso25010": 95.8,
+        "iso25023": 100.0,
+        "iso25012": 93.3
+      },
+      "nota": "Esta norma evalúa el PROCESO de evaluación de calidad, implementado por este paquete Test."
+    },
+    "ISO_IEC_12207": {
+      "norma": "ISO/IEC 12207:2017 (procesos del ciclo de vida del software)",
+      "aplicable": true,
+      "score": 65.0,
+      "veredicto": "CUMPLE_PARCIALMENTE",
+      "criterios": [
+        {
+          "id": "6.4.3",
+          "nombre": "Implementación / construcción",
+          "estado": "cumple",
+          "evidencia": "backend FastAPI, frontend HTML/JS, Streamlit, n8n",
+          "hallazgo": ""
+        },
+        {
+          "id": "6.4.4",
+          "nombre": "Integración",
+          "estado": "cumple",
+          "evidencia": "Compose: postgres, ollama, backend, streamlit, n8n",
+          "hallazgo": ""
+        },
+        {
+          "id": "6.4.5",
+          "nombre": "Pruebas de calificación",
+          "estado": "parcial",
+          "evidencia": "Este paquete Test; no hay suite de integración E2E contra API viva",
+          "hallazgo": ""
+        },
+        {
+          "id": "6.4.8",
+          "nombre": "Instalación",
+          "estado": "cumple",
+          "evidencia": "iniciar.sh / compose prod / Caddy",
+          "hallazgo": ""
+        },
+        {
+          "id": "6.4.9",
+          "nombre": "Soporte a aceptación",
+          "estado": "parcial",
+          "evidencia": "Roles y paneles; sin acta de aceptación",
+          "hallazgo": ""
+        },
+        {
+          "id": "6.4.10",
+          "nombre": "Operación",
+          "estado": "cumple",
+          "evidencia": "Health, logs Docker, respaldos, SLA",
+          "hallazgo": ""
+        },
+        {
+          "id": "6.4.11",
+          "nombre": "Mantenimiento",
+          "estado": "parcial",
+          "evidencia": "Migraciones SQL; sin política de versiones",
+          "hallazgo": ""
+        },
+        {
+          "id": "6.4.12",
+          "nombre": "Retiro",
+          "estado": "no_cumple",
+          "evidencia": "No hay proceso de retiro/archivado del sistema",
+          "hallazgo": ""
+        },
+        {
+          "id": "6.3.1",
+          "nombre": "Gestión de proyectos",
+          "estado": "no_cumple",
+          "evidencia": "No hay plan 12207 en el repositorio",
+          "hallazgo": ""
+        },
+        {
+          "id": "6.3.7",
+          "nombre": "Medición",
+          "estado": "cumple",
+          "evidencia": "KPIs SLA, TME, carga de agentes",
+          "hallazgo": ""
+        }
+      ],
+      "nota": "El producto cubre construcción, integración y operación. Faltan procesos formales de proyecto y retiro."
+    },
+    "ISO_IEC_15504_33000": {
+      "norma": "ISO/IEC 33000 / ISO/IEC 15504 (evaluación de capacidad de procesos, SPICE)",
+      "aplicable": true,
+      "score": 31.4,
+      "veredicto": "NO_CUMPLE",
+      "escala": {
+        "0": "Incompleto",
+        "1": "Realizado",
+        "2": "Gestionado",
+        "3": "Establecido",
+        "4": "Predecible",
+        "5": "En optimización"
+      },
+      "procesos": [
+        {
+          "proceso": "Gestión de incidentes",
+          "nivel": 3,
+          "evidencia": "Flujo de estados, historial, roles, SLA"
+        },
+        {
+          "proceso": "Gestión de niveles de servicio",
+          "nivel": 2,
+          "evidencia": "SLA por prioridad y KPI de cumplimiento"
+        },
+        {
+          "proceso": "Gestión del conocimiento",
+          "nivel": 2,
+          "evidencia": "RAG pgvector sobre tickets resueltos"
+        },
+        {
+          "proceso": "Gestión de la seguridad",
+          "nivel": 2,
+          "evidencia": "Controles técnicos; no hay SGSI documentado"
+        },
+        {
+          "proceso": "Gestión de problemas",
+          "nivel": 0,
+          "evidencia": "No hay entidad problema/causa raíz"
+        },
+        {
+          "proceso": "Gestión de cambios",
+          "nivel": 0,
+          "evidencia": "No hay RFC/CAB"
+        },
+        {
+          "proceso": "Pruebas y validación",
+          "nivel": 2,
+          "evidencia": "Paquete Test con proceso 29119 y métricas 25023"
+        }
+      ],
+      "nivel_medio": 1.57,
+      "nota": "15504 está retirada/reemplazada por 33000. Niveles 4-5 requieren medición estadística de proceso, no presente."
+    },
+    "ISO_IEC_IEEE_29119": {
+      "norma": "ISO/IEC/IEEE 29119-1/2/3/4 (pruebas de software)",
+      "aplicable": true,
+      "score": 100.0,
+      "veredicto": "CUMPLE (este paquete Test implementa el proceso; no certifica el producto)",
+      "criterios": [
+        {
+          "id": "29119-1",
+          "nombre": "Conceptos y vocabulario",
+          "estado": "cumple",
+          "evidencia": "Base de pruebas=código+esquema; ítem=práctica ITIL/característica 25010",
+          "hallazgo": ""
+        },
+        {
+          "id": "29119-2",
+          "nombre": "Procesos de prueba",
+          "estado": "cumple",
+          "evidencia": "Planificar (run_evaluation), diseñar (tests/), ejecutar (pytest), reportar (reports/)",
+          "hallazgo": ""
+        },
+        {
+          "id": "29119-3",
+          "nombre": "Documentación de prueba",
+          "estado": "cumple",
+          "evidencia": "informe.json con especificación, resultados y veredictos",
+          "hallazgo": ""
+        },
+        {
+          "id": "29119-4",
+          "nombre": "Técnicas de prueba",
+          "estado": "cumple",
+          "evidencia": "Partición de equivalencia, valores límite, tabla de decisión, transición de estados",
+          "hallazgo": ""
+        }
+      ],
+      "tecnicas_aplicadas": [
+        "Partición de equivalencia: roles, estados, prioridades",
+        "Valores límite: password 8, adjuntos 5, 20 MB, mensaje 1000",
+        "Tabla de decisión: agente vs coordinador vs archivado",
+        "Transición de estados: ciclo de vida del ticket",
+        "Análisis estático: AST complejidad, SQL, evidencias"
+      ]
+    },
+    "ISO_IEC_27001": {
+      "norma": "ISO/IEC 27001:2022 (seguridad de la información)",
+      "aplicable": true,
+      "score": 66.7,
+      "veredicto": "CUMPLE_PARCIALMENTE",
+      "criterios": [
+        {
+          "id": "A.5.15",
+          "nombre": "Control de acceso",
+          "estado": "cumple",
+          "evidencia": "RBAC 4 roles + JWT",
+          "hallazgo": ""
+        },
+        {
+          "id": "A.5.17",
+          "nombre": "Información de autenticación",
+          "estado": "cumple",
+          "evidencia": "bcrypt, mínimo 8 caracteres",
+          "hallazgo": ""
+        },
+        {
+          "id": "A.8.5",
+          "nombre": "Autenticación segura",
+          "estado": "parcial",
+          "evidencia": "JWT HS256 24h (exposición larga) + rate limit",
+          "hallazgo": ""
+        },
+        {
+          "id": "A.8.2",
+          "nombre": "Privilegios",
+          "estado": "parcial",
+          "evidencia": "Socket Docker montado en el backend (privilegio excesivo)",
+          "hallazgo": ""
+        },
+        {
+          "id": "A.8.9",
+          "nombre": "Gestión de configuración",
+          "estado": "cumple",
+          "evidencia": "Secretos en .env, gitignore",
+          "hallazgo": ""
+        },
+        {
+          "id": "A.8.13",
+          "nombre": "Copia de seguridad",
+          "estado": "cumple",
+          "evidencia": "pg_dump/pg_restore desde panel",
+          "hallazgo": ""
+        },
+        {
+          "id": "A.8.16",
+          "nombre": "Supervisión de actividades",
+          "estado": "parcial",
+          "evidencia": "historial y logs; tabla log de auditoría poco usada en API",
+          "hallazgo": ""
+        },
+        {
+          "id": "A.8.19",
+          "nombre": "Instalación de software",
+          "estado": "cumple",
+          "evidencia": "Imágenes Compose, sin bind-mount en prod",
+          "hallazgo": ""
+        },
+        {
+          "id": "A.8.25",
+          "nombre": "Desarrollo seguro",
+          "estado": "parcial",
+          "evidencia": "Magic bytes, UUID, SQL params; falta SAST/DAST en CI",
+          "hallazgo": ""
+        },
+        {
+          "id": "A.8.26",
+          "nombre": "Requisitos de seguridad de aplicaciones",
+          "estado": "parcial",
+          "evidencia": "Hay controles; no hay declaración de requisitos 27001",
+          "hallazgo": ""
+        },
+        {
+          "id": "A.5.33",
+          "nombre": "Protección de registros",
+          "estado": "parcial",
+          "evidencia": "historial; sin WORM ni retención formal",
+          "hallazgo": ""
+        },
+        {
+          "id": "ISMS",
+          "nombre": "Sistema de gestión (cláusulas 4-10)",
+          "estado": "no_cumple",
+          "evidencia": "No hay alcance, política, riesgos, auditorías internas ni mejora del SGSI",
+          "hallazgo": ""
+        }
+      ],
+      "nota": "Hay controles técnicos del Anexo A. NO hay SGSI: no es certificable 27001 en el estado actual."
+    },
+    "ISO_IEC_20000_1": {
+      "norma": "ISO/IEC 20000-1:2018 (gestión de servicios de TI, alineada a ITIL)",
+      "aplicable": true,
+      "score": 43.8,
+      "veredicto": "NO_CUMPLE",
+      "criterios": [
+        {
+          "id": "8.2",
+          "nombre": "Relación y acuerdo (SLA)",
+          "estado": "cumple",
+          "evidencia": "SLA por prioridad y KPI",
+          "hallazgo": ""
+        },
+        {
+          "id": "8.3",
+          "nombre": "Suministro y demanda (capacidad)",
+          "estado": "parcial",
+          "evidencia": "Cupo diario y carga; sin plan de capacidad",
+          "hallazgo": ""
+        },
+        {
+          "id": "8.4",
+          "nombre": "Diseño y transición",
+          "estado": "no_cumple",
+          "evidencia": "Sin change/release formales",
+          "hallazgo": ""
+        },
+        {
+          "id": "8.5.1",
+          "nombre": "Incidentes y peticiones",
+          "estado": "cumple",
+          "evidencia": "Ciclo de vida + mesa por roles",
+          "hallazgo": ""
+        },
+        {
+          "id": "8.5.2",
+          "nombre": "Problemas",
+          "estado": "no_cumple",
+          "evidencia": "Sin registro de problemas",
+          "hallazgo": ""
+        },
+        {
+          "id": "8.6",
+          "nombre": "Servicio (continuidad/disponibilidad)",
+          "estado": "parcial",
+          "evidencia": "Backups y health; sin BIA/DR documentado",
+          "hallazgo": ""
+        },
+        {
+          "id": "8.7",
+          "nombre": "Seguridad de la información del servicio",
+          "estado": "parcial",
+          "evidencia": "Controles técnicos, sin SGSI",
+          "hallazgo": ""
+        },
+        {
+          "id": "4-10",
+          "nombre": "SMS (sistema de gestión del servicio)",
+          "estado": "no_cumple",
+          "evidencia": "No hay SMS documentado ni auditoría 20000",
+          "hallazgo": ""
+        }
+      ],
+      "nota": "El software SOPORTA un SMS (incidentes/SLA). La organización NO está certificada 20000-1.",
+      "relacion_itil": "CUMPLE ITIL como mesa de servicio (incidentes, peticiones, SLA, conocimiento, medición)"
+    },
+    "ISO_9000_9001_9004_19011": {
+      "ISO_9000": {
+        "norma": "ISO 9000:2015 (fundamentos y vocabulario)",
+        "aplicable": true,
+        "score": 100,
+        "veredicto": "CUMPLE (vocabulario usado en la evaluación)",
+        "nota": "Se aplican los principios: enfoque a procesos, evidencias, mejora."
+      },
+      "ISO_9001": {
+        "norma": "ISO 9001:2015 (sistemas de gestión de la calidad)",
+        "aplicable": false,
+        "score": 50.0,
+        "veredicto": "NO_APLICA_CERTIFICACION_DE_PRODUCTO",
+        "criterios": [
+          {
+            "id": "4",
+            "nombre": "Contexto / alcance QMS",
+            "estado": "no_aplica",
+            "evidencia": "ISO 9001 certifica organizaciones, no productos de software",
+            "hallazgo": ""
+          },
+          {
+            "id": "5",
+            "nombre": "Liderazgo y roles",
+            "estado": "parcial",
+            "evidencia": "Roles de aplicación (admin/coordinador); no es liderazgo de QMS",
+            "hallazgo": ""
+          },
+          {
+            "id": "6",
+            "nombre": "Planificación / riesgos",
+            "estado": "no_cumple",
+            "evidencia": "No hay registro de riesgos de calidad",
+            "hallazgo": ""
+          },
+          {
+            "id": "7",
+            "nombre": "Soporte (competencia, info documentada)",
+            "estado": "parcial",
+            "evidencia": "Historial y configuración; sin control de documentos 9001",
+            "hallazgo": ""
+          },
+          {
+            "id": "8",
+            "nombre": "Operación",
+            "estado": "parcial",
+            "evidencia": "Proceso de ticket es un proceso operativo informatizado",
+            "hallazgo": ""
+          },
+          {
+            "id": "9",
+            "nombre": "Evaluación del desempeño",
+            "estado": "cumple",
+            "evidencia": "KPIs SLA, TME, eficiencia de agentes",
+            "hallazgo": ""
+          },
+          {
+            "id": "10",
+            "nombre": "Mejora",
+            "estado": "parcial",
+            "evidencia": "Estadísticas e IA; sin no-conformidades/CAPA formales",
+            "hallazgo": ""
+          }
+        ],
+        "nota": "9001 no se 'cumple' por un helpdesk. El software puede APOYAR un SGC (trazabilidad, indicadores, roles). La organización propietaria no está evaluada."
+      },
+      "ISO_9004": {
+        "norma": "ISO 9004:2018 (calidad de una organización / mejora)",
+        "aplicable": false,
+        "score": null,
+        "veredicto": "NO_APLICA",
+        "nota": "Guía de madurez organizacional, no requisitos de producto."
+      },
+      "ISO_19011": {
+        "norma": "ISO 19011:2018 (auditoría de sistemas de gestión)",
+        "aplicable": true,
+        "score": 80,
+        "veredicto": "CUMPLE_COMO_METODO_DE_ESTA_EVALUACION",
+        "nota": "Esta evaluación sigue principios 19011: integridad, evidencia, imparcialidad (métricas de código, no declaración del fabricante).",
+        "principios": [
+          "Integridad: veredictos honestos (no se declara certificación falsa)",
+          "Presentación imparcial: hallazgos y no-aplicabilidades",
+          "Cuidado profesional: normas sectoriales marcadas N/A",
+          "Confidencialidad: no se leen secretos de .env",
+          "Independencia: análisis estático reproducible",
+          "Enfoque basado en evidencia: patrones y AST"
+        ]
+      }
+    },
+    "normas_sectoriales_no_aplicables": {
+      "ISO_13485": {
+        "norma": "ISO 13485:2016 (dispositivos médicos)",
+        "aplicable": false,
+        "score": null,
+        "veredicto": "NO_APLICA",
+        "motivo": "SHelpDesk no es un dispositivo médico ni software de uso médico (SaMD)."
+      },
+      "IATF_16949": {
+        "norma": "IATF 16949:2016 (automotriz)",
+        "aplicable": false,
+        "score": null,
+        "veredicto": "NO_APLICA",
+        "motivo": "No es un sistema de producción automotriz ni forma parte de la cadena de suministro IATF."
+      },
+      "AS9100": {
+        "norma": "AS9100 (aeroespacial)",
+        "aplicable": false,
+        "score": null,
+        "veredicto": "NO_APLICA",
+        "motivo": "No es un sistema de calidad aeroespacial/defensa."
+      },
+      "ISO_22000": {
+        "norma": "ISO 22000:2018 (inocuidad alimentaria)",
+        "aplicable": false,
+        "score": null,
+        "veredicto": "NO_APLICA",
+        "motivo": "No es un sistema alimentario ni de inocuidad de alimentos."
+      },
+      "ISO_17025": {
+        "norma": "ISO/IEC 17025:2017 (competencia de laboratorios de ensayo y calibración)",
+        "aplicable": false,
+        "score": null,
+        "veredicto": "NO_APLICA_AL_PRODUCTO",
+        "motivo": "El helpdesk no es un laboratorio. El paquete Test SÍ adopta principios 17025 (método validado, trazabilidad de evidencia, imparcialidad, informes), pero no acredita un laboratorio.",
+        "principios_adoptados_en_Test": [
+          "Impartialidad: métricas reproducibles sobre el código",
+          "Validez de métodos: AST, conteos, evidencia textual",
+          "Registros: Test/reports/informe.json",
+          "Aseguramiento de calidad de resultados: pytest como repetición"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,105 @@
+SHelpDesk — Evaluación ITIL / ISO (métricas reales de código)
+========================================================================
+Fecha UTC: 2026-09-09T00:34:05Z
+Raíz: /home/sebastian/Descargas/JSProjects/SHelpDeskMicrosoft
+
+1. Tamaño del producto
+   Archivos fuente: 66
+   LOC no vacías:   19843
+   Python LOC:      3878  funciones=149  CC media=5.24  CC máx=37
+   Tablas:          15  CHECK=7  FK=21  IDX=23
+   Endpoints:       43
+   SQL parametrizado: 0.9888
+
+2. ITIL 4
+   CUMPLE ITIL como mesa de servicio (incidentes, peticiones, SLA, conocimiento, medición)
+   Score núcleo mesa de servicio: 100.0%
+   Score complementarias:         100.0%
+   Score producto helpdesk:       100.0%
+   Score ITIL 4 completo:         60.9%  (no es implementación completa)
+   SHelpDesk está alineado con las prácticas ITIL de mesa de servicio. No es una implementación ITIL 4 completa ni un SGSI/SGSTI certificable: faltan Problemas, Cambios, CMDB, Activos, Catálogo, Proveedores y Riesgo.
+
+   Prácticas:
+   - [cumple          ] Gestión de incidentes  evidencia=completa
+   - [cumple          ] Gestión de peticiones de servicio  evidencia=completa
+   - [cumple          ] Mesa de servicio  evidencia=completa
+   - [cumple          ] Gestión de niveles de servicio (SLA)  evidencia=completa
+   - [cumple          ] Gestión del conocimiento  evidencia=completa
+   - [cumple          ] Medición e informes  evidencia=completa
+   - [cumple          ] Supervisión y gestión de eventos  evidencia=completa
+   - [cumple          ] Mejora continua  evidencia=completa
+   - [cumple          ] Gestión de la seguridad de la información  evidencia=completa
+   - [cumple          ] Gestión de implantación  evidencia=completa
+   - [cumple          ] Gestión de capacidad y rendimiento  evidencia=completa
+   - [cumple          ] Continuidad del servicio  evidencia=completa
+   - [cumple          ] Gestión de personal y talento (soporte)  evidencia=completa
+   - [cumple          ] Gestión de la disponibilidad  evidencia=completa
+   - [no_implementada ] Gestión de problemas  evidencia=ninguna
+   - [no_implementada ] Habilitación del cambio  evidencia=ninguna
+   - [no_implementada ] Gestión de la configuración (CMDB)  evidencia=ninguna
+   - [no_implementada ] Gestión de versiones  evidencia=ninguna
+   - [no_implementada ] Gestión de activos de TI  evidencia=ninguna
+   - [no_implementada ] Gestión del catálogo de servicios  evidencia=ninguna
+   - [no_implementada ] Gestión de proveedores  evidencia=ninguna
+   - [no_implementada ] Gestión financiera de servicios  evidencia=ninguna
+   - [no_implementada ] Gestión del riesgo  evidencia=ninguna
+
+3. Normas ISO
+   ISO/IEC 25000 (SQuaRE — guía de familia)
+      veredicto=CUMPLE  score=97.3  aplicable=True
+      Familia SQuaRE aplicada al producto HelpDesk. No es certificación.
+   ISO/IEC 25010:2023 (SQuaRE — modelo de calidad del producto)
+      veredicto=CUMPLE  score=95.8  aplicable=True
+      Modelo de calidad de producto de software. Aplicable y medible sobre el código real.
+   ISO/IEC 25012:2008 (calidad de datos)
+      veredicto=CUMPLE  score=93.3  aplicable=True
+   ISO/IEC 25023:2016 (métricas de calidad del producto)
+      veredicto=CUMPLE  score=100.0  aplicable=True
+      Valores medidos sobre el árbol de código, no estimados.
+   ISO/IEC 25040:2011 (proceso de evaluación SQuaRE)
+      veredicto=CUMPLE (proceso de evaluación, no el producto)  score=100.0  aplicable=True
+      Esta norma evalúa el PROCESO de evaluación de calidad, implementado por este paquete Test.
+   ISO/IEC 12207:2017 (procesos del ciclo de vida del software)
+      veredicto=CUMPLE_PARCIALMENTE  score=65.0  aplicable=True
+      El producto cubre construcción, integración y operación. Faltan procesos formales de proyecto y retiro.
+   ISO/IEC 33000 / ISO/IEC 15504 (evaluación de capacidad de procesos, SPICE)
+      veredicto=NO_CUMPLE  score=31.4  aplicable=True
+      15504 está retirada/reemplazada por 33000. Niveles 4-5 requieren medición estadística de proceso, no presente.
+   ISO/IEC/IEEE 29119-1/2/3/4 (pruebas de software)
+      veredicto=CUMPLE (este paquete Test implementa el proceso; no certifica el producto)  score=100.0  aplicable=True
+   ISO/IEC 27001:2022 (seguridad de la información)
+      veredicto=CUMPLE_PARCIALMENTE  score=66.7  aplicable=True
+      Hay controles técnicos del Anexo A. NO hay SGSI: no es certificable 27001 en el estado actual.
+   ISO/IEC 20000-1:2018 (gestión de servicios de TI, alineada a ITIL)
+      veredicto=NO_CUMPLE  score=43.8  aplicable=True
+      El software SOPORTA un SMS (incidentes/SLA). La organización NO está certificada 20000-1.
+   Familia ISO 9000:
+      ISO 9000:2015 (fundamentos y vocabulario): CUMPLE (vocabulario usado en la evaluación)
+         Se aplican los principios: enfoque a procesos, evidencias, mejora.
+      ISO 9001:2015 (sistemas de gestión de la calidad): NO_APLICA_CERTIFICACION_DE_PRODUCTO
+         9001 no se 'cumple' por un helpdesk. El software puede APOYAR un SGC (trazabilidad, indicadores, roles). La organización propietaria no está evaluada.
+      ISO 9004:2018 (calidad de una organización / mejora): NO_APLICA
+         Guía de madurez organizacional, no requisitos de producto.
+      ISO 19011:2018 (auditoría de sistemas de gestión): CUMPLE_COMO_METODO_DE_ESTA_EVALUACION
+         Esta evaluación sigue principios 19011: integridad, evidencia, imparcialidad (métricas de código, no declaración del fabricante).
+
+4. Normas sectoriales (no aplicables al producto)
+   ISO 13485:2016 (dispositivos médicos): NO_APLICA
+      SHelpDesk no es un dispositivo médico ni software de uso médico (SaMD).
+   IATF 16949:2016 (automotriz): NO_APLICA
+      No es un sistema de producción automotriz ni forma parte de la cadena de suministro IATF.
+   AS9100 (aeroespacial): NO_APLICA
+      No es un sistema de calidad aeroespacial/defensa.
+   ISO 22000:2018 (inocuidad alimentaria): NO_APLICA
+      No es un sistema alimentario ni de inocuidad de alimentos.
+   ISO/IEC 17025:2017 (competencia de laboratorios de ensayo y calibración): NO_APLICA_AL_PRODUCTO
+      El helpdesk no es un laboratorio. El paquete Test SÍ adopta principios 17025 (método validado, trazabilidad de evidencia, imparcialidad, informes), pero no acredita un laboratorio.
+
+5. Conclusión
+   SHelpDesk SÍ cumple el perfil ITIL de mesa de servicio (incidentes,
+   peticiones, SLA, conocimiento, medición). NO cumple ITIL 4 completo
+   ni es certificable ISO 9001 / 20000-1 / 27001. Las normas 13485,
+   IATF 16949, AS9100, 22000 y 17025 NO APLICAN a este software.
+   La calidad de producto (ISO/IEC 25010/25012/25023) se mide en este
+   informe con datos del código, no con declaraciones.
+
