@@ -1,0 +1,6 @@
+escenario,url,concurrencia,peticiones,ok,fallos,tasa_fallo_pct,duracion_s,rps,p50_ms,p95_ms,p99_ms,max_ms,media_ms,errores_red
+A_tunel_c4,https://api.sistemahelpdesk.online/api/health,4,60,60,0,0.0,5.48,10.95,342.0,471.0,546.6,550.7,354.7,0
+B_tunel_c10,https://api.sistemahelpdesk.online/api/health,10,100,100,0,0.0,4.11,24.36,365.6,524.5,547.4,566.6,395.2,0
+C_local_c10,http://127.0.0.1:8000/api/health,10,100,100,0,0.0,1.82,55.08,174.5,209.0,290.4,299.4,178.9,0
+D_frontend_c10,https://www.sistemahelpdesk.online/login.html,10,100,100,0,0.0,20.48,4.88,304.2,4800.4,5755.1,15283.1,1227.4,0
+E_tunel_c20,https://api.sistemahelpdesk.online/api/health,20,100,100,0,0.0,3.22,31.08,659.1,820.6,828.3,830.4,624.9,0

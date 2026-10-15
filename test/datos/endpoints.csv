@@ -1,0 +1,57 @@
+metodo,ruta,grupo,resumen,requiere_auth,tags
+GET,/,(raiz),Root,no/depende,
+GET,/api/adjuntos-archivos/{archivo},adjuntos-archivos,Descargar Archivo,sí,Adjuntos
+POST,/api/auth/login,auth,Login,no/depende,Authentication
+POST,/api/auth/logout,auth,Logout,sí,Authentication
+GET,/api/auth/me,auth,Get Current User,sí,Authentication
+POST,/api/auth/mfa/disable,auth,Mfa Disable,sí,Authentication
+POST,/api/auth/mfa/enable,auth,Mfa Enable,sí,Authentication
+POST,/api/auth/mfa/setup,auth,Mfa Setup,sí,Authentication
+POST,/api/auth/mfa/verify,auth,Mfa Verify,no/depende,Authentication
+POST,/api/auth/register,auth,Register User,no/depende,Authentication
+POST,/api/chat,chat,Chat With Ai,sí,Chat IA
+GET,/api/chat/health,chat,Chat Health,no/depende,Chat IA
+GET,/api/chat-global/mensajes,chat-global,Listar Mensajes,sí,Chat Global
+POST,/api/chat-global/mensajes,chat-global,Enviar Mensaje,sí,Chat Global
+GET,/api/chat-privado/contactos,chat-privado,Listar Contactos,sí,Chat Privado
+GET,/api/chat-privado/conversacion/{otro_id},chat-privado,Ver Conversacion,sí,Chat Privado
+POST,/api/chat-privado/conversacion/{otro_id},chat-privado,Enviar Mensaje,sí,Chat Privado
+GET,/api/chat-privado/no-leidos,chat-privado,Contar No Leidos,sí,Chat Privado
+GET,/api/coordinator/agentes,coordinator,Get Agentes,sí,Coordinador
+POST,/api/coordinator/agentes/{usuario_id}/permisos,coordinator,Set Permisos,sí,Coordinador
+GET,/api/coordinator/asignacion,coordinator,Get Asignacion,sí,Coordinador
+POST,/api/coordinator/asignar/{ticket_id},coordinator,Asignar Ticket,sí,Coordinador
+GET,/api/coordinator/bd/tablas,coordinator,Tablas Bd,sí,Coordinador
+GET,/api/coordinator/estadisticas,coordinator,Get Estadisticas,sí,Coordinador
+GET,/api/coordinator/ia,coordinator,Estado Ia,sí,Coordinador
+POST,/api/coordinator/ia/modelo,coordinator,Set Modelo Ia,sí,Coordinador
+POST,/api/coordinator/ia/params,coordinator,Set Params Ia,sí,Coordinador
+POST,/api/coordinator/ia/probar,coordinator,Probar Modelo Ia,sí,Coordinador
+POST,/api/coordinator/ia/pull,coordinator,Pull Modelo Ia,sí,Coordinador
+GET,/api/coordinator/logs/{contenedor},coordinator,Logs Contenedor,sí,Coordinador
+GET,/api/coordinator/n8n/workflows,coordinator,Listar Workflows,sí,Coordinador
+POST,/api/coordinator/n8n/workflows/{workflow_id}/toggle,coordinator,Toggle Workflow,sí,Coordinador
+GET,/api/coordinator/rag,coordinator,Search Rag,sí,Coordinador
+POST,/api/coordinator/rag/indexar,coordinator,Rag Indexar,sí,Coordinador
+GET,/api/coordinator/reportes,coordinator,Get Reportes,sí,Coordinador
+GET,/api/coordinator/respaldos,coordinator,Listar Respaldos,sí,Coordinador
+POST,/api/coordinator/respaldos,coordinator,Crear Respaldo,sí,Coordinador
+DELETE,/api/coordinator/respaldos/{nombre},coordinator,Eliminar Respaldo,sí,Coordinador
+GET,/api/coordinator/respaldos/{nombre}/descargar,coordinator,Descargar Respaldo,sí,Coordinador
+POST,/api/coordinator/respaldos/{nombre}/restaurar,coordinator,Restaurar Respaldo,sí,Coordinador
+GET,/api/coordinator/respaldos/{nombre}/verificar,coordinator,Verificar Respaldo,sí,Coordinador
+GET,/api/coordinator/sla,coordinator,Get Sla,sí,Coordinador
+POST,/api/coordinator/sla,coordinator,Set Sla,sí,Coordinador
+GET,/api/coordinator/usuarios,coordinator,Listar Usuarios,sí,Coordinador
+POST,/api/coordinator/usuarios,coordinator,Crear Usuario,sí,Coordinador
+DELETE,/api/coordinator/usuarios/{usuario_id},coordinator,Eliminar Usuario,sí,Coordinador
+PATCH,/api/coordinator/usuarios/{usuario_id},coordinator,Actualizar Usuario,sí,Coordinador
+PATCH,/api/coordinator/usuarios/{usuario_id}/rol,coordinator,Cambiar Rol,sí,Coordinador
+GET,/api/health,health,Health Check,no/depende,
+GET,/api/tickets,tickets,Get Tickets,sí,Tickets
+POST,/api/tickets,tickets,Create Ticket,sí,Tickets
+GET,/api/tickets/{ticket_id},tickets,Get Ticket Detail,sí,Tickets
+PATCH,/api/tickets/{ticket_id},tickets,Update Ticket,sí,Tickets
+GET,/api/tickets/{ticket_id}/adjuntos,tickets,Listar Adjuntos,sí,Adjuntos
+POST,/api/tickets/{ticket_id}/adjuntos,tickets,Subir Adjuntos,sí,Adjuntos
+POST,/api/tickets/{ticket_id}/ai-analysis,tickets,Receive Ai Analysis,no/depende,Tickets
