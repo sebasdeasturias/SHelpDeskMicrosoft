@@ -1,0 +1,354 @@
+{
+  "carpetas": {
+    ".freebuff": {
+      "ficheros": 1,
+      "lineas": 1,
+      "por_extension": {
+        "(sin)": {
+          "extension": "(sin)",
+          "idioma": "(sin)",
+          "ficheros": 1,
+          "lineas": 1
+        }
+      }
+    },
+    ".github": {
+      "ficheros": 2,
+      "lineas": 43,
+      "por_extension": {
+        ".yml": {
+          "extension": ".yml",
+          "idioma": "YAML",
+          "ficheros": 2,
+          "lineas": 43
+        }
+      }
+    },
+    ".ruff_cache": {
+      "ficheros": 5,
+      "lineas": 17,
+      "por_extension": {
+        "(sin)": {
+          "extension": "(sin)",
+          "idioma": "(sin)",
+          "ficheros": 4,
+          "lineas": 16
+        },
+        ".tag": {
+          "extension": ".tag",
+          "idioma": ".tag",
+          "ficheros": 1,
+          "lineas": 1
+        }
+      }
+    },
+    "AIEngine": {
+      "ficheros": 3,
+      "lineas": 442,
+      "por_extension": {
+        ".md": {
+          "extension": ".md",
+          "idioma": "Markdown",
+          "ficheros": 1,
+          "lineas": 25
+        },
+        ".json": {
+          "extension": ".json",
+          "idioma": "JSON",
+          "ficheros": 2,
+          "lineas": 417
+        }
+      }
+    },
+    "backend": {
+      "ficheros": 17,
+      "lineas": 4046,
+      "por_extension": {
+        "(sin)": {
+          "extension": "(sin)",
+          "idioma": "(sin)",
+          "ficheros": 2,
+          "lineas": 30
+        },
+        ".py": {
+          "extension": ".py",
+          "idioma": "Python",
+          "ficheros": 13,
+          "lineas": 3915
+        },
+        ".md": {
+          "extension": ".md",
+          "idioma": "Markdown",
+          "ficheros": 1,
+          "lineas": 53
+        },
+        ".txt": {
+          "extension": ".txt",
+          "idioma": ".txt",
+          "ficheros": 1,
+          "lineas": 48
+        }
+      }
+    },
+    "database": {
+      "ficheros": 14,
+      "lineas": 1111,
+      "por_extension": {
+        ".md": {
+          "extension": ".md",
+          "idioma": "Markdown",
+          "ficheros": 1,
+          "lineas": 31
+        },
+        ".sql": {
+          "extension": ".sql",
+          "idioma": "SQL",
+          "ficheros": 13,
+          "lineas": 1080
+        }
+      }
+    },
+    "docker": {
+      "ficheros": 5,
+      "lineas": 771,
+      "por_extension": {
+        ".md": {
+          "extension": ".md",
+          "idioma": "Markdown",
+          "ficheros": 1,
+          "lineas": 39
+        },
+        ".prod": {
+          "extension": ".prod",
+          "idioma": ".prod",
+          "ficheros": 1,
+          "lineas": 33
+        },
+        ".yml": {
+          "extension": ".yml",
+          "idioma": "YAML",
+          "ficheros": 3,
+          "lineas": 699
+        }
+      }
+    },
+    "docs": {
+      "ficheros": 1,
+      "lineas": 225,
+      "por_extension": {
+        ".md": {
+          "extension": ".md",
+          "idioma": "Markdown",
+          "ficheros": 1,
+          "lineas": 225
+        }
+      }
+    },
+    "frontend": {
+      "ficheros": 33,
+      "lineas": 32303,
+      "por_extension": {
+        ".md": {
+          "extension": ".md",
+          "idioma": "Markdown",
+          "ficheros": 1,
+          "lineas": 44
+        },
+        ".html": {
+          "extension": ".html",
+          "idioma": "HTML",
+          "ficheros": 8,
+          "lineas": 1994
+        },
+        ".png": {
+          "extension": ".png",
+          "idioma": ".png",
+          "ficheros": 2,
+          "lineas": 17298
+        },
+        ".json": {
+          "extension": ".json",
+          "idioma": "JSON",
+          "ficheros": 1,
+          "lineas": 31
+        },
+        ".js": {
+          "extension": ".js",
+          "idioma": "JavaScript",
+          "ficheros": 13,
+          "lineas": 5784
+        },
+        ".css": {
+          "extension": ".css",
+          "idioma": "CSS",
+          "ficheros": 8,
+          "lineas": 7152
+        }
+      }
+    },
+    "marketing": {
+      "ficheros": 4,
+      "lineas": 129,
+      "por_extension": {
+        ".md": {
+          "extension": ".md",
+          "idioma": "Markdown",
+          "ficheros": 3,
+          "lineas": 127
+        },
+        ".csv": {
+          "extension": ".csv",
+          "idioma": ".csv",
+          "ficheros": 1,
+          "lineas": 2
+        }
+      }
+    },
+    "streamlit_app": {
+      "ficheros": 12,
+      "lineas": 18986,
+      "por_extension": {
+        "(sin)": {
+          "extension": "(sin)",
+          "idioma": "(sin)",
+          "ficheros": 2,
+          "lineas": 29
+        },
+        ".md": {
+          "extension": ".md",
+          "idioma": "Markdown",
+          "ficheros": 1,
+          "lineas": 33
+        },
+        ".py": {
+          "extension": ".py",
+          "idioma": "Python",
+          "ficheros": 8,
+          "lineas": 1854
+        },
+        ".png": {
+          "extension": ".png",
+          "idioma": ".png",
+          "ficheros": 1,
+          "lineas": 17070
+        }
+      }
+    }
+  },
+  "backend": {
+    "ficheros_py": 13,
+    "lineas_py": 3915,
+    "rutas_declaradas": 55,
+    "ramas_totales": 339,
+    "archivos": [
+      {
+        "lineas": 1287,
+        "no_vacias": 1140,
+        "ramas": 145,
+        "rutas_deco": 30,
+        "archivo": "coordinator.py"
+      },
+      {
+        "lineas": 582,
+        "no_vacias": 510,
+        "ramas": 50,
+        "rutas_deco": 5,
+        "archivo": "tickets.py"
+      },
+      {
+        "lineas": 522,
+        "no_vacias": 452,
+        "ramas": 40,
+        "rutas_deco": 8,
+        "archivo": "auth.py"
+      },
+      {
+        "lineas": 439,
+        "no_vacias": 379,
+        "ramas": 35,
+        "rutas_deco": 2,
+        "archivo": "chat_ai.py"
+      },
+      {
+        "lineas": 277,
+        "no_vacias": 222,
+        "ramas": 27,
+        "rutas_deco": 2,
+        "archivo": "adjuntos.py"
+      },
+      {
+        "lineas": 231,
+        "no_vacias": 193,
+        "ramas": 10,
+        "rutas_deco": 4,
+        "archivo": "chat_privado.py"
+      },
+      {
+        "lineas": 154,
+        "no_vacias": 122,
+        "ramas": 7,
+        "rutas_deco": 2,
+        "archivo": "chat_global.py"
+      },
+      {
+        "lineas": 112,
+        "no_vacias": 90,
+        "ramas": 8,
+        "rutas_deco": 2,
+        "archivo": "main.py"
+      },
+      {
+        "lineas": 101,
+        "no_vacias": 81,
+        "ramas": 10,
+        "rutas_deco": 0,
+        "archivo": "ratelimit.py"
+      },
+      {
+        "lineas": 64,
+        "no_vacias": 48,
+        "ramas": 1,
+        "rutas_deco": 0,
+        "archivo": "embeddings.py"
+      },
+      {
+        "lineas": 58,
+        "no_vacias": 42,
+        "ramas": 2,
+        "rutas_deco": 0,
+        "archivo": "docker_admin.py"
+      },
+      {
+        "lineas": 45,
+        "no_vacias": 30,
+        "ramas": 2,
+        "rutas_deco": 0,
+        "archivo": "database.py"
+      },
+      {
+        "lineas": 43,
+        "no_vacias": 31,
+        "ramas": 2,
+        "rutas_deco": 0,
+        "archivo": "audit.py"
+      }
+    ]
+  },
+  "frontend": {
+    "html": 8,
+    "js": 13,
+    "css": 8,
+    "lineas": 14930,
+    "bytes": 591921,
+    "paginas": [
+      "dashboard-admin.html",
+      "dashboard-agente.html",
+      "dashboard-coordinador.html",
+      "dashboard-solicitante.html",
+      "formulario-ticket.html",
+      "index.html",
+      "login.html",
+      "register.html"
+    ]
+  }
+}

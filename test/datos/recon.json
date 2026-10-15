@@ -1,0 +1,1167 @@
+{
+  "generado_utc": "2026-10-15T02:57:17Z",
+  "objetivos": {
+    "frontend": "https://www.sistemahelpdesk.online",
+    "apex": "https://sistemahelpdesk.online",
+    "api": "https://api.sistemahelpdesk.online"
+  },
+  "cabeceras": [
+    {
+      "url": "https://sistemahelpdesk.online/",
+      "metodo": "GET",
+      "status": 200,
+      "cabeceras": {
+        "server": "Vercel",
+        "strict-transport-security": "max-age=31536000; includeSubDomains",
+        "content-security-policy": "default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; img-src 'self' data:; font-src 'self' https://cdnjs.cloudflare.com data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
+        "x-frame-options": "DENY",
+        "x-content-type-options": "nosniff",
+        "referrer-policy": "no-referrer",
+        "permissions-policy": "geolocation=(), microphone=(), camera=(), payment=(), usb=()",
+        "age": "8082",
+        "x-vercel-cache": "HIT",
+        "cache-control": "public, max-age=0, must-revalidate",
+        "access-control-allow-origin": "*",
+        "content-length": "456",
+        "_all": [
+          "accept-ranges",
+          "access-control-allow-origin",
+          "age",
+          "cache-control",
+          "connection",
+          "content-disposition",
+          "content-length",
+          "content-security-policy",
+          "content-type",
+          "date",
+          "etag",
+          "last-modified",
+          "permissions-policy",
+          "referrer-policy",
+          "server",
+          "strict-transport-security",
+          "x-content-type-options",
+          "x-frame-options",
+          "x-vercel-cache",
+          "x-vercel-id"
+        ]
+      },
+      "cuerpo": "<!DOCTYPE html>\n<html lang=\"es\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title> Iniciar sesión - HelpDesk IT</title>\n    <meta http-equiv=\"refresh\" content=\"0; url=login.html\">\n    <link rel=\"canonical\" href=\"login.html\">\n    <link rel=\"icon\" type=\"image/png\" href=\"favicon.png\">\n</head>\n<body>\n    <p>Redirigiendo a <a href=\"login.html\">iniciar sesión</a>…</p>\n</body>\n</html>\n",
+      "bytes": 456,
+      "ms": 4173.05,
+      "error": null
+    },
+    {
+      "url": "https://www.sistemahelpdesk.online/",
+      "metodo": "GET",
+      "status": 200,
+      "cabeceras": {
+        "server": "Vercel",
+        "strict-transport-security": "max-age=31536000; includeSubDomains",
+        "content-security-policy": "default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; img-src 'self' data:; font-src 'self' https://cdnjs.cloudflare.com data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
+        "x-frame-options": "DENY",
+        "x-content-type-options": "nosniff",
+        "referrer-policy": "no-referrer",
+        "permissions-policy": "geolocation=(), microphone=(), camera=(), payment=(), usb=()",
+        "age": "8085",
+        "x-vercel-cache": "HIT",
+        "cache-control": "public, max-age=0, must-revalidate",
+        "access-control-allow-origin": "*",
+        "content-length": "456",
+        "_all": [
+          "accept-ranges",
+          "access-control-allow-origin",
+          "age",
+          "cache-control",
+          "connection",
+          "content-disposition",
+          "content-length",
+          "content-security-policy",
+          "content-type",
+          "date",
+          "etag",
+          "last-modified",
+          "permissions-policy",
+          "referrer-policy",
+          "server",
+          "strict-transport-security",
+          "x-content-type-options",
+          "x-frame-options",
+          "x-vercel-cache",
+          "x-vercel-id"
+        ]
+      },
+      "cuerpo": "<!DOCTYPE html>\n<html lang=\"es\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title> Iniciar sesión - HelpDesk IT</title>\n    <meta http-equiv=\"refresh\" content=\"0; url=login.html\">\n    <link rel=\"canonical\" href=\"login.html\">\n    <link rel=\"icon\" type=\"image/png\" href=\"favicon.png\">\n</head>\n<body>\n    <p>Redirigiendo a <a href=\"login.html\">iniciar sesión</a>…</p>\n</body>\n</html>\n",
+      "bytes": 456,
+      "ms": 2734.86,
+      "error": null
+    },
+    {
+      "url": "https://www.sistemahelpdesk.online/login.html",
+      "metodo": "GET",
+      "status": 200,
+      "cabeceras": {
+        "server": "Vercel",
+        "strict-transport-security": "max-age=31536000; includeSubDomains",
+        "content-security-policy": "default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; img-src 'self' data:; font-src 'self' https://cdnjs.cloudflare.com data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
+        "x-frame-options": "DENY",
+        "x-content-type-options": "nosniff",
+        "referrer-policy": "no-referrer",
+        "permissions-policy": "geolocation=(), microphone=(), camera=(), payment=(), usb=()",
+        "age": "8085",
+        "x-vercel-cache": "HIT",
+        "cache-control": "public, max-age=0, must-revalidate",
+        "access-control-allow-origin": "*",
+        "content-length": "5846",
+        "_all": [
+          "accept-ranges",
+          "access-control-allow-origin",
+          "age",
+          "cache-control",
+          "connection",
+          "content-disposition",
+          "content-length",
+          "content-security-policy",
+          "content-type",
+          "date",
+          "etag",
+          "last-modified",
+          "permissions-policy",
+          "referrer-policy",
+          "server",
+          "strict-transport-security",
+          "x-content-type-options",
+          "x-frame-options",
+          "x-vercel-cache",
+          "x-vercel-id"
+        ]
+      },
+      "cuerpo": "<!DOCTYPE html>\n<html lang=\"es\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Inicio de Sesión - HelpDesk IT</title>\n    <link rel=\"stylesheet\" href=\"styles/login.css\">\n    <link rel=\"stylesheet\" href=\"styles/badges.css\">\n    <link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css\">\n    <link rel=\"icon\" type=\"image/png\" href=\"favicon.png\">\n</head>\n<body>\n    <!-- Switch de Modo Diurno/Nocturno -->\n    <div class=\"theme-switch-wrapper\">\n        <label class=\"theme-switch\" for=\"checkbox\">\n            <input type=\"checkbox\" id=\"checkbox\" />\n            <div class=\"slider round\">\n                <i class=\"fas fa-sun sun-icon\"></i>\n                <i class=\"fas fa-moon moon-icon\"></i>\n            </div>\n        </label>\n        <span class=\"theme-label\">Modo Nocturno</span>\n    </div>\n\n    <div class=\"background\">\n        <div class=\"grid-overlay\"></div>\n        <div class=\"stars-overlay\"></div>\n        \n        <div class=\"ui-container\">\n            <!-- Badges Flotantes Izquierda -->\n            <div class=\"badges-col\">\n                <div class=\"badge green\" data-status=\"sistema\"\n                     data-desc=\"HelpDesk es la mesa de ayuda TI: registra incidentes, los clasifica con IA local, los asigna al equipo y hace seguimiento. Aquí se verifica en vivo que el backend, la base de datos y la IA respondan.\"\n                     data-desc-offline=\"No se pud",
+      "bytes": 5846,
+      "ms": 279.23,
+      "error": null
+    },
+    {
+      "url": "https://www.sistemahelpdesk.online/styles/login.css",
+      "metodo": "GET",
+      "status": 200,
+      "cabeceras": {
+        "server": "Vercel",
+        "strict-transport-security": "max-age=31536000; includeSubDomains",
+        "content-security-policy": "default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; img-src 'self' data:; font-src 'self' https://cdnjs.cloudflare.com data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
+        "x-frame-options": "DENY",
+        "x-content-type-options": "nosniff",
+        "referrer-policy": "no-referrer",
+        "permissions-policy": "geolocation=(), microphone=(), camera=(), payment=(), usb=()",
+        "age": "8084",
+        "x-vercel-cache": "HIT",
+        "cache-control": "public, max-age=0, must-revalidate",
+        "access-control-allow-origin": "*",
+        "content-length": "18850",
+        "_all": [
+          "accept-ranges",
+          "access-control-allow-origin",
+          "age",
+          "cache-control",
+          "connection",
+          "content-disposition",
+          "content-length",
+          "content-security-policy",
+          "content-type",
+          "date",
+          "etag",
+          "last-modified",
+          "permissions-policy",
+          "referrer-policy",
+          "server",
+          "strict-transport-security",
+          "x-content-type-options",
+          "x-frame-options",
+          "x-vercel-cache",
+          "x-vercel-id"
+        ]
+      },
+      "cuerpo": ":root {\n    /* Variables Modo Diurno */\n    --glass-bg: rgba(255, 255, 255, 0.25);\n    --glass-border: rgba(255, 255, 255, 0.6);\n    --btn-top: #8de3df;\n    --btn-bottom: #1a7495;\n    --text-glow: 0 2px 4px rgba(0,0,0,0.4), 0 0 10px rgba(255,255,255,0.6);\n    \n    /* Fondo Diurno */\n    --sky-top: #10599d;\n    --sky-mid: #3ca0d4;\n    --sky-low: #87ceeb;\n    --grass: #429d29;\n    --grid-color: rgba(255, 255, 255, 0.15);\n    \n    /* Textos */\n    --text-dark: #11425e;\n    --text-placeholder: #3b7491;\n    --icon-color: #4a8cae;\n    --footer-text: #0b3147;\n    --link-color: #004d6b;\n    --link-hover: #0076a3;\n}\n\n/* Variables Modo Nocturno */\nbody.night-mode {\n    --glass-bg: rgba(30, 30, 50, 0.4);\n    --glass-border: rgba(100, 100, 150, 0.4);\n    --btn-top: #4a6fa5;\n    --btn-bottom: #1a2a4a;\n    --text-glow: 0 2px 4px rgba(0,0,0,0.8), 0 0 10px rgba(200,200,255,0.3);\n    \n    /* Fondo Nocturno */\n    --sky-top: #000000;\n    --sky-mid: #0a0a2e;\n    --sky-low: #1a1a3e;\n    --grass: #0d2818;\n    --grid-color: rgba(100, 100, 200, 0.1);\n    \n    /* Textos */\n    --text-dark: #e0e0ff;\n    --text-placeholder: #8888aa;\n    --icon-color: #a0a0d0;\n    --footer-text: #c0c0e0;\n    --link-color: #88aaff;\n    --link-hover: #aaccff;\n}\n\nbody, html {\n    margin: 0;\n    padding: 0;\n    height: 100%;\n    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\n    overflow: hidden;\n    transition: background 0.5s ease;\n}\n\n/* Fondo de cielo, césped y cuadrícula */\n.background {\n    position: re",
+      "bytes": 18850,
+      "ms": 1551.04,
+      "error": null
+    },
+    {
+      "url": "https://www.sistemahelpdesk.online/js/config.js",
+      "metodo": "GET",
+      "status": 200,
+      "cabeceras": {
+        "server": "Vercel",
+        "strict-transport-security": "max-age=31536000; includeSubDomains",
+        "content-security-policy": "default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; img-src 'self' data:; font-src 'self' https://cdnjs.cloudflare.com data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
+        "x-frame-options": "DENY",
+        "x-content-type-options": "nosniff",
+        "referrer-policy": "no-referrer",
+        "permissions-policy": "geolocation=(), microphone=(), camera=(), payment=(), usb=()",
+        "age": "8085",
+        "x-vercel-cache": "HIT",
+        "cache-control": "no-cache",
+        "access-control-allow-origin": "*",
+        "content-length": "2621",
+        "_all": [
+          "accept-ranges",
+          "access-control-allow-origin",
+          "age",
+          "cache-control",
+          "connection",
+          "content-disposition",
+          "content-length",
+          "content-security-policy",
+          "content-type",
+          "date",
+          "etag",
+          "last-modified",
+          "permissions-policy",
+          "referrer-policy",
+          "server",
+          "strict-transport-security",
+          "x-content-type-options",
+          "x-frame-options",
+          "x-vercel-cache",
+          "x-vercel-id"
+        ]
+      },
+      "cuerpo": "(function () {\n    'use strict';\n    var override = (typeof window.APP_API_BASE_URL !== 'undefined') ? window.APP_API_BASE_URL : '';\n    var base;\n    if (override) {\n        base = override;\n    } else if (window.location.protocol === 'file:') {\n        base = 'http://localhost:8000/api';\n    } else {\n        base = window.location.origin + '/api';\n    }\n    window.API_BASE_URL = base.replace(/\\/+$/, '');\n})();\n\n// Reintentos automáticos ante fallos transitorios (5xx / red).\n\n(function () {\n    'use strict';\n    if (typeof window === 'undefined' || !window.fetch || window.__fetchRetry) return;\n    window.__fetchRetry = true;\n    var origFetch = window.fetch.bind(window);\n    var MAX = 8;\n    window.fetch = function (input, init) {\n        var intento = 0;\n        function delay(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }\n        function exec() {\n            intento++;\n            return origFetch(input, init).then(function (res) {\n                if (res.status >= 500 && intento < MAX) {\n                    return delay(Math.min(250 * intento, 800)).then(exec);\n                }\n                return res;\n            }).catch(function (err) {\n                if (intento < MAX) {\n                    return delay(Math.min(250 * intento, 800)).then(exec);\n                }\n                throw err;\n            });\n        }\n        return exec();\n    };\n})();\n\n\n// ████ █████ ████   ███   ████  ███   ████ █████ ████  █████  ███    \n//█ ░░░░█░░░░░█░░░█ █ ░",
+      "bytes": 2621,
+      "ms": 472.4,
+      "error": null
+    },
+    {
+      "url": "https://api.sistemahelpdesk.online/api/health",
+      "metodo": "GET",
+      "status": 200,
+      "cabeceras": {
+        "server": "cloudflare",
+        "cf-cache-status": "DYNAMIC",
+        "content-length": "72",
+        "_all": [
+          "alt-svc",
+          "cf-cache-status",
+          "cf-ray",
+          "connection",
+          "content-length",
+          "content-type",
+          "date",
+          "nel",
+          "report-to",
+          "server",
+          "server-timing"
+        ]
+      },
+      "cuerpo": "{\"status\":\"healthy\",\"checks\":{\"database\":\"ok\",\"ollama\":\"ok\",\"n8n\":\"ok\"}}",
+      "bytes": 72,
+      "ms": 374.5,
+      "error": null
+    },
+    {
+      "url": "https://api.sistemahelpdesk.online/",
+      "metodo": "GET",
+      "status": 200,
+      "cabeceras": {
+        "server": "cloudflare",
+        "cf-cache-status": "DYNAMIC",
+        "content-length": "65",
+        "_all": [
+          "alt-svc",
+          "cf-cache-status",
+          "cf-ray",
+          "connection",
+          "content-length",
+          "content-type",
+          "date",
+          "nel",
+          "report-to",
+          "server",
+          "server-timing"
+        ]
+      },
+      "cuerpo": "{\"message\":\"HelpDesk API is running successfully!\",\"status\":\"ok\"}",
+      "bytes": 65,
+      "ms": 369.54,
+      "error": null
+    },
+    {
+      "url": "https://api.sistemahelpdesk.online/openapi.json",
+      "metodo": "GET",
+      "status": 200,
+      "cabeceras": {
+        "server": "cloudflare",
+        "cf-cache-status": "DYNAMIC",
+        "content-length": "34087",
+        "_all": [
+          "alt-svc",
+          "cf-cache-status",
+          "cf-ray",
+          "connection",
+          "content-length",
+          "content-type",
+          "date",
+          "nel",
+          "report-to",
+          "server",
+          "server-timing"
+        ]
+      },
+      "cuerpo": "{\"openapi\":\"3.1.0\",\"info\":{\"title\":\"HelpDesk API\",\"description\":\"API para el Sistema HelpDesk con IA y RAG\",\"version\":\"1.0.0\"},\"paths\":{\"/api/auth/login\":{\"post\":{\"tags\":[\"Authentication\"],\"summary\":\"Login\",\"operationId\":\"login_api_auth_login_post\",\"requestBody\":{\"content\":{\"application/json\":{\"schema\":{\"$ref\":\"#/components/schemas/UserLogin\"}}},\"required\":true},\"responses\":{\"200\":{\"description\":\"Successful Response\",\"content\":{\"application/json\":{\"schema\":{}}}},\"422\":{\"description\":\"Validation Error\",\"content\":{\"application/json\":{\"schema\":{\"$ref\":\"#/components/schemas/HTTPValidationError\"}}}}}}},\"/api/auth/register\":{\"post\":{\"tags\":[\"Authentication\"],\"summary\":\"Register User\",\"description\":\"Registro de nuevo usuario solicitante\",\"operationId\":\"register_user_api_auth_register_post\",\"requestBody\":{\"content\":{\"application/json\":{\"schema\":{\"$ref\":\"#/components/schemas/UserRegister\"}}},\"required\":true},\"responses\":{\"201\":{\"description\":\"Successful Response\",\"content\":{\"application/json\":{\"schema\":{}}}},\"422\":{\"description\":\"Validation Error\",\"content\":{\"application/json\":{\"schema\":{\"$ref\":\"#/components/schemas/HTTPValidationError\"}}}}}}},\"/api/auth/mfa/verify\":{\"post\":{\"tags\":[\"Authentication\"],\"summary\":\"Mfa Verify\",\"description\":\"Segundo paso del login: valida el código TOTP y emite el token real.\",\"operationId\":\"mfa_verify_api_auth_mfa_verify_post\",\"requestBody\":{\"content\":{\"application/json\":{\"schema\":{\"$ref\":\"#/components/schemas/MfaVerify\"}}},\"required\":true},\"responses\":{",
+      "bytes": 34087,
+      "ms": 312.93,
+      "error": null
+    },
+    {
+      "url": "https://api.sistemahelpdesk.online/docs",
+      "metodo": "GET",
+      "status": 200,
+      "cabeceras": {
+        "server": "cloudflare",
+        "cf-cache-status": "DYNAMIC",
+        "_all": [
+          "alt-svc",
+          "cf-cache-status",
+          "cf-ray",
+          "connection",
+          "content-type",
+          "date",
+          "nel",
+          "report-to",
+          "server",
+          "server-timing",
+          "transfer-encoding"
+        ]
+      },
+      "cuerpo": "\n    <!DOCTYPE html>\n    <html>\n    <head>\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <link type=\"text/css\" rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css\">\n    <link rel=\"shortcut icon\" href=\"https://fastapi.tiangolo.com/img/favicon.png\">\n    <title>HelpDesk API - Swagger UI</title>\n    </head>\n    <body>\n    <div id=\"swagger-ui\">\n    </div>\n    <script src=\"https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js\"></script>\n    <!-- `SwaggerUIBundle` is now available on the page -->\n    <script>\n    const ui = SwaggerUIBundle({\n        url: '/openapi.json',\n    \"dom_id\": \"#swagger-ui\",\n\"layout\": \"BaseLayout\",\n\"deepLinking\": true,\n\"showExtensions\": true,\n\"showCommonExtensions\": true,\noauth2RedirectUrl: window.location.origin + '/docs/oauth2-redirect',\n    presets: [\n        SwaggerUIBundle.presets.apis,\n        SwaggerUIBundle.SwaggerUIStandalonePreset\n        ],\n    })\n    </script>\n    <script type=\"module\" src=\"https://static.cloudflareinsights.com/beacon.min.js/v4bc70e2c01a94c73b74392e4234840661791215815920\" integrity=\"sha512-L0ha0OXavK/8okipN9F8BtP84dg9DUhPERbBXzwI6dgTA55d2+yweo3pn5CSFYs45/r8md2+xvUPtTdvTNRfjA==\" data-cf-beacon='{\"version\":\"2024.11.0\",\"token\":\"78791f1128d0412586d995161bc02669\",\"r\":1,\"spa\":2}' crossorigin=\"anonymous\"></script>\n</body>\n    </html>\n    ",
+      "bytes": 1378,
+      "ms": 315.28,
+      "error": null
+    }
+  ],
+  "exposicion": [
+    {
+      "base": "https://www.sistemahelpdesk.online",
+      "url": "https://www.sistemahelpdesk.online/.env",
+      "metodo": "GET",
+      "status": 404,
+      "bytes": 79,
+      "ms": 323.2,
+      "error": null
+    },
+    {
+      "base": "https://www.sistemahelpdesk.online",
+      "url": "https://www.sistemahelpdesk.online/api/.env",
+      "metodo": "GET",
+      "status": 404,
+      "bytes": 22,
+      "ms": 2811.8,
+      "error": null
+    },
+    {
+      "base": "https://www.sistemahelpdesk.online",
+      "url": "https://www.sistemahelpdesk.online/.git/config",
+      "metodo": "GET",
+      "status": 404,
+      "bytes": 79,
+      "ms": 1573.24,
+      "error": null
+    },
+    {
+      "base": "https://www.sistemahelpdesk.online",
+      "url": "https://www.sistemahelpdesk.online/api/.git/config",
+      "metodo": "GET",
+      "status": 404,
+      "bytes": 22,
+      "ms": 4058.85,
+      "error": null
+    },
+    {
+      "base": "https://www.sistemahelpdesk.online",
+      "url": "https://www.sistemahelpdesk.online/robots.txt",
+      "metodo": "GET",
+      "status": 404,
+      "bytes": 79,
+      "ms": 20699.5,
+      "error": null
+    },
+    {
+      "base": "https://www.sistemahelpdesk.online",
+      "url": "https://www.sistemahelpdesk.online/sitemap.xml",
+      "metodo": "GET",
+      "status": 404,
+      "bytes": 79,
+      "ms": 5441.25,
+      "error": null
+    },
+    {
+      "base": "https://www.sistemahelpdesk.online",
+      "url": "https://www.sistemahelpdesk.online/security.txt",
+      "metodo": "GET",
+      "status": 404,
+      "bytes": 79,
+      "ms": 388.73,
+      "error": null
+    },
+    {
+      "base": "https://www.sistemahelpdesk.online",
+      "url": "https://www.sistemahelpdesk.online/.well-known/security.txt",
+      "metodo": "GET",
+      "status": 404,
+      "bytes": 79,
+      "ms": 17666.83,
+      "error": null
+    },
+    {
+      "base": "https://www.sistemahelpdesk.online",
+      "url": "https://www.sistemahelpdesk.online/.well-known/assetlinks.json",
+      "metodo": "GET",
+      "status": 404,
+      "bytes": 79,
+      "ms": 2689.97,
+      "error": null
+    },
+    {
+      "base": "https://www.sistemahelpdesk.online",
+      "url": "https://www.sistemahelpdesk.online/vercel.json",
+      "metodo": "GET",
+      "status": 404,
+      "bytes": 79,
+      "ms": 304.42,
+      "error": null
+    },
+    {
+      "base": "https://www.sistemahelpdesk.online",
+      "url": "https://www.sistemahelpdesk.online/docker-compose.yml",
+      "metodo": "GET",
+      "status": 404,
+      "bytes": 79,
+      "ms": 16895.27,
+      "error": null
+    },
+    {
+      "base": "https://www.sistemahelpdesk.online",
+      "url": "https://www.sistemahelpdesk.online/api/health",
+      "metodo": "GET",
+      "status": 200,
+      "bytes": 72,
+      "ms": 624.05,
+      "error": null
+    },
+    {
+      "base": "https://www.sistemahelpdesk.online",
+      "url": "https://www.sistemahelpdesk.online/api/coordinator/logs/helpdesk-backend",
+      "metodo": "GET",
+      "status": 401,
+      "bytes": 30,
+      "ms": 2853.37,
+      "error": null
+    },
+    {
+      "base": "https://www.sistemahelpdesk.online",
+      "url": "https://www.sistemahelpdesk.online/api/coordinator/bd/tablas",
+      "metodo": "GET",
+      "status": 401,
+      "bytes": 30,
+      "ms": 5827.5,
+      "error": null
+    },
+    {
+      "base": "https://www.sistemahelpdesk.online",
+      "url": "https://www.sistemahelpdesk.online/admin",
+      "metodo": "GET",
+      "status": 404,
+      "bytes": 79,
+      "ms": 17730.26,
+      "error": null
+    },
+    {
+      "base": "https://www.sistemahelpdesk.online",
+      "url": "https://www.sistemahelpdesk.online/phpmyadmin",
+      "metodo": "GET",
+      "status": 404,
+      "bytes": 79,
+      "ms": 270.95,
+      "error": null
+    },
+    {
+      "base": "https://www.sistemahelpdesk.online",
+      "url": "https://www.sistemahelpdesk.online/server-status",
+      "metodo": "GET",
+      "status": 404,
+      "bytes": 79,
+      "ms": 17662.68,
+      "error": null
+    },
+    {
+      "base": "https://www.sistemahelpdesk.online",
+      "url": "https://www.sistemahelpdesk.online/.DS_Store",
+      "metodo": "GET",
+      "status": 404,
+      "bytes": 79,
+      "ms": 285.26,
+      "error": null
+    },
+    {
+      "base": "https://www.sistemahelpdesk.online",
+      "url": "https://www.sistemahelpdesk.online/backup.sql",
+      "metodo": "GET",
+      "status": 404,
+      "bytes": 79,
+      "ms": 20437.66,
+      "error": null
+    },
+    {
+      "base": "https://www.sistemahelpdesk.online",
+      "url": "https://www.sistemahelpdesk.online/api/openapi.json",
+      "metodo": "GET",
+      "status": 404,
+      "bytes": 22,
+      "ms": 671.14,
+      "error": null
+    },
+    {
+      "base": "https://www.sistemahelpdesk.online",
+      "url": "https://www.sistemahelpdesk.online/openapi.json",
+      "metodo": "GET",
+      "status": 404,
+      "bytes": 79,
+      "ms": 1449.7,
+      "error": null
+    },
+    {
+      "base": "https://www.sistemahelpdesk.online",
+      "url": "https://www.sistemahelpdesk.online/docs",
+      "metodo": "GET",
+      "status": 404,
+      "bytes": 79,
+      "ms": 362.26,
+      "error": null
+    },
+    {
+      "base": "https://www.sistemahelpdesk.online",
+      "url": "https://www.sistemahelpdesk.online/redoc",
+      "metodo": "GET",
+      "status": 404,
+      "bytes": 79,
+      "ms": 2672.7,
+      "error": null
+    },
+    {
+      "base": "https://api.sistemahelpdesk.online",
+      "url": "https://api.sistemahelpdesk.online/.env",
+      "metodo": "GET",
+      "status": 404,
+      "bytes": 22,
+      "ms": 321.04,
+      "error": null
+    },
+    {
+      "base": "https://api.sistemahelpdesk.online",
+      "url": "https://api.sistemahelpdesk.online/api/.env",
+      "metodo": "GET",
+      "status": 404,
+      "bytes": 22,
+      "ms": 323.61,
+      "error": null
+    },
+    {
+      "base": "https://api.sistemahelpdesk.online",
+      "url": "https://api.sistemahelpdesk.online/.git/config",
+      "metodo": "GET",
+      "status": 404,
+      "bytes": 22,
+      "ms": 326.28,
+      "error": null
+    },
+    {
+      "base": "https://api.sistemahelpdesk.online",
+      "url": "https://api.sistemahelpdesk.online/api/.git/config",
+      "metodo": "GET",
+      "status": 404,
+      "bytes": 22,
+      "ms": 330.36,
+      "error": null
+    },
+    {
+      "base": "https://api.sistemahelpdesk.online",
+      "url": "https://api.sistemahelpdesk.online/robots.txt",
+      "metodo": "GET",
+      "status": 404,
+      "bytes": 22,
+      "ms": 380.15,
+      "error": null
+    },
+    {
+      "base": "https://api.sistemahelpdesk.online",
+      "url": "https://api.sistemahelpdesk.online/sitemap.xml",
+      "metodo": "GET",
+      "status": 404,
+      "bytes": 22,
+      "ms": 385.16,
+      "error": null
+    },
+    {
+      "base": "https://api.sistemahelpdesk.online",
+      "url": "https://api.sistemahelpdesk.online/security.txt",
+      "metodo": "GET",
+      "status": 404,
+      "bytes": 22,
+      "ms": 380.28,
+      "error": null
+    },
+    {
+      "base": "https://api.sistemahelpdesk.online",
+      "url": "https://api.sistemahelpdesk.online/.well-known/security.txt",
+      "metodo": "GET",
+      "status": 404,
+      "bytes": 22,
+      "ms": 381.55,
+      "error": null
+    },
+    {
+      "base": "https://api.sistemahelpdesk.online",
+      "url": "https://api.sistemahelpdesk.online/.well-known/assetlinks.json",
+      "metodo": "GET",
+      "status": 404,
+      "bytes": 22,
+      "ms": 364.46,
+      "error": null
+    },
+    {
+      "base": "https://api.sistemahelpdesk.online",
+      "url": "https://api.sistemahelpdesk.online/vercel.json",
+      "metodo": "GET",
+      "status": 404,
+      "bytes": 22,
+      "ms": 340.04,
+      "error": null
+    },
+    {
+      "base": "https://api.sistemahelpdesk.online",
+      "url": "https://api.sistemahelpdesk.online/docker-compose.yml",
+      "metodo": "GET",
+      "status": 404,
+      "bytes": 22,
+      "ms": 311.89,
+      "error": null
+    },
+    {
+      "base": "https://api.sistemahelpdesk.online",
+      "url": "https://api.sistemahelpdesk.online/api/health",
+      "metodo": "GET",
+      "status": 200,
+      "bytes": 72,
+      "ms": 344.86,
+      "error": null
+    },
+    {
+      "base": "https://api.sistemahelpdesk.online",
+      "url": "https://api.sistemahelpdesk.online/api/coordinator/logs/helpdesk-backend",
+      "metodo": "GET",
+      "status": 401,
+      "bytes": 30,
+      "ms": 316.03,
+      "error": null
+    },
+    {
+      "base": "https://api.sistemahelpdesk.online",
+      "url": "https://api.sistemahelpdesk.online/api/coordinator/bd/tablas",
+      "metodo": "GET",
+      "status": 401,
+      "bytes": 30,
+      "ms": 301.92,
+      "error": null
+    },
+    {
+      "base": "https://api.sistemahelpdesk.online",
+      "url": "https://api.sistemahelpdesk.online/admin",
+      "metodo": "GET",
+      "status": 404,
+      "bytes": 22,
+      "ms": 343.27,
+      "error": null
+    },
+    {
+      "base": "https://api.sistemahelpdesk.online",
+      "url": "https://api.sistemahelpdesk.online/phpmyadmin",
+      "metodo": "GET",
+      "status": 404,
+      "bytes": 22,
+      "ms": 320.28,
+      "error": null
+    },
+    {
+      "base": "https://api.sistemahelpdesk.online",
+      "url": "https://api.sistemahelpdesk.online/server-status",
+      "metodo": "GET",
+      "status": 404,
+      "bytes": 22,
+      "ms": 343.34,
+      "error": null
+    },
+    {
+      "base": "https://api.sistemahelpdesk.online",
+      "url": "https://api.sistemahelpdesk.online/.DS_Store",
+      "metodo": "GET",
+      "status": 404,
+      "bytes": 22,
+      "ms": 312.88,
+      "error": null
+    },
+    {
+      "base": "https://api.sistemahelpdesk.online",
+      "url": "https://api.sistemahelpdesk.online/backup.sql",
+      "metodo": "GET",
+      "status": 404,
+      "bytes": 22,
+      "ms": 350.69,
+      "error": null
+    },
+    {
+      "base": "https://api.sistemahelpdesk.online",
+      "url": "https://api.sistemahelpdesk.online/api/openapi.json",
+      "metodo": "GET",
+      "status": 404,
+      "bytes": 22,
+      "ms": 328.59,
+      "error": null
+    },
+    {
+      "base": "https://api.sistemahelpdesk.online",
+      "url": "https://api.sistemahelpdesk.online/openapi.json",
+      "metodo": "GET",
+      "status": 200,
+      "bytes": 34087,
+      "ms": 318.81,
+      "error": null
+    },
+    {
+      "base": "https://api.sistemahelpdesk.online",
+      "url": "https://api.sistemahelpdesk.online/docs",
+      "metodo": "GET",
+      "status": 200,
+      "bytes": 1378,
+      "ms": 326.52,
+      "error": null
+    },
+    {
+      "base": "https://api.sistemahelpdesk.online",
+      "url": "https://api.sistemahelpdesk.online/redoc",
+      "metodo": "GET",
+      "status": 200,
+      "bytes": 1260,
+      "ms": 342.41,
+      "error": null
+    }
+  ],
+  "auth": [
+    {
+      "ruta": "/api/tickets",
+      "sin_token": 401,
+      "token_invalido": 401,
+      "cuerpo_sin_token": "{\"detail\":\"Not authenticated\"}",
+      "vulnerabilidad": false
+    },
+    {
+      "ruta": "/api/auth/me",
+      "sin_token": 401,
+      "token_invalido": 401,
+      "cuerpo_sin_token": "{\"detail\":\"Not authenticated\"}",
+      "vulnerabilidad": false
+    },
+    {
+      "ruta": "/api/chat/health",
+      "sin_token": 200,
+      "token_invalido": 200,
+      "cuerpo_sin_token": "{\"status\":\"ok\",\"n8n\":\"accessible\"}",
+      "vulnerabilidad": true
+    },
+    {
+      "ruta": "/api/chat-global/mensajes",
+      "sin_token": 401,
+      "token_invalido": 401,
+      "cuerpo_sin_token": "{\"detail\":\"Not authenticated\"}",
+      "vulnerabilidad": false
+    },
+    {
+      "ruta": "/api/chat-privado/contactos",
+      "sin_token": 401,
+      "token_invalido": 401,
+      "cuerpo_sin_token": "{\"detail\":\"Not authenticated\"}",
+      "vulnerabilidad": false
+    },
+    {
+      "ruta": "/api/chat-privado/no-leidos",
+      "sin_token": 401,
+      "token_invalido": 401,
+      "cuerpo_sin_token": "{\"detail\":\"Not authenticated\"}",
+      "vulnerabilidad": false
+    },
+    {
+      "ruta": "/api/coordinator/usuarios",
+      "sin_token": 401,
+      "token_invalido": 401,
+      "cuerpo_sin_token": "{\"detail\":\"Not authenticated\"}",
+      "vulnerabilidad": false
+    },
+    {
+      "ruta": "/api/coordinator/estadisticas",
+      "sin_token": 401,
+      "token_invalido": 401,
+      "cuerpo_sin_token": "{\"detail\":\"Not authenticated\"}",
+      "vulnerabilidad": false
+    },
+    {
+      "ruta": "/api/coordinator/respaldos",
+      "sin_token": 401,
+      "token_invalido": 401,
+      "cuerpo_sin_token": "{\"detail\":\"Not authenticated\"}",
+      "vulnerabilidad": false
+    },
+    {
+      "ruta": "/api/coordinator/logs/helpdesk-backend",
+      "sin_token": 401,
+      "token_invalido": 401,
+      "cuerpo_sin_token": "{\"detail\":\"Not authenticated\"}",
+      "vulnerabilidad": false
+    },
+    {
+      "ruta": "/api/coordinator/bd/tablas",
+      "sin_token": 401,
+      "token_invalido": 401,
+      "cuerpo_sin_token": "{\"detail\":\"Not authenticated\"}",
+      "vulnerabilidad": false
+    },
+    {
+      "ruta": "/api/coordinator/agentes",
+      "sin_token": 401,
+      "token_invalido": 401,
+      "cuerpo_sin_token": "{\"detail\":\"Not authenticated\"}",
+      "vulnerabilidad": false
+    },
+    {
+      "ruta": "/api/coordinator/sla",
+      "sin_token": 401,
+      "token_invalido": 401,
+      "cuerpo_sin_token": "{\"detail\":\"Not authenticated\"}",
+      "vulnerabilidad": false
+    },
+    {
+      "ruta": "/api/coordinator/ia",
+      "sin_token": 401,
+      "token_invalido": 401,
+      "cuerpo_sin_token": "{\"detail\":\"Not authenticated\"}",
+      "vulnerabilidad": false
+    },
+    {
+      "ruta": "/api/coordinator/n8n/workflows",
+      "sin_token": 401,
+      "token_invalido": 401,
+      "cuerpo_sin_token": "{\"detail\":\"Not authenticated\"}",
+      "vulnerabilidad": false
+    },
+    {
+      "ruta": "/api/coordinator/rag",
+      "sin_token": 401,
+      "token_invalido": 422,
+      "cuerpo_sin_token": "{\"detail\":\"Not authenticated\"}",
+      "vulnerabilidad": false
+    },
+    {
+      "ruta": "/api/tickets/1",
+      "sin_token": 401,
+      "token_invalido": 401,
+      "cuerpo_sin_token": "{\"detail\":\"Not authenticated\"}",
+      "vulnerabilidad": false
+    },
+    {
+      "ruta": "/api/tickets/1/adjuntos",
+      "sin_token": 401,
+      "token_invalido": 401,
+      "cuerpo_sin_token": "{\"detail\":\"Not authenticated\"}",
+      "vulnerabilidad": false
+    },
+    {
+      "ruta": "/api/adjuntos-archivos/prueba.txt",
+      "sin_token": 401,
+      "token_invalido": 404,
+      "cuerpo_sin_token": "{\"detail\":\"Not authenticated\"}",
+      "vulnerabilidad": false
+    }
+  ],
+  "cors": [
+    {
+      "caso": "origen_legitimo",
+      "origen": "https://www.sistemahelpdesk.online",
+      "get_acao": "https://www.sistemahelpdesk.online",
+      "get_acac": "true",
+      "get_status": 200,
+      "preflight_status": 405,
+      "preflight_acao": "https://www.sistemahelpdesk.online",
+      "preflight_allow_methods": "",
+      "todos_headers_get": [
+        "access-control-allow-credentials",
+        "access-control-allow-origin",
+        "alt-svc",
+        "cf-cache-status",
+        "cf-ray",
+        "connection",
+        "content-length",
+        "content-type",
+        "date",
+        "nel",
+        "report-to",
+        "server",
+        "server-timing",
+        "vary"
+      ]
+    },
+    {
+      "caso": "origen_ajeno",
+      "origen": "https://evil.example",
+      "get_acao": "",
+      "get_acac": "true",
+      "get_status": 200,
+      "preflight_status": 405,
+      "preflight_acao": "",
+      "preflight_allow_methods": "",
+      "todos_headers_get": [
+        "access-control-allow-credentials",
+        "alt-svc",
+        "cf-cache-status",
+        "cf-ray",
+        "connection",
+        "content-length",
+        "content-type",
+        "date",
+        "nel",
+        "report-to",
+        "server",
+        "server-timing"
+      ]
+    },
+    {
+      "caso": "origen_null",
+      "origen": "null",
+      "get_acao": "",
+      "get_acac": "true",
+      "get_status": 200,
+      "preflight_status": 405,
+      "preflight_acao": "",
+      "preflight_allow_methods": "",
+      "todos_headers_get": [
+        "access-control-allow-credentials",
+        "alt-svc",
+        "cf-cache-status",
+        "cf-ray",
+        "connection",
+        "content-length",
+        "content-type",
+        "date",
+        "nel",
+        "report-to",
+        "server",
+        "server-timing"
+      ]
+    },
+    {
+      "caso": "origen_subdominio_ajeno",
+      "origen": "https://sistemahelpdesk.online.evil.com",
+      "get_acao": "",
+      "get_acac": "true",
+      "get_status": 200,
+      "preflight_status": 405,
+      "preflight_acao": "",
+      "preflight_allow_methods": "",
+      "todos_headers_get": [
+        "access-control-allow-credentials",
+        "alt-svc",
+        "cf-cache-status",
+        "cf-ray",
+        "connection",
+        "content-length",
+        "content-type",
+        "date",
+        "nel",
+        "report-to",
+        "server",
+        "server-timing"
+      ]
+    }
+  ],
+  "metodos": [
+    {
+      "ruta": "/api/tickets",
+      "status": 200,
+      "headers": {
+        "server": "cloudflare",
+        "cf-cache-status": "DYNAMIC",
+        "access-control-allow-origin": "https://www.sistemahelpdesk.online",
+        "access-control-allow-credentials": "true",
+        "vary": "Origin",
+        "content-length": "2"
+      },
+      "todos": [
+        "access-control-allow-credentials",
+        "access-control-allow-methods",
+        "access-control-allow-origin",
+        "access-control-max-age",
+        "alt-svc",
+        "cf-cache-status",
+        "cf-ray",
+        "connection",
+        "content-length",
+        "content-type",
+        "date",
+        "nel",
+        "report-to",
+        "server",
+        "server-timing",
+        "vary"
+      ]
+    },
+    {
+      "ruta": "/api/auth/login",
+      "status": 200,
+      "headers": {
+        "server": "cloudflare",
+        "cf-cache-status": "DYNAMIC",
+        "access-control-allow-origin": "https://www.sistemahelpdesk.online",
+        "access-control-allow-credentials": "true",
+        "vary": "Origin",
+        "content-length": "2"
+      },
+      "todos": [
+        "access-control-allow-credentials",
+        "access-control-allow-methods",
+        "access-control-allow-origin",
+        "access-control-max-age",
+        "alt-svc",
+        "cf-cache-status",
+        "cf-ray",
+        "connection",
+        "content-length",
+        "content-type",
+        "date",
+        "nel",
+        "report-to",
+        "server",
+        "server-timing",
+        "vary"
+      ]
+    }
+  ],
+  "validacion": [
+    {
+      "caso": "json_invalido",
+      "status": 422,
+      "ms": 308.49,
+      "cuerpo": "{\"detail\":[{\"type\":\"json_invalid\",\"loc\":[\"body\",1],\"msg\":\"JSON decode error\",\"input\":{},\"ctx\":{\"error\":\"Expecting property name enclosed in double quotes\"}}]}",
+      "contiene_traceback": false,
+      "contiene_sql_error": false,
+      "refleja_payload": false
+    },
+    {
+      "caso": "sql_injection_email",
+      "status": 422,
+      "ms": 314.53,
+      "cuerpo": "{\"detail\":[{\"type\":\"value_error\",\"loc\":[\"body\",\"email\"],\"msg\":\"value is not a valid email address: An email address must have an @-sign.\",\"input\":\"' OR '1'='1' --\",\"ctx\":{\"reason\":\"An email address must have an @-sign.\"}}]}",
+      "contiene_traceback": false,
+      "contiene_sql_error": false,
+      "refleja_payload": false
+    },
+    {
+      "caso": "sin_campos",
+      "status": 422,
+      "ms": 300.02,
+      "cuerpo": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"email\"],\"msg\":\"Field required\",\"input\":{}},{\"type\":\"missing\",\"loc\":[\"body\",\"password\"],\"msg\":\"Field required\",\"input\":{}}]}",
+      "contiene_traceback": false,
+      "contiene_sql_error": false,
+      "refleja_payload": false
+    },
+    {
+      "caso": "cuerpo_hinchado",
+      "status": 422,
+      "ms": 322.52,
+      "cuerpo": "{\"detail\":[{\"type\":\"value_error\",\"loc\":[\"body\",\"email\"],\"msg\":\"value is not a valid email address: Length must not exceed 2048 characters\",\"input\":\"a@bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "contiene_traceback": false,
+      "contiene_sql_error": false,
+      "refleja_payload": false
+    },
+    {
+      "caso": "xss_reflejado_query",
+      "status": 401,
+      "ms": 335.04,
+      "cuerpo": "{\"detail\":\"Token inválido o expirado\"}",
+      "contiene_traceback": false,
+      "contiene_sql_error": false,
+      "refleja_payload": false
+    }
+  ],
+  "rate_limit": [
+    {
+      "intento": 1,
+      "status": 401,
+      "ms": 310.48,
+      "cuerpo": "{\"detail\":\"Credenciales incorrectas o usuario inactivo\"}",
+      "cabeceras_rate": {}
+    },
+    {
+      "intento": 2,
+      "status": 401,
+      "ms": 448.64,
+      "cuerpo": "{\"detail\":\"Credenciales incorrectas o usuario inactivo\"}",
+      "cabeceras_rate": {}
+    },
+    {
+      "intento": 3,
+      "status": 401,
+      "ms": 309.04,
+      "cuerpo": "{\"detail\":\"Credenciales incorrectas o usuario inactivo\"}",
+      "cabeceras_rate": {}
+    },
+    {
+      "intento": 4,
+      "status": 401,
+      "ms": 317.02,
+      "cuerpo": "{\"detail\":\"Credenciales incorrectas o usuario inactivo\"}",
+      "cabeceras_rate": {}
+    },
+    {
+      "intento": 5,
+      "status": 401,
+      "ms": 348.69,
+      "cuerpo": "{\"detail\":\"Credenciales incorrectas o usuario inactivo\"}",
+      "cabeceras_rate": {}
+    },
+    {
+      "intento": 6,
+      "status": 429,
+      "ms": 351.42,
+      "cuerpo": "{\"detail\":\"Demasiados intentos para esta cuenta. Intenta de nuevo más tarde.\"}",
+      "cabeceras_rate": {}
+    }
+  ],
+  "informacion": {
+    "api_raiz": {
+      "status": 200,
+      "cuerpo": "{\"message\":\"HelpDesk API is running successfully!\",\"status\":\"ok\"}"
+    },
+    "health": {
+      "status": 200,
+      "cuerpo": "{\"status\":\"healthy\",\"checks\":{\"database\":\"ok\",\"ollama\":\"ok\",\"n8n\":\"ok\"}}"
+    },
+    "openapi": {
+      "status": 200,
+      "descripcion": "Especificación pública completa de la API"
+    },
+    "docs": {
+      "status": 200,
+      "descripcion": "Swagger UI pública"
+    },
+    "redoc": {
+      "status": 200
+    }
+  }
+}
