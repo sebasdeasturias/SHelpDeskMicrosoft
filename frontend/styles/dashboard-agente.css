@@ -239,12 +239,13 @@ body.night-mode .theme-label {
     display: flex; gap: 16px; padding: 20px;
     height: calc(100vh - 65px);
     overflow-x: auto; overflow-y: hidden;
-    align-items: flex-start;
+    align-items: stretch;
 }
 
 .kanban-column {
     flex: 0 0 270px;
-    min-height: calc(100vh - 115px);
+    min-height: 0;
+    max-height: 100%;
     background: var(--glass-bg);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
@@ -290,6 +291,7 @@ body.night-mode .archive-hint b { color: #cbd5e1; }
     padding: 16px;
     border-radius: 14px 14px 0 0;
     display: flex; align-items: center; justify-content: space-between;
+    flex-shrink: 0;
 }
 
 .column-header h2 {
@@ -307,14 +309,35 @@ body.night-mode .archive-hint b { color: #cbd5e1; }
 }
 body.night-mode .column-header .count-badge { background: #203b5c; color: #cfe3ff; }
 
+/* Scroll vertical dentro de cada columna: la columna queda acotada al alto
+   del tablero y el cuerpo es el único contenedor que desplaza las tarjetas. */
 .column-body {
-    flex: 1; padding: 8px;
+    flex: 1 1 0;
+    min-height: 0;
+    padding: 8px;
     overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(17, 66, 94, 0.6) rgba(0, 0, 0, 0.12);
     display: flex; flex-direction: column; gap: 10px;
 }
-.column-body::-webkit-scrollbar { width: 6px; }
-.column-body::-webkit-scrollbar-track { background: transparent; }
-.column-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+.column-body::-webkit-scrollbar { width: 10px; }
+.column-body::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.12);
+    border-radius: 999px;
+    margin: 4px 0;
+}
+.column-body::-webkit-scrollbar-thumb {
+    background: rgba(17, 66, 94, 0.6);
+    border-radius: 999px;
+}
+.column-body::-webkit-scrollbar-thumb:hover { background: rgba(17, 66, 94, 0.8); }
+body.night-mode .column-body {
+    scrollbar-color: rgba(200, 220, 255, 0.5) rgba(255, 255, 255, 0.08);
+}
+body.night-mode .column-body::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.08); }
+body.night-mode .column-body::-webkit-scrollbar-thumb { background: rgba(200, 220, 255, 0.5); }
+body.night-mode .column-body::-webkit-scrollbar-thumb:hover { background: rgba(220, 235, 255, 0.75); }
 
 /* ============================================
    KANBAN CARDS
@@ -757,8 +780,13 @@ body.night-mode .chat-input-area textarea {
         overflow-x: hidden; overflow-y: auto;
         align-items: stretch;
     }
-    .kanban-column { min-height: auto; flex: none; }
-    .kanban-column .column-body { min-height: 150px; }
+    .kanban-column { min-height: auto; max-height: none; flex: none; }
+    .kanban-column .column-body {
+        flex: 1 1 auto;
+        min-height: 150px;
+        max-height: none;
+        overflow-y: visible;
+    }
     .chat-panel {
         width: calc(100% - 48px);
         right: 24px; left: 24px;
