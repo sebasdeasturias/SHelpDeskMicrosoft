@@ -12,11 +12,11 @@
     --grass: #429d29;
     --grid-color: rgba(255, 255, 255, 0.15);
     --text-dark: #11425e;
-    --text-placeholder: #3b7491;
+    --text-placeholder: #244b61;
     --icon-color: #4a8cae;
     --footer-text: #0b3147;
-    --link-color: #004d6b;
-    --link-hover: #0076a3;
+    --link-color: #00364d;
+    --link-hover: #002437;
 }
 
 /* Variables Modo Nocturno */
@@ -36,11 +36,11 @@ body.night-mode {
     
     /* Textos */
     --text-dark: #e0e0ff;
-    --text-placeholder: #8888aa;
+    --text-placeholder: #c4d2f3;
     --icon-color: #a0a0d0;
     --footer-text: #c0c0e0;
-    --link-color: #88aaff;
-    --link-hover: #aaccff;
+    --link-color: #dbeafe;
+    --link-hover: #ffffff;
 }
 
 body, html {
@@ -156,7 +156,7 @@ body.night-mode .register-panel {
     width: 100%;
     padding: 15px 15px 15px 50px;
     font-size: 1rem;
-    color: #11425e;
+    color: var(--text-dark);
     background: linear-gradient(to bottom, rgba(255,255,255,0.4), rgba(255,255,255,0.7));
     border: 1px solid rgba(255, 255, 255, 0.9);
     border-radius: 50px;
@@ -167,8 +167,15 @@ body.night-mode .register-panel {
 }
 
 .input-group input::placeholder {
-    color: #3b7491;
+    color: var(--text-placeholder);
     font-weight: 500;
+}
+
+body.night-mode .input-group input,
+body.night-mode .input-group select {
+    background: linear-gradient(to bottom, rgba(40,40,60,0.6), rgba(30,30,50,0.8));
+    border: 1px solid rgba(100, 100, 150, 0.5);
+    color: var(--text-dark);
 }
 
 .input-group input:focus,
@@ -260,7 +267,7 @@ body.night-mode .register-panel {
 }
 
 .back-to-login {
-    color: #004d6b;
+    color: var(--link-color);
     text-decoration: none;
     font-weight: bold;
     text-shadow: 0 1px 2px rgba(255,255,255,0.8);
@@ -271,7 +278,7 @@ body.night-mode .register-panel {
 }
 
 .back-to-login:hover {
-    color: #0076a3;
+    color: var(--link-hover);
     text-decoration: underline;
 }
 
