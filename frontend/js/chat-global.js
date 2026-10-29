@@ -217,6 +217,34 @@
         window.__chatIaFallback = true;
     }
 
+    // Traduce el error de /api/chat a un texto útil: 422 (validación de
+    // guardrails) y 502 (IA sin respuesta) devuelven `detail`, y Pydantic lo
+    // manda como lista de errores.
+    function detalleErrorChat(payload, status) {
+        const d = payload && payload.detail;
+        if (typeof d === 'string' && d.trim()) return d;
+        if (Array.isArray(d) && d.length) {
+            const primero = d[0] || {};
+            const campo = Array.isArray(primero.loc) ? primero.loc[primero.loc.length - 1] : '';
+            // Pydantic responde en inglés: se traducen los casos del contrato del chat.
+            if (campo === 'mensaje' && primero.type === 'string_too_long') {
+                return 'El mensaje es demasiado largo (máximo 4000 caracteres).';
+            }
+            if (campo === 'mensaje' && primero.type === 'string_too_short') {
+                return 'El mensaje no puede estar vacío.';
+            }
+            if (campo === 'role') {
+                return 'El historial solo admite mensajes de usuario y asistente.';
+            }
+            if (campo === 'historial' && primero.type === 'too_long') {
+                return 'El historial tiene demasiados mensajes (máximo 20).';
+            }
+            if (campo) return `Dato no válido en "${campo}": ${primero.msg || 'revisa el mensaje'}`;
+            return primero.msg || 'La petición no es válida.';
+        }
+        return `HTTP ${status}`;
+    }
+
     async function enviarIA(texto) {
         const msgsIA = $('chatMessages');
         const input = $('chatInput');
@@ -242,8 +270,8 @@
                 },
                 body: JSON.stringify({
                     mensaje: texto,
-                    historial: historialIA.slice(-MAX_HISTORIAL_IA),
-                    modelo: 'llama3.2:3b'
+                    // El modelo lo decide el servidor, no el cliente.
+                    historial: historialIA.slice(-MAX_HISTORIAL_IA)
                 })
             });
 
@@ -251,8 +279,8 @@
 
             typing.remove();
             if (!resp.ok) {
-                const err = await resp.json().catch(() => ({}));
-                addMsg(msgsIA, err.detail || 'La IA no está disponible en este momento.', 'system', null, null);
+                const err = await resp.json().catch(() => null);
+                addMsg(msgsIA, detalleErrorChat(err, resp.status), 'system', null, null);
                 return;
             }
             const data = await resp.json();

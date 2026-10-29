@@ -503,6 +503,34 @@ function initChat() {
     }
 }
 
+// Traduce el error de /api/chat a un texto útil: 422 (validación de guardrails)
+// y 502 (IA sin respuesta) devuelven `detail`, y Pydantic lo manda como lista.
+function detalleErrorChat(payload, status) {
+    const d = payload && payload.detail;
+    if (typeof d === 'string' && d.trim()) return d;
+    if (Array.isArray(d) && d.length) {
+        const primero = d[0] || {};
+        const campo = Array.isArray(primero.loc) ? primero.loc[primero.loc.length - 1] : '';
+        // Pydantic responde en inglés: se traducen los casos del contrato del chat
+        // para que el usuario sepa qué corregir.
+        if (campo === 'mensaje' && primero.type === 'string_too_long') {
+            return 'El mensaje es demasiado largo (máximo 4000 caracteres).';
+        }
+        if (campo === 'mensaje' && primero.type === 'string_too_short') {
+            return 'El mensaje no puede estar vacío.';
+        }
+        if (campo === 'role') {
+            return 'El historial solo admite mensajes de usuario y asistente.';
+        }
+        if (campo === 'historial' && primero.type === 'too_long') {
+            return 'El historial tiene demasiados mensajes (máximo 20).';
+        }
+        if (campo) return `Dato no válido en "${campo}": ${primero.msg || 'revisa el mensaje'}`;
+        return primero.msg || 'La petición no es válida.';
+    }
+    return `HTTP ${status}`;
+}
+
 async function sendChatMessage() {
     // Si la tab activa es Chat Global, el widget compartido (chat-global.js) maneja el envío
     if (window.ChatGlobal && window.ChatGlobal.activo()) { window.ChatGlobal.enviarDesdeInput(); return; }
@@ -520,8 +548,8 @@ async function sendChatMessage() {
     // (ticket + solicitante + análisis IA) a partir del ticket_id
     const payload = {
         mensaje: mensaje,
-        historial: state.chatHistory.slice(-10),
-        modelo: 'llama3.2:3b'
+        // El modelo lo decide el servidor (configuracion_ia / DEFAULT_MODEL).
+        historial: state.chatHistory.slice(-10)
     };
     if (state.attachedTicket) {
         payload.ticket_id = state.attachedTicket.id_solicitud;
@@ -559,7 +587,8 @@ async function sendChatMessage() {
         typing.remove();
 
         if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
+            const err = await response.json().catch(() => null);
+            throw new Error(detalleErrorChat(err, response.status));
         }
 
         const data = await response.json();
@@ -595,7 +624,12 @@ async function sendChatMessage() {
 
     } catch (error) {
         typing.remove();
-        addChatMessage(`❌ Error al conectar con la IA: ${error.message}. Verifica que el backend y n8n estén corriendo.`, 'system');
+        const detalle = error.message || 'error desconocido';
+        // Solo sugerir revisar servicios cuando el fallo es de red/servidor.
+        const pista = /^(HTTP 5|Failed to fetch|NetworkError|Load failed)/i.test(detalle)
+            ? ' Verifica que el backend y n8n estén corriendo.'
+            : '';
+        addChatMessage(`❌ Error de la IA: ${detalle}${pista}`, 'system');
         console.error('Chat error:', error);
     } finally {
         chatInput.focus();
