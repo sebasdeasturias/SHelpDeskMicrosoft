@@ -317,3 +317,11 @@ SELECT estado, count(*) FROM solicitud GROUP BY estado ORDER BY estado;
 SELECT 'historial de mocks' AS detalle, count(*) FROM historial WHERE id_solicitud IN (
     SELECT id_solicitud FROM solicitud WHERE estado IN ('resuelto', 'cerrado')
 );
+
+-- ████ █████ ████   ███   ████  ███   ████ █████ ████  █████  ███    
+--█ ░░░░█░░░░░█░░░█ █ ░░█ █ ░░░░█ ░░█ █ ░░░░ ░█░░░█░░░█ █░░░░░█ ░░█   
+-- ███░░████░░████░░█████░ ███░░█████░ ███░░░ █░░░████░░████░░█████░  
+--  ░░█ █░░░░ █░░░█ █░░░█░░ ░░█ █░░░█░░ ░░█   █░░ █░░█░ █░░░░ █░░░█░░ 
+--████░░█████░████░░█░░░█░████░░█░░░█░████░░  █░░ █░░░█░█████░█░░░█░░ 
+-- ░░░░ ░░░░░░ ░░░░ ░░░  ░░░░░░ ░░░  ░░░░░░ ░  ░░  ░░  ░ ░░░░░ ░░  ░░ 
+--  ░░░░  ░░░░░ ░░░░  ░   ░ ░░░░  ░   ░ ░░░░    ░   ░   ░ ░░░░░ ░   ░ 
