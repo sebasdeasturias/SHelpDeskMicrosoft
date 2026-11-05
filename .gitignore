@@ -70,6 +70,7 @@ marketing/
 !.github/workflows/*.yml
 !.github/dependabot.yml
 .git
+.freebuff/
 
 # ████ █████ ████   ███   ████  ███   ████ █████ ████  █████  ███    
 #█ ░░░░█░░░░░█░░░█ █ ░░█ █ ░░░░█ ░░█ █ ░░░░ ░█░░░█░░░█ █░░░░░█ ░░█   
