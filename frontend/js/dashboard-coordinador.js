@@ -943,6 +943,8 @@ function initCoordinatorModules() {
     }
     const btnIndexarRAG = document.getElementById('btnIndexarRAG');
     if (btnIndexarRAG) btnIndexarRAG.addEventListener('click', indexarTicketsRAG);
+    const btnAnalizarRAG = document.getElementById('btnAnalizarRAG');
+    if (btnAnalizarRAG) btnAnalizarRAG.addEventListener('click', analizarRAG);
 }
 
 async function indexarTicketsRAG() {
@@ -1491,10 +1493,72 @@ function renderRAG(results, list) {
                 <span class="similarity-badge">${(r.similitud * 100).toFixed(1)}% Similitud</span>
             </div>
             <p><strong>Detalle del ticket:</strong> ${esc(r.descripcion)}</p>
+            ${r.solucion ? `<p><strong>Solución aplicada:</strong> ${esc(r.solucion)}</p>` : ''}
             <p><strong>Estado:</strong> ${esc(r.estado)} • <strong>Categoría:</strong> ${esc(r.categoria)}</p>
             <span class="rag-meta-tag"><i class="fas fa-check-circle"></i> Ticket fuente: #${r.id_solicitud} • Atención: ${esc(r.agente)}</span>
         </div>
     `).join('');
+}
+
+// ============================================
+// RAG: análisis profundo con IA del histórico
+// ============================================
+// Pide al backend que envíe al modelo la pregunta + las soluciones que bge-m3
+// trae como más similares (las mismas tarjetas) y muestre sus conclusiones.
+async function analizarRAG() {
+    const q = document.getElementById('ragSearchInput')?.value.trim();
+    const panel = document.getElementById('ragAnalisisPanel');
+    const body = document.getElementById('ragAnalisisBody');
+    const btn = document.getElementById('btnAnalizarRAG');
+    if (!q) {
+        mostrarToast('Escribe una consulta antes de pedir el análisis a la IA');
+        return;
+    }
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-ring"></span> Analizando...';
+    }
+    if (panel) panel.hidden = false;
+    if (body) {
+        body.innerHTML = '<div class="rag-analisis-loading"><span class="spinner-ring"></span> La IA está comparando las soluciones históricas más similares...</div>';
+    }
+    try {
+        const r = await apiFetch('/coordinator/rag/analizar', {
+            method: 'POST',
+            body: { pregunta: q }
+        });
+        renderAnalisisRAG(r, body);
+    } catch (e) {
+        console.error('Error en el análisis RAG:', e);
+        if (body) body.innerHTML = `<div class="rag-analisis-error">❌ ${esc(e.message)}</div>`;
+        mostrarToast(`❌ Error en el análisis: ${esc(e.message)}`);
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-robot"></i> Preguntar a la IA';
+        }
+    }
+}
+
+function renderAnalisisRAG(r, body) {
+    if (!body) return;
+    const meta = document.getElementById('ragAnalisisMeta');
+    if (!r || r.sin_contexto) {
+        body.innerHTML = `<div class="rag-analisis-empty">${esc((r && r.mensaje) || 'Sin contexto histórico suficiente para analizar.')}</div>`;
+        if (meta) meta.textContent = 'Sin coincidencias';
+        return;
+    }
+    if (meta) {
+        meta.textContent = `${r.modelo || 'modelo local'} · ${r.tickets_analizados || 0} ticket(s) · ${r.tiempo_ms || 0} ms`;
+    }
+    const fuentes = (r.fuentes || []).map(f => `
+        <span class="rag-fuente-chip" title="${esc(f.asunto)}">
+            <i class="fas fa-ticket-alt"></i> #${esc(f.id_solicitud)} · ${(Number(f.similitud) * 100).toFixed(0)}%
+        </span>`).join('');
+    body.innerHTML = `
+        <div class="rag-analisis-text">${esc(r.respuesta).replace(/\n/g, '<br>')}</div>
+        ${fuentes ? `<div class="rag-fuentes"><strong>Fuentes:</strong> ${fuentes}</div>` : ''}
+    `;
 }
 
 function enviarPromptSugerido(texto) {

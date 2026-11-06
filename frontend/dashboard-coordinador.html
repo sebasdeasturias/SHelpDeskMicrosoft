@@ -541,6 +541,7 @@
                         <input type="text" id="ragSearchInput" placeholder="Escribe el problema o síntoma técnico (ej: pantalla azul error driver wifi)...">
                         <button class="action-header-btn primary" id="btnBuscarRAG"><i class="fas fa-magic"></i> Buscar con RAG</button>
                         <button class="action-header-btn success" id="btnIndexarRAG" title="Genera embeddings de todos los tickets resueltos/cerrados pendientes"><i class="fas fa-database"></i> Indexar tickets</button>
+                        <button class="action-header-btn primary" id="btnAnalizarRAG" title="La IA analiza las soluciones históricas recuperadas y propone una recomendación"><i class="fas fa-robot"></i> Preguntar a la IA</button>
                     </div>
                 </div>
 
@@ -560,6 +561,14 @@
                             <span class="rag-meta-tag"><i class="fas fa-check-circle"></i> Ticket fuente: #TK-0089 • Resuelto por María González</span>
                         </div>
                     </div>
+                </div>
+
+                <div class="table-glass-container rag-analisis-container" id="ragAnalisisPanel" hidden>
+                    <div class="table-header-bar">
+                        <h3><i class="fas fa-robot"></i> Análisis y recomendación de la IA</h3>
+                        <span class="badge-tag" id="ragAnalisisMeta">bge-m3 + modelo local</span>
+                    </div>
+                    <div class="rag-analisis-body" id="ragAnalisisBody"></div>
                 </div>
             </div>
         </section>

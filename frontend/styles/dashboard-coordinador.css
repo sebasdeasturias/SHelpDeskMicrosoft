@@ -1574,6 +1574,33 @@ body.night-mode .rag-result-card { background: rgba(60,60,100,0.3); }
     color: var(--text-placeholder);
 }
 
+/* RAG: análisis profundo con IA del histórico */
+.rag-analisis-container { margin-top: 16px; }
+.rag-analisis-container[hidden] { display: none; }
+.rag-analisis-body {
+    padding: 16px;
+    display: flex; flex-direction: column; gap: 12px;
+}
+.rag-analisis-text {
+    font-size: 0.85rem; line-height: 1.65; color: var(--text-dark);
+    white-space: normal;
+}
+.rag-analisis-loading, .rag-analisis-empty {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 0.85rem; color: var(--text-placeholder);
+}
+.rag-analisis-error { font-size: 0.85rem; font-weight: 600; color: #b91c1c; }
+.rag-fuentes {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+    font-size: 0.75rem; color: var(--text-dark);
+}
+.rag-fuente-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 999px;
+    background: #047857; color: #fff;
+    font-weight: 600; font-size: 0.7rem;
+}
+
 /* ============================================
    SLA: Tarjetas por prioridad
 ============================================ */
