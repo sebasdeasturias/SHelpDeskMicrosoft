@@ -6,14 +6,14 @@ document.addEventListener("DOMContentLoaded", () => {
     let isAnimating = false;
 
     logoContainer.addEventListener('click', () => {
+        // Si ya está animando, ignoramos el clic
         if (isAnimating) return; 
         isAnimating = true;
 
         // 1. Ocultar el logo original suavemente
         mainLogo.style.opacity = '0';
 
-        // 2. Configuración de la rejilla
-        // Ajusta esto si quieres cubos más grandes (menos número) o más pequeños (más número)
+        // 2. Configuración de la rejilla (Cubos)
         const cols = 25; 
         const rows = 25; 
         
@@ -41,7 +41,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         for (let y = 0; y < rows; y++) {
             for (let x = 0; x < cols; x++) {
-                // Intentamos leer el color del píxel
                 try {
                     const pixelData = ctx.getImageData(x * widthStep, y * heightStep, 1, 1).data;
                     const r = pixelData[0];
@@ -60,8 +59,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     voxelGrid.appendChild(cube);
 
-                    // Retraso aleatorio LENTO (entre 0.2s y 1.8s)
-                    const randomDelay = Math.random() * 1.5; 
+                    // Retraso aleatorio LENTO (entre 0.2s y 1.5s)
+                    const randomDelay = Math.random() * 1.3; 
                     const duration = 1.5 + Math.random() * 1.5; // Caída de 1.5s a 3s
 
                     setTimeout(() => {
@@ -70,8 +69,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     }, randomDelay * 1000);
 
                 } catch (e) {
-                    console.error("Error leyendo píxel (posible problema de CORS si abres el archivo localmente):", e);
-                    // Fallback: Si falla, creamos un cubo azul genérico para no romper la ilusión
+                    console.error("Error leyendo píxel:", e);
+                    // Fallback visual si falla la lectura de color (útil si se abre en local sin servidor)
                     const cube = document.createElement('div');
                     cube.classList.add('voxel-cube');
                     cube.style.backgroundColor = `#00aaff`; 
@@ -80,5 +79,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             }
         }
+
+        // --- NUEVO: Temporizador para hacerlo cíclico ---
+        // Esperamos 4.5 segundos para asegurarnos de que todos los cubos hayan caído
+        setTimeout(() => {
+            voxelGrid.innerHTML = ''; // Eliminamos los cubos del DOM
+            mainLogo.style.opacity = '1'; // Volvemos a mostrar el logo original
+            isAnimating = false; // Liberamos el bloqueo para el siguiente clic
+        }, 4500); 
+
     });
 });
