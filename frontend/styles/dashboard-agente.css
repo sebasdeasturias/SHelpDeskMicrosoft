@@ -872,7 +872,7 @@ body.night-mode .card-info-btn {
 
 .detail-section {
     background: rgba(255,255,255,0.12);
-    border: 1px solid rgba(255,255,255,0.2);
+    border: 1px solid rgba(255, 255, 255, 0.827);
     border-radius: 12px;
     padding: 12px 14px;
 }
