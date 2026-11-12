@@ -109,3 +109,13 @@ operativas: **instancia única con `--reload`, sin tests automatizados, límites
 en memoria y un puerto de backend demasiado abierto** — todos corregibles con
 cambios pequeños (ver planes en los informes de
 [seguridad](seguridad.md) y [escalabilidad](escalabilidad.md)).
+
+```
+ ████ █████ ████   ███   ████  ███   ████ █████ ████  █████  ███    
+█ ░░░░█░░░░░█░░░█ █ ░░█ █ ░░░░█ ░░█ █ ░░░░ ░█░░░█░░░█ █░░░░░█ ░░█   
+ ███░░████░░████░░█████░ ███░░█████░ ███░░░ █░░░████░░████░░█████░  
+  ░░█ █░░░░ █░░░█ █░░░█░░ ░░█ █░░░█░░ ░░█   █░░ █░░█░ █░░░░ █░░░█░░ 
+████░░█████░████░░█░░░█░████░░█░░░█░████░░  █░░ █░░░█░█████░█░░░█░░ 
+ ░░░░ ░░░░░░ ░░░░ ░░░  ░░░░░░ ░░░  ░░░░░░ ░  ░░  ░░  ░ ░░░░░ ░░  ░░ 
+  ░░░░  ░░░░░ ░░░░  ░   ░ ░░░░  ░   ░ ░░░░    ░   ░   ░ ░░░░░ ░   ░ 
+```

@@ -403,3 +403,11 @@ Write-Host "`n✅ n8n (workflows IA): http://localhost:5678" -ForegroundColor Gr
 Write-Host "✅ Ollama (modelos IA): http://localhost:11434" -ForegroundColor Green
 Write-Host "✅ PostgreSQL: localhost:5432 (usuario: $PgUser)" -ForegroundColor Green
 Write-Host "`n📋 Logs: docker logs -f helpdesk-backend | docker logs -f helpdesk-streamlit" -ForegroundColor Yellow
+
+# ████ █████ ████   ███   ████  ███   ████ █████ ████  █████  ███    
+#█ ░░░░█░░░░░█░░░█ █ ░░█ █ ░░░░█ ░░█ █ ░░░░ ░█░░░█░░░█ █░░░░░█ ░░█   
+# ███░░████░░████░░█████░ ███░░█████░ ███░░░ █░░░████░░████░░█████░  
+#  ░░█ █░░░░ █░░░█ █░░░█░░ ░░█ █░░░█░░ ░░█   █░░ █░░█░ █░░░░ █░░░█░░ 
+#████░░█████░████░░█░░░█░████░░█░░░█░████░░  █░░ █░░░█░█████░█░░░█░░ 
+# ░░░░ ░░░░░░ ░░░░ ░░░  ░░░░░░ ░░░  ░░░░░░ ░  ░░  ░░  ░ ░░░░░ ░░  ░░ 
+#  ░░░░  ░░░░░ ░░░░  ░   ░ ░░░░  ░   ░ ░░░░    ░   ░   ░ ░░░░░ ░   ░ 

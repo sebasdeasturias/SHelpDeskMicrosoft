@@ -110,3 +110,13 @@ docker stats --no-stream               # instantánea de recursos
 **Notas éticas**: solo se usó `GET /api/health` y un HTML estático; la
 duración total fue < 4 minutos y no se generaron escrituras. Repite las
 mediciones en horario laboral para capturar la carga real.
+
+```
+ ████ █████ ████   ███   ████  ███   ████ █████ ████  █████  ███    
+█ ░░░░█░░░░░█░░░█ █ ░░█ █ ░░░░█ ░░█ █ ░░░░ ░█░░░█░░░█ █░░░░░█ ░░█   
+ ███░░████░░████░░█████░ ███░░█████░ ███░░░ █░░░████░░████░░█████░  
+  ░░█ █░░░░ █░░░█ █░░░█░░ ░░█ █░░░█░░ ░░█   █░░ █░░█░ █░░░░ █░░░█░░ 
+████░░█████░████░░█░░░█░████░░█░░░█░████░░  █░░ █░░░█░█████░█░░░█░░ 
+ ░░░░ ░░░░░░ ░░░░ ░░░  ░░░░░░ ░░░  ░░░░░░ ░  ░░  ░░  ░ ░░░░░ ░░  ░░ 
+  ░░░░  ░░░░░ ░░░░  ░   ░ ░░░░  ░   ░ ░░░░    ░   ░   ░ ░░░░░ ░   ░ 
+```

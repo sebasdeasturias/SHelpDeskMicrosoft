@@ -76,3 +76,13 @@ python test/scripts/graficos.py         # regenera test/graficos/*.png
   validar rate-limit y validación de esquema).
 - **Los resultados de latencia son de un único vantage point** en una ventana
   corta; úsalos para comparar objetivos entre sí, no como SLA.
+
+```
+ ████ █████ ████   ███   ████  ███   ████ █████ ████  █████  ███    
+█ ░░░░█░░░░░█░░░█ █ ░░█ █ ░░░░█ ░░█ █ ░░░░ ░█░░░█░░░█ █░░░░░█ ░░█   
+ ███░░████░░████░░█████░ ███░░█████░ ███░░░ █░░░████░░████░░█████░  
+  ░░█ █░░░░ █░░░█ █░░░█░░ ░░█ █░░░█░░ ░░█   █░░ █░░█░ █░░░░ █░░░█░░ 
+████░░█████░████░░█░░░█░████░░█░░░█░████░░  █░░ █░░░█░█████░█░░░█░░ 
+ ░░░░ ░░░░░░ ░░░░ ░░░  ░░░░░░ ░░░  ░░░░░░ ░  ░░  ░░  ░ ░░░░░ ░░  ░░ 
+  ░░░░  ░░░░░ ░░░░  ░   ░ ░░░░  ░   ░ ░░░░    ░   ░   ░ ░░░░░ ░   ░ 
+```

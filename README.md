@@ -235,3 +235,13 @@ Garantías del diseño actual:
 Proyecto en desarrollo activo. La arquitectura, la seguridad y la integración de IA se han ido endureciendo conforme se detectaban y resolvían problemas reales de despliegue y de seguridad.
 
 Para detalles de operación, accesos, comandos y guías de despliegue en otra máquina o servidor, consulta el runbook interno del proyecto.
+
+```
+ ████ █████ ████   ███   ████  ███   ████ █████ ████  █████  ███    
+█ ░░░░█░░░░░█░░░█ █ ░░█ █ ░░░░█ ░░█ █ ░░░░ ░█░░░█░░░█ █░░░░░█ ░░█   
+ ███░░████░░████░░█████░ ███░░█████░ ███░░░ █░░░████░░████░░█████░  
+  ░░█ █░░░░ █░░░█ █░░░█░░ ░░█ █░░░█░░ ░░█   █░░ █░░█░ █░░░░ █░░░█░░ 
+████░░█████░████░░█░░░█░████░░█░░░█░████░░  █░░ █░░░█░█████░█░░░█░░ 
+ ░░░░ ░░░░░░ ░░░░ ░░░  ░░░░░░ ░░░  ░░░░░░ ░  ░░  ░░  ░ ░░░░░ ░░  ░░ 
+  ░░░░  ░░░░░ ░░░░  ░   ░ ░░░░  ░   ░ ░░░░    ░   ░   ░ ░░░░░ ░   ░ 
+```

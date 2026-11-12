@@ -19,3 +19,11 @@ CREATE TABLE IF NOT EXISTS mensaje_chat_global (
 -- El listado siempre se ordena por fecha/ids crecientes; este índice ayuda
 -- al recorte inicial (últimos N mensajes) del polling del frontend.
 CREATE INDEX IF NOT EXISTS idx_chat_global_fecha ON mensaje_chat_global (fecha DESC);
+
+-- ████ █████ ████   ███   ████  ███   ████ █████ ████  █████  ███    
+--█ ░░░░█░░░░░█░░░█ █ ░░█ █ ░░░░█ ░░█ █ ░░░░ ░█░░░█░░░█ █░░░░░█ ░░█   
+-- ███░░████░░████░░█████░ ███░░█████░ ███░░░ █░░░████░░████░░█████░  
+--  ░░█ █░░░░ █░░░█ █░░░█░░ ░░█ █░░░█░░ ░░█   █░░ █░░█░ █░░░░ █░░░█░░ 
+--████░░█████░████░░█░░░█░████░░█░░░█░████░░  █░░ █░░░█░█████░█░░░█░░ 
+-- ░░░░ ░░░░░░ ░░░░ ░░░  ░░░░░░ ░░░  ░░░░░░ ░  ░░  ░░  ░ ░░░░░ ░░  ░░ 
+--  ░░░░  ░░░░░ ░░░░  ░   ░ ░░░░  ░   ░ ░░░░    ░   ░   ░ ░░░░░ ░   ░ 

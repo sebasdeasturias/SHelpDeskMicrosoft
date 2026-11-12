@@ -96,6 +96,17 @@ async def health_check(db: AsyncSession = Depends(get_db)):
     return {"status": "healthy", "checks": checks}
 
 
+@app.get("/health", include_in_schema=False)
+async def health_alias(db: AsyncSession = Depends(get_db)):
+    """Alias de `/api/health` sin prefijo.
+
+    Hay clientes (paneles de monitorización, sondas externas) que consultan
+    `http://host:8000/health` y recibían 404. Se reutiliza el mismo healthcheck
+    (BD + Ollama + n8n) en lugar de duplicar la lógica.
+    """
+    return await health_check(db)
+
+
 
 
 
