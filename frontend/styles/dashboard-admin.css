@@ -26,6 +26,9 @@
     --link-hover: #0076a3;
     --nav-bg: rgba(255,255,255,0.15);
     --nav-active: rgba(255,255,255,0.3);
+    /* Anillo de foco accesible (día): cian aero sobre halo blanco */
+    --focus-ring: rgba(255,255,255,0.95);
+    --focus-glow: rgba(45,170,220,0.85);
 }
 
 body.night-mode {
@@ -48,6 +51,9 @@ body.night-mode {
     --link-hover: #aaccff;
     --nav-bg: rgba(40,40,80,0.3);
     --nav-active: rgba(60,60,120,0.4);
+    /* Anillo de foco accesible (noche): halo azul lavanda luminoso */
+    --focus-ring: rgba(200,210,255,0.95);
+    --focus-glow: rgba(120,150,255,0.85);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -945,6 +951,93 @@ body.night-mode .chat-privado-item,
 body.night-mode .chat-privado-nombre,
 body.night-mode .chat-privado-conv-bar { color: #e0e0ff; }
 .chat-privado-msgs { flex: 1; min-height: 0; }
+
+/* ============================================
+   ACCESIBILIDAD (preservando Frutiger Aero + glassmorphism)
+   Añade lo que el estilo "glass" exige: foco visible por teclado,
+   respeto a "movimiento reducido" y pequeños ajustes de contraste.
+   No cambia la estética: mismos colores, mismo cristal, mismas estrellas.
+============================================ */
+
+/* 1) FOCO VISIBLE POR TECLADO ---------------------------------------
+   Solo aparece en navegación con teclado (:focus-visible), no al hacer
+   clic con el ratón, para no "ensuciar" el look glass en uso normal.
+   El anillo es un halo blanco/lavanda + resplandor cian aero que encaja
+   con el lenguaje visual existente. */
+.nav-btn:focus-visible,
+.action-header-btn:focus-visible,
+.btn-mini:focus-visible,
+.logout-btn:focus-visible,
+.glass-input:focus-visible,
+.glass-select:focus-visible,
+.chat-fab:focus-visible,
+.chat-tab:focus-visible,
+.chat-close:focus-visible,
+.chat-send-btn:focus-visible,
+.chat-input-area textarea:focus-visible,
+.chat-privado-item:focus-visible,
+.chat-privado-volver:focus-visible,
+.btn-cancel:focus-visible,
+.btn-confirm:focus-visible,
+.theme-switch input:focus-visible + .slider {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px var(--focus-glow), 0 0 12px var(--focus-glow);
+}
+/* En elementos ya redondeados, el anillo debe seguir su forma */
+.chat-fab:focus-visible,
+.chat-send-btn:focus-visible,
+.chat-close:focus-visible,
+.chat-privado-volver:focus-visible { outline-offset: 3px; }
+
+/* Fallback para navegadores sin :focus-visible: al menos mostrar foco */
+.nav-btn:focus,
+.action-header-btn:focus,
+.btn-mini:focus {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+}
+.nav-btn:focus:not(:focus-visible),
+.action-header-btn:focus:not(:focus-visible),
+.btn-mini:focus:not(:focus-visible) { outline: none; }
+
+/* 2) PEQUEÑOS AJUSTES DE CONTRASTE -----------------------------------
+   Textos translúcidos sobre cristal brillante que quedaban flojos.
+   Subimos opacidad/peso sin tocar la paleta. */
+.header-info p { opacity: 1; }
+.hint { color: var(--text-dark); opacity: 0.85; }
+.glass-input::placeholder,
+.chat-input-area textarea::placeholder { color: var(--text-placeholder); opacity: 1; }
+
+/* 3) MOVIMIENTO REDUCIDO ---------------------------------------------
+   Respeta la preferencia del sistema: desactiva animaciones y
+   transiciones decorativas (hover que eleva, aparición de páginas,
+   latido del FAB, entrada de mensajes). Se conserva el spinner de carga
+   porque comunica estado del sistema, no es decorativo. */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+    }
+    /* Los desplazamientos por hover no deben moverse */
+    .kpi-card:hover,
+    .action-header-btn:hover,
+    .btn-mini:hover,
+    .chat-fab:hover,
+    .chat-send-btn:hover { transform: none; }
+    /* El latido del botón de chat se detiene */
+    .chat-fab.tiene-novedad { animation: none; }
+    /* Excepción: el spinner de carga sí debe girar (estado del sistema) */
+    .spinner-ring {
+        animation: spinner-rotar 0.9s linear infinite !important;
+        animation-duration: 0.9s !important;
+    }
+}
+
 
 /*
  ████ █████ ████   ███   ████  ███   ████ █████ ████  █████  ███    
