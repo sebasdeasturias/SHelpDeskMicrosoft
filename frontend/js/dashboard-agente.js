@@ -13,7 +13,8 @@ const state = {
     authToken: localStorage.getItem('token') || sessionStorage.getItem('token'),
     chatHistory: [],
     attachedTicket: null,
-    isChatLoading: false
+    isChatLoading: false,
+    filtros: { texto: '', categoria: '', prioridad: '' }
 };
 
 // Mapeo de estados de la BD a columnas del Kanban
@@ -74,6 +75,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     initTheme();
     initKanban();
+    initFiltros();
+    initRag();
     initChat();
     initTicketDetail();
     fetchTickets();
@@ -128,14 +131,16 @@ async function fetchTickets() {
         state.tickets = data;
         renderBoard();
         updateCounts();
+        actualizarResumenFiltros();
     } catch (e) {
         console.warn('Sync:', e.message);
     }
 }
 
 function renderBoard() {
+    const visibles = ticketsVisibles();
     const cols = { todo: [], progress: [], review: [], done: [] };
-    state.tickets.forEach(t => {
+    visibles.forEach(t => {
         const c = COLUMN_MAP[t.estado];
         if (c) cols[c].push(t);
     });
@@ -190,7 +195,7 @@ function createCardHTML(t) {
 function updateCounts() {
     // FIX BUG #2: acumular todos los estados que pertenecen a cada columna
     const counts = { todo: 0, progress: 0, review: 0, done: 0 };
-    state.tickets.forEach(t => {
+    ticketsVisibles().forEach(t => {
         const colKey = COLUMN_MAP[t.estado];
         if (colKey) counts[colKey]++;
     });
@@ -198,6 +203,72 @@ function updateCounts() {
         const el = document.getElementById(`count-${colKey}`);
         if (el) el.textContent = counts[colKey];
     });
+}
+
+// ============================================
+// FILTROS / BÚSQUEDA DEL TABLERO
+// ============================================
+// Aplica los filtros sobre la lista real (state.tickets) sin mutarla, para que
+// el polling de cada 5s pueda seguir refrescando datos y re-aplicar el filtro.
+function ticketsVisibles() {
+    const f = state.filtros;
+    const texto = (f.texto || '').trim().toLowerCase();
+    return state.tickets.filter(t => {
+        if (f.categoria && (t.cat_nombre || '') !== f.categoria) return false;
+        if (f.prioridad && (t.prio_nivel || '').toLowerCase() !== f.prioridad) return false;
+        if (texto) {
+            const heno = `${t.asunto || ''} #${t.id_solicitud}`.toLowerCase();
+            if (!heno.includes(texto)) return false;
+        }
+        return true;
+    });
+}
+
+function initFiltros() {
+    const inputTexto = document.getElementById('filtroTexto');
+    const selCat = document.getElementById('filtroCategoria');
+    const selPrio = document.getElementById('filtroPrioridad');
+    const btnLimpiar = document.getElementById('filtroLimpiar');
+
+    function aplicar() {
+        state.filtros.texto = inputTexto ? inputTexto.value : '';
+        state.filtros.categoria = selCat ? selCat.value : '';
+        state.filtros.prioridad = selPrio ? selPrio.value : '';
+        renderBoard();
+        updateCounts();
+        actualizarResumenFiltros();
+    }
+
+    if (inputTexto) inputTexto.addEventListener('input', aplicar);
+    if (selCat) selCat.addEventListener('change', aplicar);
+    if (selPrio) selPrio.addEventListener('change', aplicar);
+    if (btnLimpiar) {
+        btnLimpiar.addEventListener('click', () => {
+            if (inputTexto) inputTexto.value = '';
+            if (selCat) selCat.value = '';
+            if (selPrio) selPrio.value = '';
+            aplicar();
+        });
+    }
+}
+
+function hayFiltrosActivos() {
+    const f = state.filtros;
+    return Boolean((f.texto && f.texto.trim()) || f.categoria || f.prioridad);
+}
+
+function actualizarResumenFiltros() {
+    const resumen = document.getElementById('filtroResumen');
+    const btnLimpiar = document.getElementById('filtroLimpiar');
+    const activos = hayFiltrosActivos();
+    if (btnLimpiar) btnLimpiar.hidden = !activos;
+    if (!resumen) return;
+    if (!activos) {
+        resumen.textContent = '';
+        return;
+    }
+    const n = ticketsVisibles().length;
+    resumen.textContent = `${n} ticket${n === 1 ? '' : 's'} coincide${n === 1 ? '' : 'n'}`;
 }
 
 // ============================================
@@ -935,6 +1006,188 @@ async function descargarAdjunto(a) {
         link.remove();
         setTimeout(() => URL.revokeObjectURL(url), 10000);
     } catch (_) {}
+}
+
+
+// ============================================
+// RAG: Base de conocimiento (búsqueda semántica + análisis con IA)
+// ============================================
+// Lee el histórico de soluciones validadas. Backend: GET /coordinator/rag y
+// POST /coordinator/rag/analizar, habilitados para roles de soporte
+// (_verify_support). El agente NO indexa (eso es tarea del coordinador).
+
+function ragToast(msg) {
+    let el = document.getElementById('ragToast');
+    if (!el) {
+        el = document.createElement('div');
+        el.id = 'ragToast';
+        el.className = 'rag-toast';
+        document.body.appendChild(el);
+    }
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(ragToast._t);
+    ragToast._t = setTimeout(() => el.classList.remove('show'), 3200);
+}
+
+async function ragFetch(path, options = {}) {
+    const headers = {
+        'Authorization': `Bearer ${state.authToken}`,
+        ...(options.headers || {})
+    };
+    if (options.body && typeof options.body !== 'string') {
+        headers['Content-Type'] = 'application/json';
+        options.body = JSON.stringify(options.body);
+    }
+    const res = await fetch(`${API}${path}`, { ...options, headers });
+    if (res.status === 401) {
+        localStorage.removeItem('token');
+        sessionStorage.removeItem('token');
+        window.location.href = 'login.html';
+        throw new Error('No autorizado');
+    }
+    if (!res.ok) {
+        let msg = `HTTP ${res.status}`;
+        try {
+            const err = await res.json();
+            if (err.detail) msg = typeof err.detail === 'string' ? err.detail : JSON.stringify(err.detail);
+        } catch (_) {}
+        throw new Error(msg);
+    }
+    return res.json();
+}
+
+function initRag() {
+    const overlay = document.getElementById('ragOverlay');
+    const btnAbrir = document.getElementById('btnAbrirRag');
+    const btnCerrar = document.getElementById('ragOverlayClose');
+    const input = document.getElementById('ragSearchInput');
+    const btnBuscar = document.getElementById('btnBuscarRAG');
+    const btnAnalizar = document.getElementById('btnAnalizarRAG');
+
+    if (btnAbrir && overlay) {
+        btnAbrir.addEventListener('click', () => {
+            overlay.classList.add('open');
+            if (input) setTimeout(() => input.focus(), 50);
+        });
+    }
+    function cerrar() { if (overlay) overlay.classList.remove('open'); }
+    if (btnCerrar) btnCerrar.addEventListener('click', cerrar);
+    if (overlay) {
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) cerrar(); });
+    }
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && overlay && overlay.classList.contains('open')) cerrar();
+    });
+
+    if (btnBuscar) btnBuscar.addEventListener('click', buscarRAG);
+    if (input) input.addEventListener('keydown', e => { if (e.key === 'Enter') buscarRAG(); });
+    if (btnAnalizar) btnAnalizar.addEventListener('click', analizarRAG);
+}
+
+async function buscarRAG() {
+    const q = document.getElementById('ragSearchInput')?.value.trim();
+    const list = document.getElementById('ragResultsList');
+    if (!q) { ragToast('Escribe una consulta para buscar en el histórico'); return; }
+    if (list) list.innerHTML = '<div class="rag-placeholder"><span class="spinner-ring"></span> Buscando soluciones similares...</div>';
+    try {
+        const results = await ragFetch(`/coordinator/rag?query=${encodeURIComponent(q)}`);
+        renderRAG(results, list);
+    } catch (e) {
+        console.error('Error buscando RAG:', e);
+        if (list) list.innerHTML = `<div class="rag-placeholder">❌ ${esc(e.message)}</div>`;
+        ragToast(`Error en la búsqueda: ${e.message}`);
+    }
+}
+
+function renderRAG(results, list) {
+    if (!list) return;
+    if (!results || results.length === 0) {
+        list.innerHTML = '<div class="rag-placeholder">No se encontraron soluciones similares en el histórico.</div>';
+        return;
+    }
+    list.innerHTML = results.map(r => `
+        <div class="rag-result-card">
+            <div class="rag-result-top">
+                <h4>Solución para: ${esc(r.asunto)}</h4>
+                <span class="similarity-badge">${(Number(r.similitud) * 100).toFixed(1)}% Similitud</span>
+            </div>
+            <p><strong>Detalle del ticket:</strong> ${esc(r.descripcion)}</p>
+            ${r.solucion ? `<p><strong>Solución aplicada:</strong> ${esc(r.solucion)}</p>` : ''}
+            <p><strong>Estado:</strong> ${esc(r.estado)} • <strong>Categoría:</strong> ${esc(r.categoria)}</p>
+            <span class="rag-meta-tag"><i class="fas fa-check-circle"></i> Ticket fuente: #${esc(r.id_solicitud)} • Atención: ${esc(r.agente)}</span>
+        </div>
+    `).join('');
+}
+
+async function analizarRAG() {
+    const q = document.getElementById('ragSearchInput')?.value.trim();
+    const panel = document.getElementById('ragAnalisisPanel');
+    const body = document.getElementById('ragAnalisisBody');
+    const btn = document.getElementById('btnAnalizarRAG');
+    if (!q) { ragToast('Escribe una consulta antes de pedir el análisis a la IA'); return; }
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-ring"></span> Analizando...';
+    }
+    if (panel) panel.hidden = false;
+    if (body) {
+        body.innerHTML = '<div class="rag-analisis-loading"><span class="spinner-ring"></span> La IA está comparando las soluciones históricas más similares...</div>';
+    }
+    try {
+        const r = await ragFetch('/coordinator/rag/analizar', {
+            method: 'POST',
+            body: { pregunta: q }
+        });
+        renderAnalisisRAG(r, body);
+        enfocarAnalisisRAG(panel, body);
+    } catch (e) {
+        console.error('Error en el análisis RAG:', e);
+        if (body) body.innerHTML = `<div class="rag-analisis-error">❌ ${esc(e.message)}</div>`;
+        ragToast(`Error en el análisis: ${e.message}`);
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-robot"></i> Preguntar a la IA';
+        }
+    }
+}
+
+function renderAnalisisRAG(r, body) {
+    if (!body) return;
+    const meta = document.getElementById('ragAnalisisMeta');
+    if (!r || r.sin_contexto) {
+        body.innerHTML = `<div class="rag-analisis-empty">${esc((r && r.mensaje) || 'Sin contexto histórico suficiente para analizar.')}</div>`;
+        if (meta) meta.textContent = 'Sin coincidencias';
+        return;
+    }
+    if (meta) {
+        meta.textContent = `${r.modelo || 'modelo local'} · ${r.tickets_analizados || 0} ticket(s) · ${r.tiempo_ms || 0} ms`;
+    }
+    const fuentes = (r.fuentes || []).map(f => `
+        <span class="rag-fuente-chip" title="${esc(f.asunto)}">
+            <i class="fas fa-ticket-alt"></i> #${esc(f.id_solicitud)} · ${(Number(f.similitud) * 100).toFixed(0)}%
+        </span>`).join('');
+    body.innerHTML = `
+        <div class="rag-analisis-text">${esc(r.respuesta).replace(/\n/g, '<br>')}</div>
+        ${fuentes ? `<div class="rag-fuentes"><strong>Fuentes:</strong> ${fuentes}</div>` : ''}
+    `;
+}
+
+// Tras la inferencia: desplaza la vista al panel de análisis y resalta la respuesta final
+function enfocarAnalisisRAG(panel, body) {
+    if (!panel) return;
+    const respuesta = (body && body.querySelector('.rag-analisis-text')) || panel;
+    requestAnimationFrame(() => {
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        panel.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+        respuesta.classList.remove('rag-analisis-highlight');
+        void respuesta.offsetWidth; // reflow para re-disparar la animación
+        respuesta.classList.add('rag-analisis-highlight');
+        respuesta.addEventListener('animationend', () => {
+            respuesta.classList.remove('rag-analisis-highlight');
+        }, { once: true });
+    });
 }
 
 

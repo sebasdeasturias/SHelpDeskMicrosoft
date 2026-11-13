@@ -36,6 +36,19 @@ async def _verify_token(db: AsyncSession, token: str) -> dict:
     return payload
 
 
+async def _verify_support(db: AsyncSession, token: str) -> dict:
+    # Igual que _verify_token (misma revalidación de sesión contra la BD), pero
+    # admite además al rol 'agente'. Se usa SOLO en la lectura de la base de
+    # conocimiento RAG (búsqueda semántica y análisis con IA del histórico):
+    # son consultas de solo lectura sobre soluciones ya validadas, que es la
+    # misma información que el agente ya puede pedir por el chat IA. NO habilita
+    # el resto del panel de coordinación.
+    payload = await usuario_actual(db, token)
+    if payload.get("role") not in SUPPORT_ROLES:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Se requiere rol de soporte")
+    return payload
+
+
 def _iso(dt):
     return dt.isoformat() if dt else None
 
@@ -502,7 +515,7 @@ async def set_sla(data: dict, db: AsyncSession = Depends(get_db), token: str = D
 # ============================================================
 @router.get("/rag")
 async def search_rag(query: str = Query(..., min_length=1), db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
-    await _verify_token(db, token)
+    await _verify_support(db, token)
 
     # 1) Intentar búsqueda vectorial sobre embeddings reales
     vector_rows = await _vector_search(db, query)
@@ -702,9 +715,9 @@ async def rag_analizar(data: dict, db: AsyncSession = Depends(get_db), token: st
     Flujo: bge-m3 recupera los tickets resueltos similares (los de las tarjetas)
     -> se envían como datos no confiables + la pregunta al modelo local -> se
     devuelven las conclusiones con los tickets fuente citados.
-    Solo coordinador/administrador (vía _verify_token).
+    Roles de soporte (agente/coordinador/administrador) vía _verify_support.
     """
-    payload = await _verify_token(db, token)
+    payload = await _verify_support(db, token)
     user_id = payload.get("user_id")
 
     pregunta = str(data.get("pregunta") or "").strip()

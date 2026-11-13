@@ -17,6 +17,9 @@
     <div class="topbar">
         <h1><span class="logo-icon"><img src="logohelpdesk.png" alt="HelpDesk"></span> Tablero Kanban IT</h1>
         <div class="topbar-right">
+            <button class="kb-btn" id="btnAbrirRag" title="Buscar soluciones en el histórico (RAG)">
+                <i class="fas fa-brain"></i> <span>Base de conocimiento</span>
+            </button>
             <div class="theme-switch-wrapper">
                 <label class="theme-switch">
                     <input type="checkbox" id="themeCheck">
@@ -30,6 +33,33 @@
             <a href="dashboard-admin.html" class="logout-btn admin-return-btn" id="adminReturnBtn" style="display:none;"><i class="fas fa-shield-halved"></i> Volver a Admin</a>
             <button class="logout-btn" id="logoutBtn">Cerrar Sesión</button>
         </div>
+    </div>
+
+    <!-- Barra de filtros y búsqueda del tablero -->
+    <div class="board-filters" id="boardFilters">
+        <div class="filter-search">
+            <i class="fas fa-search"></i>
+            <input type="text" id="filtroTexto" placeholder="Buscar en mis tickets por asunto o #ID...">
+        </div>
+        <select id="filtroCategoria" class="filter-select" aria-label="Filtrar por categoría">
+            <option value="">Todas las categorías</option>
+            <option value="Hardware">Hardware</option>
+            <option value="Software">Software</option>
+            <option value="Red/Internet">Red / Internet</option>
+            <option value="Cuentas/Accesos">Cuentas / Accesos</option>
+            <option value="Otros">Otros</option>
+        </select>
+        <select id="filtroPrioridad" class="filter-select" aria-label="Filtrar por prioridad">
+            <option value="">Todas las prioridades</option>
+            <option value="crítica">Crítica</option>
+            <option value="alta">Alta</option>
+            <option value="media">Media</option>
+            <option value="baja">Baja</option>
+        </select>
+        <button class="filter-clear" id="filtroLimpiar" title="Quitar todos los filtros" hidden>
+            <i class="fas fa-times"></i> Limpiar
+        </button>
+        <span class="filter-count" id="filtroResumen"></span>
     </div>
 
     <!-- Kanban Board -->
@@ -146,6 +176,46 @@
 
     <!-- Footer -->
     <div class="global-footer">Sistema HelpDesk V1.0 • Panel de Agente</div>
+
+    <!-- Panel RAG: Base de conocimiento (búsqueda semántica + análisis IA) -->
+    <div class="rag-overlay" id="ragOverlay">
+        <div class="rag-modal">
+            <div class="rag-modal-header">
+                <h3><i class="fas fa-brain"></i> Base de conocimiento — Soluciones del histórico</h3>
+                <button class="rag-modal-close" id="ragOverlayClose" aria-label="Cerrar base de conocimiento">✕</button>
+            </div>
+            <div class="rag-modal-body">
+                <p class="rag-intro">Consulta cómo se resolvieron problemas similares. Describe el síntoma técnico y busca soluciones parecidas, o pide a la IA que las analice y te proponga una recomendación.</p>
+
+                <div class="rag-search-box">
+                    <div class="search-input-wrap">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="ragSearchInput" placeholder="Ej: pantalla azul al conectar el proyector, error driver wifi...">
+                        <button class="action-header-btn primary" id="btnBuscarRAG"><i class="fas fa-magic"></i> Buscar</button>
+                        <button class="action-header-btn robot" id="btnAnalizarRAG" title="La IA analiza las soluciones históricas y propone una recomendación"><i class="fas fa-robot"></i> Preguntar a la IA</button>
+                    </div>
+                </div>
+
+                <div class="rag-section">
+                    <div class="rag-section-bar">
+                        <h4><i class="fas fa-list-ol"></i> Soluciones similares encontradas</h4>
+                        <span class="badge-tag">Similitud coseno (HNSW)</span>
+                    </div>
+                    <div class="rag-results-list" id="ragResultsList">
+                        <div class="rag-placeholder">Escribe una consulta y pulsa <b>Buscar</b> para ver soluciones del histórico.</div>
+                    </div>
+                </div>
+
+                <div class="rag-section rag-analisis-container" id="ragAnalisisPanel" hidden>
+                    <div class="rag-section-bar">
+                        <h4><i class="fas fa-robot"></i> Análisis y recomendación de la IA</h4>
+                        <span class="badge-tag" id="ragAnalisisMeta">bge-m3 + modelo local</span>
+                    </div>
+                    <div class="rag-analisis-body" id="ragAnalisisBody"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 
 <script src="js/config.js"></script>
 <script src="js/session-timeout.js"></script>
