@@ -308,6 +308,29 @@ body.night-mode .badge-coming {
     border: 1px solid rgba(255,255,255,0.2);
 }
 
+/* Badge de usuario como acceso a "Mi Perfil" */
+.user-badge-btn {
+    cursor: pointer;
+    font: inherit;
+    transition: all 0.2s;
+}
+
+.user-badge-btn:hover {
+    background: rgba(255,255,255,0.22);
+    border-color: rgba(255,255,255,0.4);
+}
+
+.user-badge-btn.active {
+    background: var(--nav-active);
+    border-color: rgba(255,255,255,0.45);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.user-badge-btn:focus-visible {
+    outline: 2px solid #ffd700;
+    outline-offset: 2px;
+}
+
 .user-role {
     font-size: 0.7rem;
     color: #ffd700;

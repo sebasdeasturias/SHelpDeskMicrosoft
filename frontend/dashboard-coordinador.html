@@ -20,27 +20,47 @@
         </div>
         <div class="topbar-center">
             <nav class="main-nav">
-                <!-- 1. Kanban -->
+                <!-- 1. Operación: Tablero Kanban -->
                 <button class="nav-btn active" data-page="kanban" title="Tablero Kanban de Tickets">
                     <i class="fas fa-columns"></i> <span>Tablero Kanban</span>
                 </button>
 
-                <!-- 2. Estadísticas Streamlit -->
-                <button class="nav-btn" data-page="streamlit" title="Dashboard de Estadísticas con Streamlit">
-                    <i class="fas fa-chart-pie"></i> <span>Estadísticas</span>
-                </button>
-
-                <!-- 3. Reportes de Tickets -->
-                <button class="nav-btn" data-page="reportes" title="Generación y Exportación de Reportes">
-                    <i class="fas fa-file-invoice"></i> <span>Reportes</span>
-                </button>
-
-                <!-- 4. Gestión de Agentes de Soporte (Dropdown) -->
-                <div class="nav-dropdown" id="agentesNavDropdown">
-                    <button class="nav-btn dropdown-toggle" id="menuToggle" title="Gestión de Agentes de Soporte">
-                        <i class="fas fa-users-cog"></i> <span>Gestión Agentes</span> <i class="fas fa-chevron-down nav-caret"></i>
+                <!-- 2. Análisis (Dropdown): métricas, reportes y búsqueda de conocimiento -->
+                <div class="nav-dropdown">
+                    <button class="nav-btn dropdown-toggle" title="Análisis: estadísticas, reportes y búsqueda semántica">
+                        <i class="fas fa-chart-pie"></i> <span>Análisis</span> <i class="fas fa-chevron-down nav-caret"></i>
                     </button>
-                    <div class="dropdown-menu" id="dropdownMenu">
+                    <div class="dropdown-menu">
+                        <a href="#" data-page="streamlit" class="dropdown-item">
+                            <i class="fas fa-chart-pie"></i>
+                            <div class="dropdown-item-text">
+                                <span class="dropdown-item-title">Estadísticas</span>
+                                <span class="dropdown-item-desc">Métricas y tendencias del equipo</span>
+                            </div>
+                        </a>
+                        <a href="#" data-page="reportes" class="dropdown-item">
+                            <i class="fas fa-file-invoice"></i>
+                            <div class="dropdown-item-text">
+                                <span class="dropdown-item-title">Reportes</span>
+                                <span class="dropdown-item-desc">Generar y exportar reportes</span>
+                            </div>
+                        </a>
+                        <a href="#" data-page="rag" class="dropdown-item">
+                            <i class="fas fa-brain"></i>
+                            <div class="dropdown-item-text">
+                                <span class="dropdown-item-title">Consultar RAG</span>
+                                <span class="dropdown-item-desc">Búsqueda semántica de tickets</span>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 3. Equipo (Dropdown): gestión real de agentes de soporte -->
+                <div class="nav-dropdown">
+                    <button class="nav-btn dropdown-toggle" title="Equipo: asignación y supervisión de agentes">
+                        <i class="fas fa-users-cog"></i> <span>Equipo</span> <i class="fas fa-chevron-down nav-caret"></i>
+                    </button>
+                    <div class="dropdown-menu">
                         <a href="#" data-page="asignar" class="dropdown-item">
                             <i class="fas fa-user-plus"></i>
                             <div class="dropdown-item-text">
@@ -55,30 +75,13 @@
                                 <span class="dropdown-item-desc">Roles, accesos y métricas</span>
                             </div>
                         </a>
-                        <a href="#" data-page="chat-ia" class="dropdown-item">
-                            <i class="fas fa-robot"></i>
-                            <div class="dropdown-item-text">
-                                <span class="dropdown-item-title">Chat IA Asistente</span>
-                                <span class="dropdown-item-desc">Consultas avanzadas de equipo</span>
-                            </div>
-                        </a>
-                        <a href="#" data-page="rag" class="dropdown-item">
-                            <i class="fas fa-brain"></i>
-                            <div class="dropdown-item-text">
-                                <span class="dropdown-item-title">Consultar RAG</span>
-                                <span class="dropdown-item-desc">Búsqueda semántica de tickets</span>
-                            </div>
-                        </a>
-                        <hr class="dropdown-divider">
-                        <a href="#" data-page="mi-perfil" class="dropdown-item">
-                            <i class="fas fa-user-circle"></i>
-                            <div class="dropdown-item-text">
-                                <span class="dropdown-item-title">Mi Perfil</span>
-                                <span class="dropdown-item-desc">Datos del coordinador</span>
-                            </div>
-                        </a>
                     </div>
                 </div>
+
+                <!-- 4. Asistente IA -->
+                <button class="nav-btn" data-page="chat-ia" title="Asistente de IA para Coordinadores">
+                    <i class="fas fa-robot"></i> <span>Asistente IA</span>
+                </button>
 
                 <!-- 5. Configuración de SLAs -->
                 <button class="nav-btn" data-page="sla" title="Configuración de Service Level Agreements (SLAs)">
@@ -97,10 +100,10 @@
                 </label>
                 <span class="theme-label">Modo Nocturno</span>
             </div>
-            <div class="user-badge">
+            <button type="button" class="user-badge user-badge-btn" data-page="mi-perfil" title="Ver Mi Perfil">
                 <span class="user-role" id="userRoleBadge">👑 Coordinador</span>
                 <span class="user-name" id="userName">Cargando...</span>
-            </div>
+            </button>
             <a href="dashboard-admin.html" class="logout-btn admin-return-btn" id="adminReturnBtn" style="display:none;"><i class="fas fa-shield-halved"></i> Volver a Admin</a>
             <button class="logout-btn" id="logoutBtn">
                 <i class="fas fa-sign-out-alt"></i> Salir

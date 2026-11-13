@@ -198,40 +198,47 @@ function initTheme() {
     });
 }
 
+function cerrarTodosLosMenus() {
+    document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
+}
+
 function initNavigation() {
-    const menuToggle = document.getElementById('menuToggle');
-    const dropdownMenu = document.getElementById('dropdownMenu');
-    const navBtns = document.querySelectorAll('.nav-btn:not(.dropdown-toggle)');
-    const dropdownItems = document.querySelectorAll('.dropdown-item');
+    const dropdowns = document.querySelectorAll('.nav-dropdown');
+    // Botones de navegación directa: los principales y el badge de usuario (Mi Perfil)
+    const navBtns = document.querySelectorAll('.nav-btn:not(.dropdown-toggle)[data-page], .user-badge-btn[data-page]');
+    const dropdownItems = document.querySelectorAll('.dropdown-item[data-page]');
 
-    // Toggle del menú desplegable
-    menuToggle.addEventListener('click', (e) => {
-        e.stopPropagation();
-        dropdownMenu.classList.toggle('open');
-    });
-
-    // Cerrar menú al hacer clic fuera
-    document.addEventListener('click', () => {
-        dropdownMenu.classList.remove('open');
-    });
-
-    // Navegación por botones principales (Kanban)
-    navBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const page = btn.dataset.page;
-            navigateTo(page);
-            dropdownMenu.classList.remove('open');
+    // Toggle de cada menú desplegable (soporta varios dropdowns)
+    dropdowns.forEach(dropdown => {
+        const toggle = dropdown.querySelector('.dropdown-toggle');
+        const menu = dropdown.querySelector('.dropdown-menu');
+        if (!toggle || !menu) return;
+        toggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const yaAbierto = menu.classList.contains('open');
+            cerrarTodosLosMenus();
+            if (!yaAbierto) menu.classList.add('open');
         });
     });
 
-    // Navegación por items del dropdown
+    // Cerrar menús al hacer clic fuera
+    document.addEventListener('click', cerrarTodosLosMenus);
+
+    // Navegación por botones principales y badge de usuario
+    navBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            navigateTo(btn.dataset.page);
+            cerrarTodosLosMenus();
+        });
+    });
+
+    // Navegación por items de los dropdowns
     dropdownItems.forEach(item => {
         item.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            const page = item.dataset.page;
-            navigateTo(page);
-            dropdownMenu.classList.remove('open');
+            navigateTo(item.dataset.page);
+            cerrarTodosLosMenus();
         });
     });
 }
@@ -251,17 +258,19 @@ function navigateTo(page) {
         targetPage.classList.add('active');
     }
 
-    // Actualizar botón activo
-    document.querySelectorAll('.nav-btn:not(.dropdown-toggle)').forEach(btn => {
+    // Actualizar botón activo (botones directos + badge de usuario)
+    document.querySelectorAll('.nav-btn:not(.dropdown-toggle)[data-page], .user-badge-btn[data-page]').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.page === page);
     });
 
-    // Resaltar el dropdown "Gestión Agentes" si la página pertenece a su grupo
-    const paginasAgentes = ['asignar', 'supervisar', 'chat-ia', 'rag', 'mi-perfil'];
-    const dropdownToggle = document.getElementById('menuToggle');
-    if (dropdownToggle) {
-        dropdownToggle.classList.toggle('active', paginasAgentes.includes(page));
-    }
+    // Resaltar cada dropdown si la página activa pertenece a su menú
+    document.querySelectorAll('.nav-dropdown').forEach(dropdown => {
+        const toggle = dropdown.querySelector('.dropdown-toggle');
+        if (!toggle) return;
+        const paginas = Array.from(dropdown.querySelectorAll('.dropdown-item[data-page]'))
+            .map(i => i.dataset.page);
+        toggle.classList.toggle('active', paginas.includes(page));
+    });
 
     // Si es kanban, refrescar tickets
     if (page === 'kanban') {
