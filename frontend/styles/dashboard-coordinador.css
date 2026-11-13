@@ -2154,3 +2154,21 @@ body.night-mode .chat-privado-conv-bar { color: #e0e0ff; }
  ░░░░ ░░░░░░ ░░░░ ░░░  ░░░░░░ ░░░  ░░░░░░ ░  ░░  ░░  ░ ░░░░░ ░░  ░░ 
   ░░░░  ░░░░░ ░░░░  ░   ░ ░░░░  ░   ░ ░░░░    ░   ░   ░ ░░░░░ ░   ░ 
 */
+
+/* Markdown ligero de la IA (chat bot + análisis RAG): código en línea */
+.chat-msg.bot code,
+.rag-analisis-text code {
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.9em;
+    padding: 1px 6px;
+    border-radius: 6px;
+    background: rgba(17,66,94,0.12);
+    border: 1px solid rgba(17,66,94,0.18);
+}
+body.night-mode .chat-msg.bot code,
+body.night-mode .rag-analisis-text code {
+    background: rgba(160,180,255,0.14);
+    border-color: rgba(160,180,255,0.22);
+}
+.chat-msg.bot strong,
+.rag-analisis-text strong { font-weight: 700; }

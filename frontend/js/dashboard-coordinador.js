@@ -811,7 +811,13 @@ function addChatMessage(text, type) {
     const container = document.getElementById('chatMessages');
     const msg = document.createElement('div');
     msg.className = `chat-msg ${type}`;
-    msg.textContent = text;
+    // Solo la IA (bot) devuelve Markdown; se renderiza con el parser seguro.
+    // Los mensajes de usuario/sistema van como texto plano.
+    if (type === 'bot' && window.mdLigero) {
+        msg.innerHTML = window.mdLigero(text);
+    } else {
+        msg.textContent = text;
+    }
     container.appendChild(msg);
     container.scrollTop = container.scrollHeight;
     return msg;
@@ -1567,7 +1573,7 @@ function renderAnalisisRAG(r, body) {
             <i class="fas fa-ticket-alt"></i> #${esc(f.id_solicitud)} · ${(Number(f.similitud) * 100).toFixed(0)}%
         </span>`).join('');
     body.innerHTML = `
-        <div class="rag-analisis-text">${esc(r.respuesta).replace(/\n/g, '<br>')}</div>
+        <div class="rag-analisis-text">${window.mdLigero ? window.mdLigero(r.respuesta) : esc(r.respuesta).replace(/\n/g, '<br>')}</div>
         ${fuentes ? `<div class="rag-fuentes"><strong>Fuentes:</strong> ${fuentes}</div>` : ''}
     `;
 }
