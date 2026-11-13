@@ -1537,6 +1537,8 @@ async function analizarRAG() {
             body: { pregunta: q }
         });
         renderAnalisisRAG(r, body);
+        // Inferencia terminada: lleva la vista al resultado y resáltalo
+        enfocarAnalisisRAG(panel, body);
     } catch (e) {
         console.error('Error en el análisis RAG:', e);
         if (body) body.innerHTML = `<div class="rag-analisis-error">❌ ${esc(e.message)}</div>`;
@@ -1568,6 +1570,28 @@ function renderAnalisisRAG(r, body) {
         <div class="rag-analisis-text">${esc(r.respuesta).replace(/\n/g, '<br>')}</div>
         ${fuentes ? `<div class="rag-fuentes"><strong>Fuentes:</strong> ${fuentes}</div>` : ''}
     `;
+}
+
+// Tras la inferencia: desplaza la vista al panel de análisis y resalta la respuesta final
+function enfocarAnalisisRAG(panel, body) {
+    if (!panel) return;
+    const respuesta = (body && body.querySelector('.rag-analisis-text')) || panel;
+    // Esperar al pintado para que el scroll y el highlight apunten al contenido ya renderizado
+    requestAnimationFrame(() => {
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        panel.scrollIntoView({
+            behavior: reduceMotion ? 'auto' : 'smooth',
+            block: 'start'
+        });
+        // Reiniciar la animación si se vuelve a analizar seguido
+        respuesta.classList.remove('rag-analisis-highlight');
+        // Forzar reflow para re-disparar la animación CSS
+        void respuesta.offsetWidth;
+        respuesta.classList.add('rag-analisis-highlight');
+        respuesta.addEventListener('animationend', () => {
+            respuesta.classList.remove('rag-analisis-highlight');
+        }, { once: true });
+    });
 }
 
 function enviarPromptSugerido(texto) {
