@@ -308,6 +308,29 @@ body.night-mode .badge-coming {
     border: 1px solid rgba(255,255,255,0.2);
 }
 
+/* Badge de usuario como acceso a "Mi Perfil" */
+.user-badge-btn {
+    cursor: pointer;
+    font: inherit;
+    transition: all 0.2s;
+}
+
+.user-badge-btn:hover {
+    background: rgba(255,255,255,0.22);
+    border-color: rgba(255,255,255,0.4);
+}
+
+.user-badge-btn.active {
+    background: var(--nav-active);
+    border-color: rgba(255,255,255,0.45);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.user-badge-btn:focus-visible {
+    outline: 2px solid #ffd700;
+    outline-offset: 2px;
+}
+
 .user-role {
     font-size: 0.7rem;
     color: #ffd700;
@@ -1584,6 +1607,70 @@ body.night-mode .rag-result-card { background: rgba(60,60,100,0.3); }
 .rag-analisis-text {
     font-size: 0.85rem; line-height: 1.65; color: var(--text-dark);
     white-space: normal;
+    border-radius: 12px;
+}
+
+/* Resaltado temporal de la respuesta final tras la inferencia IA */
+.rag-analisis-highlight {
+    animation: ragHighlightPulse 2.6s ease-out forwards;
+}
+@keyframes ragHighlightPulse {
+    0% {
+        background: rgba(16, 185, 129, 0.28);
+        box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.55),
+                    0 6px 22px rgba(16, 185, 129, 0.30);
+        padding: 12px 14px;
+    }
+    70% {
+        background: rgba(16, 185, 129, 0.12);
+        box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.30),
+                    0 4px 14px rgba(16, 185, 129, 0.15);
+        padding: 12px 14px;
+    }
+    100% {
+        background: transparent;
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+        padding: 0;
+    }
+}
+body.night-mode .rag-analisis-highlight {
+    animation-name: ragHighlightPulseNight;
+}
+@keyframes ragHighlightPulseNight {
+    0% {
+        background: rgba(56, 189, 248, 0.30);
+        box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.60),
+                    0 6px 22px rgba(56, 189, 248, 0.35);
+        padding: 12px 14px;
+    }
+    70% {
+        background: rgba(56, 189, 248, 0.14);
+        box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.30),
+                    0 4px 14px rgba(56, 189, 248, 0.18);
+        padding: 12px 14px;
+    }
+    100% {
+        background: transparent;
+        box-shadow: 0 0 0 0 rgba(56, 189, 248, 0);
+        padding: 0;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .rag-analisis-highlight {
+        animation: ragHighlightStatic 2.6s steps(1, end) forwards;
+    }
+    @keyframes ragHighlightStatic {
+        0%, 70% {
+            background: rgba(16, 185, 129, 0.16);
+            box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.35);
+            padding: 12px 14px;
+        }
+        100% {
+            background: transparent;
+            box-shadow: none;
+            padding: 0;
+        }
+    }
 }
 .rag-analisis-loading, .rag-analisis-empty {
     display: flex; align-items: center; gap: 10px;
@@ -2067,3 +2154,21 @@ body.night-mode .chat-privado-conv-bar { color: #e0e0ff; }
  ░░░░ ░░░░░░ ░░░░ ░░░  ░░░░░░ ░░░  ░░░░░░ ░  ░░  ░░  ░ ░░░░░ ░░  ░░ 
   ░░░░  ░░░░░ ░░░░  ░   ░ ░░░░  ░   ░ ░░░░    ░   ░   ░ ░░░░░ ░   ░ 
 */
+
+/* Markdown ligero de la IA (chat bot + análisis RAG): código en línea */
+.chat-msg.bot code,
+.rag-analisis-text code {
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.9em;
+    padding: 1px 6px;
+    border-radius: 6px;
+    background: rgba(17,66,94,0.12);
+    border: 1px solid rgba(17,66,94,0.18);
+}
+body.night-mode .chat-msg.bot code,
+body.night-mode .rag-analisis-text code {
+    background: rgba(160,180,255,0.14);
+    border-color: rgba(160,180,255,0.22);
+}
+.chat-msg.bot strong,
+.rag-analisis-text strong { font-weight: 700; }
