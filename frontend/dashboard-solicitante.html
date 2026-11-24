@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Solicitante - HelpDesk IT</title>
     <link rel="stylesheet" href="styles/dashboard-solicitante.css">
+    <link rel="stylesheet" href="styles/popups.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/png" href="favicon.png">
 </head>
@@ -99,8 +100,8 @@
     <div class="solucion-overlay" id="solucionOverlay" aria-hidden="true">
         <div class="solucion-modal" role="dialog" aria-modal="true" aria-labelledby="solucionTitulo">
             <div class="solucion-header">
-                <h3 id="solucionTitulo"><i class="fas fa-check-circle"></i> Solución del Ticket <span id="solucionId"></span></h3>
-                <button class="solucion-close" id="solucionClose" aria-label="Cerrar">✕</button>
+                <h3 id="solucionTitulo"><span class="modal-icon"><i class="fas fa-circle-check" aria-hidden="true"></i></span> Solución del Ticket <span id="solucionId"></span></h3>
+                <button class="solucion-close" id="solucionClose" aria-label="Cerrar"><i class="fas fa-xmark" aria-hidden="true"></i></button>
             </div>
             <div class="solucion-body" id="solucionBody"></div>
         </div>
@@ -110,16 +111,16 @@
     <button class="chat-fab" id="chatFab" aria-label="Abrir chat del equipo">
         <span class="fab-icon">
             <i class="fas fa-robot fab-open-icon" aria-hidden="true"></i>
-            <i class="fas fa-times fab-close-icon" aria-hidden="true"></i>
+            <i class="fas fa-xmark fab-close-icon" aria-hidden="true"></i>
         </span>
     </button>
 
     <!-- Chat Panel (flotante): Chat Global -->
     <div class="chat-panel" id="chatPanel">
         <div class="chat-header">
-            <h3><i class="fas fa-users chat-header-icon" aria-hidden="true"></i> Chat Global</h3>
+            <h3><i class="fas fa-robot chat-header-icon" aria-hidden="true"></i> Chat Global</h3>
             <div style="display:flex; gap:8px; align-items:center;">
-                <button class="chat-close" id="chatClose">✕</button>
+                <button class="chat-close" id="chatClose" aria-label="Cerrar chat"><i class="fas fa-xmark" aria-hidden="true"></i></button>
             </div>
         </div>
         <div class="chat-messages chat-global-msgs" id="chatGlobalMessages">
@@ -127,7 +128,7 @@
         </div>
         <div class="chat-input-area">
             <textarea id="chatInput" rows="1" placeholder="Mensaje para el equipo..."></textarea>
-            <button class="chat-send-btn" id="chatSendBtn">➤</button>
+            <button class="chat-send-btn" id="chatSendBtn" aria-label="Enviar mensaje"><i class="fas fa-paper-plane" aria-hidden="true"></i></button>
         </div>
     </div>
 

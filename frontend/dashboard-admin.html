@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Administración - HelpDesk IT</title>
     <link rel="stylesheet" href="styles/dashboard-admin.css">
+    <link rel="stylesheet" href="styles/popups.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/png" href="favicon.png">
 </head>
@@ -318,9 +319,14 @@
             </div>
         </section>
     </div>
-    <div class="modal-overlay" id="modalOverlay">
+    <div class="modal-overlay" id="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitulo" aria-hidden="true">
         <div class="modal-content">
-            <div class="modal-header"><h3 id="modalTitulo">Confirmar</h3></div>
+            <div class="modal-header">
+                <h3><span class="modal-icon" id="modalIcono"><i class="fas fa-circle-question" aria-hidden="true"></i></span> <span id="modalTitulo">Confirmar</span></h3>
+                <button class="modal-close" id="modalCerrar" type="button" aria-label="Cerrar">
+                    <i class="fas fa-xmark" aria-hidden="true"></i>
+                </button>
+            </div>
             <div class="modal-body" id="modalCuerpo"></div>
             <div class="modal-footer">
                 <button class="btn-cancel" id="modalCancelar">Cancelar</button>
@@ -336,7 +342,7 @@
     <button class="chat-fab" id="chatFab" aria-label="Abrir chat de soporte">
         <span class="fab-icon">
             <i class="fas fa-robot fab-open-icon" aria-hidden="true"></i>
-            <i class="fas fa-times fab-close-icon" aria-hidden="true"></i>
+            <i class="fas fa-xmark fab-close-icon" aria-hidden="true"></i>
         </span>
     </button>
 
@@ -345,7 +351,7 @@
         <div class="chat-header">
             <h3><i class="fas fa-robot chat-header-icon" aria-hidden="true"></i> Chat Soporte</h3>
             <div style="display:flex; gap:8px; align-items:center;">
-                <button class="chat-close" id="chatClose">✕</button>
+                <button class="chat-close" id="chatClose" aria-label="Cerrar chat"><i class="fas fa-xmark" aria-hidden="true"></i></button>
             </div>
         </div>
         <div class="chat-tabs" role="tablist" aria-label="Tipo de chat">
@@ -366,14 +372,14 @@
         </div>
         <div class="chat-privado-conv" id="chatPrivadoConv" style="display:none;">
             <div class="chat-privado-conv-bar">
-                <button type="button" id="chatPrivadoVolver" class="chat-privado-volver" aria-label="Volver a contactos">←</button>
+                <button type="button" id="chatPrivadoVolver" class="chat-privado-volver" aria-label="Volver a contactos"><i class="fas fa-arrow-left" aria-hidden="true"></i></button>
                 <span id="chatPrivadoNombre">Conversación</span>
             </div>
             <div class="chat-messages chat-privado-msgs" id="chatPrivadoMessages"></div>
         </div>
         <div class="chat-input-area">
             <textarea id="chatInput" rows="1" placeholder="Escribe tu mensaje..."></textarea>
-            <button class="chat-send-btn" id="chatSendBtn">➤</button>
+            <button class="chat-send-btn" id="chatSendBtn" aria-label="Enviar mensaje"><i class="fas fa-paper-plane" aria-hidden="true"></i></button>
         </div>
     </div>
 

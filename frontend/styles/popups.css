@@ -1,0 +1,445 @@
+/* ============================================
+   POP-UPS: lenguaje visual único
+   ============================================
+   Hojas de estilo por página definen el contenido
+   propio de cada modal (tabla, formulario, RAG...).
+   Este archivo fija la "cáscara" común: fondo,
+   superficie, cabecera, cierre, cuerpo y botones.
+   Se carga SIEMPRE después del CSS de la página.
+   Paleta: la misma del detalle de ticket (glass
+   Frutiger Aero + cabecera teal sólida).
+============================================ */
+
+:root {
+    --popup-overlay: rgba(6, 20, 35, 0.58);
+    --popup-surface: rgba(250, 253, 255, 0.97);
+    --popup-border: rgba(9, 76, 101, 0.28);
+    --popup-header-top: #0b5673;
+    --popup-header-bottom: #0f7a97;
+    --popup-text: #123b52;
+    --popup-muted: #335f75;
+    --popup-divider: rgba(17, 94, 124, 0.16);
+    --popup-section: rgba(17, 94, 124, 0.06);
+    --popup-section-border: rgba(17, 94, 124, 0.2);
+    --popup-scroll: rgba(17, 94, 124, 0.35);
+    --popup-shadow: 0 24px 60px rgba(4, 35, 50, 0.4),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.65);
+    --popup-close-bg: rgba(0, 0, 0, 0.18);
+    --popup-close-border: rgba(255, 255, 255, 0.38);
+    --popup-close-hover: rgba(220, 38, 38, 0.5);
+    --popup-secondary-bg: rgba(17, 94, 124, 0.08);
+    --popup-secondary-border: rgba(17, 94, 124, 0.22);
+    --popup-primary-top: #2a9dbf;
+    --popup-primary-bottom: #17607f;
+    --popup-radius: 20px;
+}
+
+body.night-mode {
+    --popup-overlay: rgba(3, 9, 18, 0.66);
+    --popup-surface: rgba(24, 25, 44, 0.97);
+    --popup-border: rgba(130, 145, 200, 0.45);
+    --popup-header-top: #1e3350;
+    --popup-header-bottom: #2a4a6e;
+    --popup-text: #f0f2ff;
+    --popup-muted: #b9c3e8;
+    --popup-divider: rgba(160, 175, 225, 0.16);
+    --popup-section: rgba(255, 255, 255, 0.055);
+    --popup-section-border: rgba(160, 175, 225, 0.22);
+    --popup-scroll: rgba(185, 195, 232, 0.35);
+    --popup-shadow: 0 24px 60px rgba(0, 0, 0, 0.55),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    --popup-close-bg: rgba(0, 0, 0, 0.28);
+    --popup-close-border: rgba(255, 255, 255, 0.4);
+    --popup-close-hover: rgba(220, 38, 38, 0.55);
+    --popup-secondary-bg: rgba(255, 255, 255, 0.08);
+    --popup-secondary-border: rgba(160, 175, 225, 0.25);
+    --popup-primary-top: #3b6fa8;
+    --popup-primary-bottom: #1c3357;
+}
+
+/* --- Fondo / overlay ------------------------------------------------ */
+.modal-overlay,
+.card-selector-overlay,
+.ticket-detail-overlay,
+.rag-overlay,
+.solucion-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 5000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: var(--popup-overlay);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    animation: none;
+    transition: opacity 0.22s ease, visibility 0.22s ease;
+}
+
+.modal-overlay.open,
+.card-selector-overlay.open,
+.ticket-detail-overlay.open,
+.rag-overlay.open,
+.solucion-overlay.open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+/* --- Superficie ----------------------------------------------------- */
+.modal-content,
+.card-selector,
+.ticket-detail-modal,
+.rag-modal,
+.solucion-modal {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: min(var(--popup-w, 480px), calc(100vw - 40px));
+    max-height: calc(100vh - 40px);
+    background: var(--popup-surface);
+    -webkit-backdrop-filter: blur(18px);
+    backdrop-filter: blur(18px);
+    border: 2px solid var(--popup-border);
+    border-radius: var(--popup-radius);
+    box-shadow: var(--popup-shadow);
+    overflow: hidden;
+    transform: translateY(10px) scale(0.98);
+    transition: transform 0.22s ease;
+}
+
+body.night-mode .modal-content,
+body.night-mode .card-selector,
+body.night-mode .ticket-detail-modal,
+body.night-mode .rag-modal,
+body.night-mode .solucion-modal {
+    background: var(--popup-surface);
+    border-color: var(--popup-border);
+    box-shadow: var(--popup-shadow);
+}
+
+body.night-mode .solucion-header {
+    background: linear-gradient(135deg, var(--popup-header-top), var(--popup-header-bottom));
+    border-bottom-color: rgba(255, 255, 255, 0.2);
+}
+
+.modal-content { --popup-w: 480px; }
+.card-selector { --popup-w: 440px; }
+.ticket-detail-modal,
+.solucion-modal { --popup-w: 560px; }
+.rag-modal { --popup-w: 860px; }
+.kanban-modal { --popup-w: 500px; }
+
+.modal-overlay.open .modal-content,
+.card-selector-overlay.open .card-selector,
+.ticket-detail-overlay.open .ticket-detail-modal,
+.rag-overlay.open .rag-modal,
+.solucion-overlay.open .solucion-modal {
+    transform: translateY(0) scale(1);
+}
+
+/* --- Cabecera ------------------------------------------------------- */
+.modal-header,
+.card-selector-header,
+.ticket-detail-header,
+.rag-modal-header,
+.solucion-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-shrink: 0;
+    padding: 14px 20px;
+    background: linear-gradient(135deg, var(--popup-header-top), var(--popup-header-bottom));
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.modal-header h3,
+.card-selector-header h3,
+.ticket-detail-header h3,
+.rag-modal-header h3,
+.solucion-header h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0;
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.3;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+    overflow-wrap: anywhere;
+}
+
+/* Icono identificativo de la cabecera */
+.modal-icon {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    box-shadow: inset 0 1px 3px rgba(255, 255, 255, 0.35);
+    color: #ffffff;
+    font-size: 0.95rem;
+    line-height: 1;
+    text-shadow: none;
+}
+
+.modal-icon i { line-height: 1; }
+
+/* --- Cierre --------------------------------------------------------- */
+.modal-close,
+.card-selector-close,
+.rag-modal-close,
+.solucion-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 1px solid var(--popup-close-border);
+    border-radius: 50%;
+    background: var(--popup-close-bg);
+    color: #ffffff;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.modal-close:hover,
+.card-selector-close:hover,
+.rag-modal-close:hover,
+.solucion-close:hover,
+.ticket-detail-header .card-selector-close:hover,
+body:not(.night-mode) .card-selector-header .card-selector-close:hover,
+body:not(.night-mode) .rag-modal-close:hover {
+    background: var(--popup-close-hover);
+}
+
+.modal-close:focus-visible,
+.card-selector-close:focus-visible,
+.rag-modal-close:focus-visible,
+.solucion-close:focus-visible,
+.ticket-detail-header .card-selector-close:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+}
+
+.ticket-detail-header .card-selector-close,
+body:not(.night-mode) .card-selector-header .card-selector-close,
+body:not(.night-mode) .rag-modal-close {
+    background: var(--popup-close-bg);
+    border: 1px solid var(--popup-close-border);
+    color: #ffffff;
+}
+
+/* --- Cuerpo --------------------------------------------------------- */
+.modal-body {
+    padding: 18px 20px;
+    overflow-y: auto;
+    color: var(--popup-text);
+    font-size: 0.9rem;
+    line-height: 1.55;
+}
+
+.modal-body p {
+    margin: 0 0 12px;
+    color: inherit;
+    font-size: inherit;
+    text-align: left;
+}
+
+.modal-body p:last-child { margin-bottom: 0; }
+
+.ticket-detail-body,
+.rag-modal-body,
+.solucion-body,
+.card-selector-list {
+    scrollbar-color: var(--popup-scroll) transparent;
+    scrollbar-width: thin;
+}
+
+.ticket-detail-body::-webkit-scrollbar,
+.rag-modal-body::-webkit-scrollbar,
+.solucion-body::-webkit-scrollbar,
+.card-selector-list::-webkit-scrollbar { width: 6px; }
+
+.ticket-detail-body::-webkit-scrollbar-thumb,
+.rag-modal-body::-webkit-scrollbar-thumb,
+.solucion-body::-webkit-scrollbar-thumb,
+.card-selector-list::-webkit-scrollbar-thumb {
+    background: var(--popup-scroll);
+    border-radius: 3px;
+}
+
+.solucion-body,
+body.night-mode .solucion-body { color: var(--popup-text); }
+
+/* --- Pie y botones -------------------------------------------------- */
+.modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-shrink: 0;
+    padding: 14px 20px;
+    background: transparent;
+    border-top: 1px solid var(--popup-divider);
+}
+
+body.night-mode .modal-footer { background: transparent; }
+
+.btn-cancel,
+.btn-confirm {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 9px 18px;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 0.88rem;
+    font-weight: 700;
+    line-height: 1.2;
+    cursor: pointer;
+    transition: filter 0.15s ease, transform 0.15s ease;
+}
+
+.btn-cancel {
+    background: var(--popup-secondary-bg);
+    border: 1px solid var(--popup-secondary-border);
+    color: var(--popup-text);
+    box-shadow: none;
+}
+
+.btn-confirm {
+    background: linear-gradient(to bottom, var(--popup-primary-top), var(--popup-primary-bottom));
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(4, 35, 50, 0.25);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.btn-confirm.danger {
+    background: linear-gradient(to bottom, #ef4444, #b91c1c);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+.btn-confirm.warning {
+    background: linear-gradient(to bottom, #f59e0b, #b45309);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+.btn-cancel:hover,
+.btn-confirm:hover {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+    box-shadow: none;
+}
+
+.btn-confirm:hover { box-shadow: 0 6px 16px rgba(4, 35, 50, 0.3); }
+
+.btn-cancel:active,
+.btn-confirm:active { transform: none; }
+
+/* --- Piezas de contenido compartidas -------------------------------- */
+.modal-ref {
+    margin: 0 0 12px;
+    padding: 8px 10px;
+    border: 1px solid var(--popup-section-border);
+    border-radius: 8px;
+    background: var(--popup-section);
+    color: var(--popup-muted);
+    font-size: 0.82rem;
+    font-weight: 600;
+    word-break: break-word;
+}
+
+.modal-note {
+    margin: 10px 0 0;
+    color: var(--popup-muted);
+    font-size: 0.8rem;
+    line-height: 1.5;
+}
+
+.modal-textarea {
+    width: 100%;
+    min-height: 96px;
+    box-sizing: border-box;
+    padding: 11px 13px;
+    border: 1px solid var(--popup-section-border);
+    border-radius: 10px;
+    background: var(--popup-section);
+    color: var(--popup-text);
+    font-family: inherit;
+    font-size: 0.9rem;
+    line-height: 1.55;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.modal-textarea::placeholder { color: var(--popup-muted); opacity: 0.8; }
+
+.modal-textarea:focus {
+    border-color: var(--popup-header-bottom);
+    box-shadow: 0 0 0 3px rgba(15, 122, 151, 0.18);
+}
+
+body.night-mode .modal-textarea:focus {
+    box-shadow: 0 0 0 3px rgba(120, 160, 220, 0.22);
+}
+
+/* --- Responsive ----------------------------------------------------- */
+@media (max-width: 520px) {
+    .modal-overlay,
+    .card-selector-overlay,
+    .ticket-detail-overlay,
+    .rag-overlay,
+    .solucion-overlay { padding: 12px; }
+
+    .modal-header,
+    .card-selector-header,
+    .ticket-detail-header,
+    .rag-modal-header,
+    .solucion-header { padding: 12px 16px; }
+
+    .modal-body { padding: 16px; }
+    .modal-footer { padding: 12px 16px; }
+    .modal-icon { width: 32px; height: 32px; font-size: 0.85rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .modal-overlay,
+    .card-selector-overlay,
+    .ticket-detail-overlay,
+    .rag-overlay,
+    .solucion-overlay,
+    .modal-content,
+    .card-selector,
+    .ticket-detail-modal,
+    .rag-modal,
+    .solucion-modal,
+    .modal-textarea {
+        transition: none;
+    }
+}
+
+/* --- Flecha de transición en el detalle de ticket ------------------- */
+.detail-arrow {
+    margin: 0 4px;
+    opacity: 0.65;
+    font-size: 0.75em;
+}

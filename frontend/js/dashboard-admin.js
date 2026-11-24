@@ -139,8 +139,14 @@ function mostrarToast(msg) {
 
 function initModal() {
     document.getElementById('modalCancelar').addEventListener('click', cerrarModal);
+    const btnCerrar = document.getElementById('modalCerrar');
+    if (btnCerrar) btnCerrar.addEventListener('click', cerrarModal);
     document.getElementById('modalOverlay').addEventListener('click', e => {
         if (e.target.id === 'modalOverlay') cerrarModal();
+    });
+    document.addEventListener('keydown', e => {
+        const overlay = document.getElementById('modalOverlay');
+        if (e.key === 'Escape' && overlay && overlay.classList.contains('open')) cerrarModal();
     });
 }
 
@@ -149,15 +155,21 @@ let _modalAceptar = null;
 function abrirModal({ titulo, cuerpo, aceptarTexto = 'Aceptar', peligroso = false, onAceptar }) {
     document.getElementById('modalTitulo').textContent = titulo;
     document.getElementById('modalCuerpo').innerHTML = cuerpo;
+    const icono = document.querySelector('#modalIcono i');
+    if (icono) icono.className = 'fas ' + (peligroso ? 'fa-triangle-exclamation' : 'fa-circle-question');
     const btn = document.getElementById('modalAceptar');
     btn.textContent = aceptarTexto;
     btn.classList.toggle('danger', peligroso);
     _modalAceptar = onAceptar;
-    document.getElementById('modalOverlay').classList.add('open');
+    const overlay = document.getElementById('modalOverlay');
+    overlay.classList.add('open');
+    overlay.setAttribute('aria-hidden', 'false');
 }
 
 function cerrarModal() {
-    document.getElementById('modalOverlay').classList.remove('open');
+    const overlay = document.getElementById('modalOverlay');
+    overlay.classList.remove('open');
+    overlay.setAttribute('aria-hidden', 'true');
     _modalAceptar = null;
 }
 

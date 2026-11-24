@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tablero Coordinador - HelpDesk IT</title>
     <link rel="stylesheet" href="styles/dashboard-coordinador.css">
+    <link rel="stylesheet" href="styles/popups.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/png" href="favicon.png">
 </head>
@@ -366,7 +367,7 @@
                     </div>
                     <div class="header-actions">
                         <button class="action-header-btn purple" id="btnAutoAsignarIA">
-                            <i class="fas fa-magic"></i> Balanceo Automático IA
+                            <i class="fas fa-robot"></i> Balanceo Automático IA
                         </button>
                     </div>
                 </div>
@@ -498,7 +499,7 @@
                     </div>
                     <div class="header-actions">
                         <button class="action-header-btn primary" id="btnAbrirChatIA">
-                            <i class="fas fa-comments"></i> Abrir Chat Flotante
+                            <i class="fas fa-robot"></i> Abrir Chat Flotante
                         </button>
                     </div>
                 </div>
@@ -542,7 +543,7 @@
                     <div class="search-input-wrap">
                         <i class="fas fa-search"></i>
                         <input type="text" id="ragSearchInput" placeholder="Escribe el problema o síntoma técnico (ej: pantalla azul error driver wifi)...">
-                        <button class="action-header-btn primary" id="btnBuscarRAG"><i class="fas fa-magic"></i> Buscar con RAG</button>
+                        <button class="action-header-btn primary" id="btnBuscarRAG"><i class="fas fa-magnifying-glass"></i> Buscar con RAG</button>
                         <button class="action-header-btn success" id="btnIndexarRAG" title="Genera embeddings de todos los tickets resueltos/cerrados pendientes"><i class="fas fa-database"></i> Indexar tickets</button>
                         <button class="action-header-btn primary" id="btnAnalizarRAG" title="La IA analiza las soluciones históricas recuperadas y propone una recomendación"><i class="fas fa-robot"></i> Preguntar a la IA</button>
                     </div>
@@ -710,7 +711,7 @@
     <button class="chat-fab" id="chatFab" aria-label="Abrir chat de soporte IA">
         <span class="fab-icon">
             <i class="fas fa-robot fab-open-icon" aria-hidden="true"></i>
-            <i class="fas fa-times fab-close-icon" aria-hidden="true"></i>
+            <i class="fas fa-xmark fab-close-icon" aria-hidden="true"></i>
         </span>
     </button>
 
@@ -719,8 +720,8 @@
         <div class="chat-header">
             <h3><i class="fas fa-robot chat-header-icon" aria-hidden="true"></i> Chat Soporte</h3>
             <div style="display:flex; gap:8px; align-items:center;">
-                <button class="chat-action-btn attach-btn" id="attachBtn" title="Adjuntar ticket">📎</button>
-                <button class="chat-close" id="chatClose">✕</button>
+                <button class="chat-action-btn attach-btn" id="attachBtn" title="Adjuntar ticket"><i class="fas fa-paperclip" aria-hidden="true"></i></button>
+                <button class="chat-close" id="chatClose" aria-label="Cerrar chat"><i class="fas fa-xmark" aria-hidden="true"></i></button>
             </div>
         </div>
         <div class="chat-tabs" role="tablist" aria-label="Tipo de chat">
@@ -741,14 +742,14 @@
         </div>
         <div class="chat-privado-conv" id="chatPrivadoConv" style="display:none;">
             <div class="chat-privado-conv-bar">
-                <button type="button" id="chatPrivadoVolver" class="chat-privado-volver" aria-label="Volver a contactos">←</button>
+                <button type="button" id="chatPrivadoVolver" class="chat-privado-volver" aria-label="Volver a contactos"><i class="fas fa-arrow-left" aria-hidden="true"></i></button>
                 <span id="chatPrivadoNombre">Conversación</span>
             </div>
             <div class="chat-messages chat-privado-msgs" id="chatPrivadoMessages"></div>
         </div>
         <div class="chat-input-area">
             <textarea id="chatInput" rows="1" placeholder="Escribe tu mensaje..."></textarea>
-            <button class="chat-send-btn" id="chatSendBtn">➤</button>
+            <button class="chat-send-btn" id="chatSendBtn" aria-label="Enviar mensaje"><i class="fas fa-paper-plane" aria-hidden="true"></i></button>
         </div>
     </div>
 
@@ -756,8 +757,8 @@
     <div class="card-selector-overlay" id="cardSelectorOverlay">
         <div class="card-selector">
             <div class="card-selector-header">
-                <h3>📎 Adjuntar Ticket</h3>
-                <button class="card-selector-close" id="cardSelectorClose">✕</button>
+                <h3><span class="modal-icon"><i class="fas fa-paperclip" aria-hidden="true"></i></span> Adjuntar Ticket</h3>
+                <button class="card-selector-close" id="cardSelectorClose" aria-label="Cerrar selector de tickets"><i class="fas fa-xmark" aria-hidden="true"></i></button>
             </div>
             <div class="card-selector-search">
                 <input type="text" id="cardSelectorSearch" placeholder="Buscar ticket...">
@@ -770,8 +771,8 @@
     <div class="ticket-detail-overlay" id="ticketDetailOverlay">
         <div class="ticket-detail-modal">
             <div class="ticket-detail-header">
-                <h3>📄 Detalle del Ticket <span id="ticketDetailId"></span></h3>
-                <button class="card-selector-close" id="ticketDetailClose">✕</button>
+                <h3><span class="modal-icon"><i class="fas fa-ticket-alt" aria-hidden="true"></i></span> Detalle del Ticket <span id="ticketDetailId"></span></h3>
+                <button class="card-selector-close" id="ticketDetailClose" aria-label="Cerrar detalle del ticket"><i class="fas fa-xmark" aria-hidden="true"></i></button>
             </div>
             <div class="ticket-detail-body" id="ticketDetailBody"></div>
         </div>

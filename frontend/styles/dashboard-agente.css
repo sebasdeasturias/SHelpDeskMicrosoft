@@ -423,8 +423,8 @@ body.night-mode .column-body::-webkit-scrollbar-thumb:hover { background: rgba(2
 
 /* ============================================
    CHAT (Panel flotante)
-   Diseño A "Asistente IA": FAB circular con
-   robot + anillo de pulso (Frutiger Aero)
+   Diseño "Asistente IA": FAB circular con robot,
+   tabs segmentadas y badge de no leídos.
 ============================================ */
 .chat-fab {
     position: fixed; bottom: 24px; right: 24px;
@@ -1114,8 +1114,10 @@ body.night-mode .spinner-ring {
     background: rgba(255,255,255,0.15);
     border: 1px solid rgba(255,255,255,0.35);
     color: white; width: 26px; height: 26px; border-radius: 50%;
-    cursor: pointer; font-size: 0.9rem; line-height: 1;
+    cursor: pointer; font-size: 0.78rem; line-height: 1;
+    display: flex; align-items: center; justify-content: center;
 }
+.chat-privado-volver i { line-height: 1; }
 .chat-privado-volver:hover { background: rgba(255,255,255,0.3); }
 body.night-mode .chat-privado-item,
 body.night-mode .chat-privado-nombre,

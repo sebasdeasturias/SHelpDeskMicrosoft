@@ -268,10 +268,11 @@ btnEnviar.addEventListener('click', () => {
         previewAdjuntosItem.style.display = 'none';
     }
 
-    confirmModal.style.display = 'flex';
+    confirmModal.classList.add('open');
+    confirmModal.setAttribute('aria-hidden', 'false');
 });
 
-btnCancelar.addEventListener('click', () => { confirmModal.style.display = 'none'; pendingTicketData = null; });
+btnCancelar.addEventListener('click', () => cerrarConfirmacion());
 
 btnConfirmar.addEventListener('click', async () => {
     if (!pendingTicketData || !currentUserData) {
@@ -279,7 +280,7 @@ btnConfirmar.addEventListener('click', async () => {
         return;
     }
 
-    confirmModal.style.display = 'none';
+    cerrarConfirmacion(false);
     showLoading();
     btnEnviar.disabled = true;
     if (aiIndicator) aiIndicator.style.display = 'flex';
@@ -382,7 +383,21 @@ async function subirAdjuntos(ticketId, token) {
     return fallos;
 }
 
-confirmModal.addEventListener('click', (e) => { if (e.target === confirmModal) { confirmModal.style.display = 'none'; pendingTicketData = null; } });
+confirmModal.addEventListener('click', (e) => { if (e.target === confirmModal) cerrarConfirmacion(); });
+
+// Cierre unificado del pop-up (botón de cierre, fondo y tecla Escape).
+const btnCerrarConfirm = document.getElementById('btnCerrarConfirm');
+if (btnCerrarConfirm) btnCerrarConfirm.addEventListener('click', () => cerrarConfirmacion());
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && confirmModal.classList.contains('open')) cerrarConfirmacion();
+});
+
+function cerrarConfirmacion(limpiar = true) {
+    confirmModal.classList.remove('open');
+    confirmModal.setAttribute('aria-hidden', 'true');
+    if (limpiar) pendingTicketData = null;
+}
 
 function showError(msg) { errorText.textContent = msg; errorMessage.style.display = 'flex'; successMessage.style.display = 'none'; setTimeout(() => { errorMessage.style.display = 'none'; }, 5000); }
 function showSuccess(msg) { successText.textContent = msg; successMessage.style.display = 'flex'; errorMessage.style.display = 'none'; }

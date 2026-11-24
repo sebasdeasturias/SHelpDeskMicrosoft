@@ -292,7 +292,7 @@ function navigateTo(page) {
     };
     if (loaders[page]) loaders[page]();
 
-    console.log(`📄 Navegando a: ${page}`);
+    console.log(`Navegando a: ${page}`);
 }
 
 // ============================================
@@ -885,7 +885,7 @@ function renderCardSelectorList(tickets) {
             const ticket = state.tickets.find(t => t.id_solicitud === ticketId);
             if (ticket) {
                 state.attachedTicket = ticket;
-                addChatMessage(`📎 Ticket #${ticket.id_solicitud} adjuntado. La IA recibirá el contexto completo (ticket, solicitante y análisis IA).`, 'system');
+                addChatMessage(`Ticket #${ticket.id_solicitud} adjuntado. La IA recibirá el contexto completo (ticket, solicitante y análisis IA).`, 'system');
             }
             closeCardSelector();
         });
@@ -1100,7 +1100,7 @@ async function exportarReportePDF() {
     // Se imprime desde el opener (script externo 'self') para no necesitar script inline.
     setTimeout(() => { try { w.print(); } catch (e) {} }, 300);
 
-    mostrarToast(`📄 Generando PDF (${tickets.length} tickets)...`);
+    mostrarToast(`Generando PDF (${tickets.length} tickets)...`);
 }
 
 // ============================================
@@ -1697,7 +1697,7 @@ function buildTicketDetailHTML(d) {
 
     let html = `
         <div class="detail-section">
-            <h4>📄 Información del Ticket</h4>
+            <h4><i class="fas fa-circle-info" aria-hidden="true"></i> Información del Ticket</h4>
             <div class="detail-desc"><strong>${esc(t.asunto)}</strong></div>
             <div class="detail-desc">${esc(t.descripcion)}</div>
             <div class="detail-row"><span class="detail-key">Estado</span><span class="detail-val">${esc(t.estado)}</span></div>
@@ -1709,12 +1709,12 @@ function buildTicketDetailHTML(d) {
 
         ${t.solucion ? `
         <div class="detail-section">
-            <h4>💡 Solución</h4>
+            <h4><i class="fas fa-lightbulb" aria-hidden="true"></i> Solución</h4>
             <div class="detail-desc">${esc(t.solucion)}</div>
         </div>` : ''}
 
         <div class="detail-section">
-            <h4>👤 Solicitante</h4>
+            <h4><i class="fas fa-user" aria-hidden="true"></i> Solicitante</h4>
             ${sol ? `
             <div class="detail-row"><span class="detail-key">Nombre</span><span class="detail-val">${esc(sol.nombre)}</span></div>
             <div class="detail-row"><span class="detail-key">Email</span><span class="detail-val">${esc(sol.email)}</span></div>
@@ -1727,7 +1727,7 @@ function buildTicketDetailHTML(d) {
         </div>
 
         <div class="detail-section">
-            <h4>🛠️ Agente Asignado</h4>
+            <h4><i class="fas fa-user-gear" aria-hidden="true"></i> Agente Asignado</h4>
             ${ag ? `
             <div class="detail-row"><span class="detail-key">Nombre</span><span class="detail-val">${esc(ag.nombre)}</span></div>
             <div class="detail-row"><span class="detail-key">Email</span><span class="detail-val">${esc(ag.email)}</span></div>
@@ -1737,7 +1737,7 @@ function buildTicketDetailHTML(d) {
         </div>
 
         <div class="detail-section">
-            <h4>🤖 Análisis IA Local (Ollama)</h4>
+            <h4><i class="fas fa-robot" aria-hidden="true"></i> Análisis IA Local (Ollama)</h4>
             ${ia ? `
             <div class="detail-row"><span class="detail-key">Categoría IA</span><span class="detail-val">${esc(ia.categoria_ia) || 'N/A'}</span></div>
             <div class="detail-row"><span class="detail-key">Prioridad IA</span><span class="detail-val">${esc(ia.prioridad_ia) || 'N/A'}</span></div>
@@ -1752,7 +1752,7 @@ function buildTicketDetailHTML(d) {
         </div>
 
         <div class="detail-section">
-            <h4>📎 Adjuntos</h4>
+            <h4><i class="fas fa-paperclip" aria-hidden="true"></i> Adjuntos</h4>
             <div id="detailAdjuntos"></div>
         </div>
     `;
@@ -1760,10 +1760,10 @@ function buildTicketDetailHTML(d) {
     if (d.historial && d.historial.length > 0) {
         html += `
         <div class="detail-section">
-            <h4>🕘 Historial de Estados</h4>
+            <h4><i class="fas fa-history" aria-hidden="true"></i> Historial de Estados</h4>
             ${d.historial.map(h => `
                 <div class="detail-row">
-                    <span class="detail-key">${esc(h.estado_anterior) || '—'} → ${esc(h.estado_nuevo)}</span>
+                    <span class="detail-key">${esc(h.estado_anterior) || '—'} <i class="fas fa-arrow-right detail-arrow" aria-hidden="true"></i> ${esc(h.estado_nuevo)}</span>
                     <span class="detail-val">${fecha(h.fecha)}</span>
                 </div>
             `).join('')}
