@@ -1,7 +1,7 @@
 """Población de la BD con usuarios MOCK para el benchmark ISO/IEC 25000.
 
 - 23 usuarios simulados repartidos en los 4 roles del sistema.
-- Contraseña compartida: 'password123' (mismo hash bcrypt que seed_usuarios.sql).
+- Contraseña compartida SOLO para los mocks: 'password123' (independiente del seed real).
 - Idempotente: ON CONFLICT (email) DO NOTHING + UPDATE de estado/rol.
 - Desbloqueo de cuentas y reset de contadores entre ejecuciones del benchmark.
 """
@@ -13,7 +13,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 
-# Hash bcrypt de 'password123' (idéntico al de database/seed_usuarios.sql)
+# Hash bcrypt de 'password123' para los usuarios mock del benchmark
 BCRYPT_PASSWORD123 = "$2b$12$iYqdmnOYc.sFE6TYLkdfIe80LhwpKH/VMRCbBtKBg6wcw7h/t/vvG"
 
 PASSWORD = "password123"

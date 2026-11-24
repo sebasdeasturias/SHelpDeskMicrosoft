@@ -15,6 +15,8 @@ from sqlalchemy import text
 from database import get_db
 from auth import SECRET_KEY, ALGORITHM, oauth2_scheme, usuario_actual
 from ratelimit import chat_limiter, chat_ia_limiter
+from guardrails import evaluar_prompt, mensaje_rechazo, texto_ticket_seguro
+from audit import registrar_log
 
 router = APIRouter(prefix="/chat", tags=["Chat IA"])
 
@@ -378,6 +380,27 @@ async def chat_with_ai(
             detail="Espera 3 segundos antes de enviar otro mensaje."
         )
 
+    # 1b-ter. Guardrail de prompt injection: se evalúa el mensaje ANTES de
+    # construir el payload. Si contiene una combinación marcada, se devuelve un
+    # rechazo seguro y NO se llama a n8n ni al modelo.
+    bloqueado, categoria = evaluar_prompt(request.mensaje)
+    if bloqueado:
+        await registrar_log(
+            "chat_guardrail", f"categoria={categoria}",
+            id_usuario=user_id, id_solicitud=request.ticket_id,
+        )
+        await log_ai_interaction(
+            db, user_id, request.mensaje, "[BLOQUEADO POR GUARDRAIL]",
+            0, 0, request.ticket_id,
+        )
+        return ChatResponse(
+            respuesta=mensaje_rechazo(),
+            modelo="guardrail",
+            tokens={},
+            ticket_contexto=None,
+            tiempo_ms=0,
+        )
+
     # 1c. Contexto operacional REAL (migración de conocimiento en la rama
     # testeando-ayuda-ai): snapshot de KPIs agregados de la BD, solo para
     # coordinador/administrador. El agente sigue con su chat "de ticket"
@@ -387,6 +410,12 @@ async def chat_with_ai(
     contexto_operacional = ""
     if user_role in ("coordinador", "administrador"):
         contexto_operacional = await get_contexto_operacional(db)
+        # El snapshot incluye asuntos de ticket (texto no confiable): si alguno
+        # dispara el guardrail, se omite el bloque completo.
+        if contexto_operacional and evaluar_prompt(contexto_operacional)[0]:
+            await registrar_log("chat_guardrail_contexto", "contexto_operacional",
+                                id_usuario=user_id)
+            contexto_operacional = ""
         if contexto_operacional:
             sistema = f"{SYSTEM_PROMPT}\n\n{SYSTEM_PROMPT_CONTEXTO}"
 
@@ -407,11 +436,21 @@ async def chat_with_ai(
                 )
         contexto = await get_ticket_context(db, request.ticket_id)
         if contexto:
-            ticket_contexto = contexto
-            # El contexto se envía como dato JSON, nunca como bloque de texto
-            # que el ticket pueda "cerrar" (H-03).
-            bloque = _bloque_datos("ticket", contexto)
-            mensaje_completo = f"{bloque}\n\nPregunta del agente: {request.mensaje}"
+            # Guardrail del contexto del ticket (dato no confiable): si contiene
+            # una inyección marcada, se omite del payload en vez de enviarla.
+            contexto_seguro = texto_ticket_seguro(contexto)
+            if contexto_seguro is None:
+                await registrar_log(
+                    "chat_guardrail_contexto",
+                    f"ticket_id={request.ticket_id}",
+                    id_usuario=user_id, id_solicitud=request.ticket_id,
+                )
+            else:
+                ticket_contexto = contexto_seguro
+                # El contexto se envía como dato JSON, nunca como bloque de
+                # texto que el ticket pueda "cerrar" (H-03).
+                bloque = _bloque_datos("ticket", contexto_seguro)
+                mensaje_completo = f"{bloque}\n\nPregunta del agente: {request.mensaje}"
 
     # 2b. Inyectar el snapshot al final del mensaje (tras cualquier contexto
     # de ticket, para que ambos contextos viajen en la misma llamada).
@@ -452,6 +491,12 @@ async def chat_with_ai(
 
     # 4. Preparar payload para n8n (historial ya validado y con presupuesto)
     historial_final = _recortar_historial(request.historial)
+    # Guardrail del historial: se descartan los mensajes de usuario marcados
+    # para que una inyección multi-turno no llegue al modelo.
+    historial_final = [
+        msg for msg in historial_final
+        if not (msg.role == "user" and evaluar_prompt(msg.content)[0])
+    ]
     n8n_payload = {
         "mensaje": mensaje_completo,
         "modelo": modelo_final,

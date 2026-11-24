@@ -278,7 +278,7 @@ fi
 
 # ============================================
 # 2.7 DATOS INICIALES (seed_usuarios.sql)
-#     Idempotente: sincroniza los usuarios de prueba (password123).
+#     Idempotente: sincroniza los usuarios de prueba definidos en el seed.
 # ============================================
 if [ ! -f "$SEED_FILE" ]; then
     warn " No se encontró seed_usuarios.sql; se omiten los usuarios de prueba"
@@ -288,7 +288,7 @@ else
         err " Error aplicando seed_usuarios.sql"
         exit 1
     fi
-    ok "✅ Usuarios de prueba sincronizados (contraseña: password123)"
+    ok "✅ Usuarios de prueba sincronizados (contraseña: la definida en seed_usuarios.sql)"
 fi
 
 # ============================================

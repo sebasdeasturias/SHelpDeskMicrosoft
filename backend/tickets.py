@@ -5,6 +5,8 @@ from database import get_db
 from auth import oauth2_scheme, SECRET_KEY, ALGORITHM, usuario_actual
 from ratelimit import ticket_limiter
 from embeddings import indexar_ticket
+from guardrails import evaluar_prompt
+from audit import registrar_log
 from jose import jwt, JWTError
 from datetime import datetime
 import asyncio
@@ -106,6 +108,18 @@ async def create_ticket(data: dict, db: AsyncSession = Depends(get_db), token: s
             WHERE c.id_categoria = :c AND p.id_prioridad = :p AND u.id_usuario = :u
         """), {"c": id_categoria, "p": id_prioridad, "u": payload.get("user_id")})).fetchone()
         if fila:
+            # Guardrail: si el asunto/descripción contiene una inyección marcada,
+            # NO se envía al workflow de IA (evita envenenar la clasificación y
+            # el RAG). El ticket se crea igualmente.
+            if evaluar_prompt(f"{asunto}\n{descripcion}")[0]:
+                await registrar_log(
+                    "ticket_guardrail",
+                    f"ticket_id={ticket_id} clasificacion_ia_omitida",
+                    id_usuario=payload.get("user_id"),
+                    id_solicitud=ticket_id,
+                )
+                return {"status": "created", "ticket_id": ticket_id,
+                        "message": "Ticket creado exitosamente"}
             _programar_notificacion(f"{N8N_URL}/webhook/new-ticket", {
                 "event": "new_ticket_created",
                 "timestamp": datetime.utcnow().isoformat() + "Z",
