@@ -7,7 +7,10 @@
 #   esquema (db_logic.sql) + rol de app (helpdesk_app) + usuarios de prueba (seed_usuarios.sql)
 # Uso:
 #   chmod +x iniciar.sh
-#   ./iniciar.sh
+#   ./iniciar.sh            # arranca sin borrar datos
+#   ./iniciar.sh --reset-db # borra Postgres (helpdesk_db + n8n_db), adjuntos
+#                           # y respaldos; conserva modelos de Ollama y la
+#                           # configuración local de n8n (n8n_data)
 # ============================================
 set -u
 
@@ -23,6 +26,23 @@ dim()  { echo -e "${GRAY}${1}${NC}"; }
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 COMPOSE_FILE="$PROJECT_ROOT/docker/docker-compose.yml"
 ENV_FILE="$PROJECT_ROOT/.env"
+
+RESET_DB=false
+for arg in "$@"; do
+    case "$arg" in
+        --reset-db) RESET_DB=true ;;
+        -h|--help)
+            echo "Uso: ./iniciar.sh [--reset-db]"
+            echo "  --reset-db  Borra Postgres, adjuntos y respaldos (conserva modelos de Ollama y la config local de n8n)."
+            exit 0
+            ;;
+        *)
+            echo "Opción no reconocida: $arg" >&2
+            echo "Uso: ./iniciar.sh [--reset-db]" >&2
+            exit 1
+            ;;
+    esac
+done
 
 # docker compose solo auto-carga .env desde el directorio del compose (docker/),
 # pero el .env vive en la raíz: se pasa SIEMPRE con --env-file.
@@ -72,6 +92,27 @@ fi
 # Usuario de PostgreSQL leído del .env (por si no es 'postgres')
 PG_USER="$(grep -E '^POSTGRES_USER=' "$ENV_FILE" | head -n1 | cut -d= -f2- | tr -d ' \t\r\"')"
 PG_USER="${PG_USER:-postgres}"
+
+# ============================================
+# 0.5 RESET OPCIONAL DE LA BASE DE DATOS
+#     --reset-db elimina los datos de la app (Postgres + adjuntos + respaldos).
+#     Conserva ollama_data (modelos IA) y n8n_data (config local/clave de n8n);
+#     n8n_db se recrea dentro de Postgres.
+# ============================================
+if [ "$RESET_DB" = true ]; then
+    say "🧨 Reset de base de datos solicitado..."
+    docker compose "${COMPOSE_ARGS[@]}" down --remove-orphans
+    if [ $? -ne 0 ]; then
+        err " Error deteniendo los contenedores para el reset"
+        exit 1
+    fi
+    for vol in shelpdeskmicrosoft_postgres_data \
+               shelpdeskmicrosoft_db_backups \
+               shelpdeskmicrosoft_adjuntos_data; do
+        docker volume rm "$vol" >/dev/null 2>&1 || true
+    done
+    ok "✅ Datos de la app eliminados (Postgres, adjuntos y respaldos)"
+fi
 
 # ============================================
 # 1. DOCKER COMPOSE - Levantar servicios base
@@ -271,7 +312,20 @@ SQLEOF
             err " No se pudo crear la BD $N8N_DB"
             exit 1
         fi
-        printf '%s\n' "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"; CREATE EXTENSION IF NOT EXISTS \"pgcrypto\"; ALTER SCHEMA public OWNER TO $N8N_USER; GRANT ALL ON SCHEMA public TO $N8N_USER;" | docker exec -i helpdesk-db psql -v ON_ERROR_STOP=1 -U "$PG_USER" -d "$N8N_DB" >/dev/null
+    fi
+
+    # Extensiones y propietario del esquema: idempotente y SIEMPRE se aplica.
+    N8N_EXT_SQL="$(cat <<SQLEOF
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+ALTER SCHEMA public OWNER TO $N8N_USER;
+GRANT ALL ON SCHEMA public TO $N8N_USER;
+SQLEOF
+)"
+    printf '%s\n' "$N8N_EXT_SQL" | docker exec -i helpdesk-db psql -v ON_ERROR_STOP=1 -U "$PG_USER" -d "$N8N_DB" >/dev/null
+    if [ $? -ne 0 ]; then
+        err " Error preparando extensiones de $N8N_DB"
+        exit 1
     fi
     ok "✅ n8n usará la BD dedicada '$N8N_DB' con el rol '$N8N_USER'"
 fi

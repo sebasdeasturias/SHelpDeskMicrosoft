@@ -1,8 +1,18 @@
 ﻿# Iniciar.ps1
-# Script seguro: Verifica y arranca toda la infraestructura de SHelpDesk SIN borrar nada
+# Script seguro: verifica y arranca toda la infraestructura de SHelpDesk.
+# Por defecto NO borra nada; usa -ResetDb para recrear la base de datos.
 #   PostgreSQL (pgvector) + Ollama + n8n + Backend FastAPI + Streamlit
 # Además monta la base de datos completa si no existe:
 #   esquema (db_logic.sql) + rol de app (helpdesk_app) + usuarios de prueba (seed_usuarios.sql)
+#
+# Reset opcional de la base de datos:
+#   .\Iniciar.ps1 -ResetDb
+#   Borra Postgres (helpdesk_db + n8n_db), adjuntos y respaldos. Conserva los
+#   modelos de Ollama y la configuración local/clave de n8n (n8n_data).
+
+param(
+    [switch]$ResetDb
+)
 
 $ErrorActionPreference = "Stop"
 $ProjectRoot = $PSScriptRoot
@@ -69,6 +79,27 @@ if ($faltan) {
 # Usuario de PostgreSQL leído del .env (por si no es 'postgres')
 $PgUser = "postgres"
 if ($envContent -match "(?m)^\s*POSTGRES_USER\s*=\s*(.+?)\s*$") { $PgUser = $Matches[1] }
+
+# ============================================
+# 0.5 RESET OPCIONAL DE LA BASE DE DATOS
+#     -ResetDb elimina los datos de la app (Postgres + adjuntos + respaldos).
+#     Conserva ollama_data (modelos IA) y n8n_data (config local/clave de n8n);
+#     n8n_db se recrea dentro de Postgres.
+# ============================================
+if ($ResetDb) {
+    Write-Host "`n🧨 Reset de base de datos solicitado..." -ForegroundColor Yellow
+    docker compose -f $ComposeFile --env-file $EnvFile down --remove-orphans
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host " Error deteniendo los contenedores para el reset" -ForegroundColor Red
+        exit 1
+    }
+    foreach ($vol in @("shelpdeskmicrosoft_postgres_data",
+                       "shelpdeskmicrosoft_db_backups",
+                       "shelpdeskmicrosoft_adjuntos_data")) {
+        Invoke-DockerQuiet volume rm $vol | Out-Null
+    }
+    Write-Host "✅ Datos de la app eliminados (Postgres, adjuntos y respaldos)" -ForegroundColor Green
+}
 
 # ============================================
 # 1. DOCKER COMPOSE - Levantar servicios base
@@ -296,8 +327,27 @@ $$;
     if ("$dbExists".Trim() -ne "1") {
         docker exec helpdesk-db psql -v ON_ERROR_STOP=1 -U $PgUser -d postgres -c "CREATE DATABASE $N8nDb OWNER $N8nUser"
         if ($LASTEXITCODE -ne 0) { Write-Host " No se pudo crear la BD $N8nDb" -ForegroundColor Red; exit 1 }
-        $extSql = "CREATE EXTENSION IF NOT EXISTS `"uuid-ossp`"; CREATE EXTENSION IF NOT EXISTS `"pgcrypto`"; ALTER SCHEMA public OWNER TO $N8nUser; GRANT ALL ON SCHEMA public TO $N8nUser;"
-        docker exec helpdesk-db psql -v ON_ERROR_STOP=1 -U $PgUser -d $N8nDb -c $extSql
+    }
+
+    # Extensiones y propietario del esquema: idempotente y SIEMPRE se aplica.
+    # Se ejecuta desde fichero para que las comillas dobles de "uuid-ossp" no
+    # se pierdan al pasar SQL por la línea de comandos de Windows.
+    $extSql = @'
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+ALTER SCHEMA public OWNER TO __N8NUSER__;
+GRANT ALL ON SCHEMA public TO __N8NUSER__;
+'@
+    $extSql = $extSql.Replace('__N8NUSER__', $N8nUser)
+    $tmpExt = Join-Path $env:TEMP "helpdesk_n8n_ext.sql"
+    [System.IO.File]::WriteAllText($tmpExt, $extSql, (New-Object System.Text.UTF8Encoding($false)))
+    try {
+        docker cp $tmpExt "helpdesk-db:/tmp/n8n_ext.sql" | Out-Null
+        docker exec helpdesk-db psql -v ON_ERROR_STOP=1 -U $PgUser -d $N8nDb -f /tmp/n8n_ext.sql
+        if ($LASTEXITCODE -ne 0) { throw "Error preparando extensiones de $N8nDb" }
+        docker exec helpdesk-db rm -f /tmp/n8n_ext.sql
+    } finally {
+        Remove-Item $tmpExt -ErrorAction SilentlyContinue
     }
     Write-Host "✅ n8n usará la BD dedicada '$N8nDb' con el rol '$N8nUser'" -ForegroundColor Green
 }
