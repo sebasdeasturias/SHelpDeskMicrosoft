@@ -304,7 +304,7 @@ $$;
 
 # ============================================
 # 2.7 DATOS INICIALES (seed_usuarios.sql)
-#     Idempotente: sincroniza los usuarios de prueba (password123).
+#     Idempotente: sincroniza los usuarios de prueba definidos en el seed.
 # ============================================
 if (-not (Test-Path $SeedFile)) {
     Write-Host " No se encontró seed_usuarios.sql; se omiten los usuarios de prueba" -ForegroundColor Yellow
@@ -315,7 +315,7 @@ if (-not (Test-Path $SeedFile)) {
         exit 1
     }
     docker exec helpdesk-db rm -f /tmp/seed_usuarios.sql
-    Write-Host "✅ Usuarios de prueba sincronizados (contraseña: password123)" -ForegroundColor Green
+    Write-Host "✅ Usuarios de prueba sincronizados (contraseña: la definida en seed_usuarios.sql)" -ForegroundColor Green
 }
 
 # ============================================

@@ -1,8 +1,9 @@
 -- ============================================================================
 -- USUARIOS DE PRUEBA - SISTEMA HELPDESK
 -- 4 usuarios: 1 Solicitante, 1 Agente, 1 Coordinador, 1 Admin
--- Contraseña para todos: password123
--- Hash bcrypt generado con: bcrypt.hashpw('password123'.encode('utf-8'), bcrypt.gensalt())
+-- Contraseña por defecto: la define el administrador y NO se documenta en el
+-- repositorio (solo el hash bcrypt vive aquí). Cambiarla tras el primer acceso.
+-- Hash bcrypt (coste 12) generado fuera del repositorio.
 --
 -- IDEMPOTENTE: con ON CONFLICT (email) DO NOTHING, re-ejecutar el seed NO
 -- duplica usuarios y NUNCA pisa cambios hechos desde el panel (contraseñas,
@@ -14,8 +15,8 @@ INSERT INTO usuarios (nombre, email, contraseña, rol, area, estado, especialida
 -- 1. SOLICITANTE (Usuario final que reporta incidentes)
 (
     'Sebastian Solicitante',
-    'sebastian-solicitante@empresa.com',
-    '$2b$12$iYqdmnOYc.sFE6TYLkdfIe80LhwpKH/VMRCbBtKBg6wcw7h/t/vvG', 
+    'sebas-solicitante@empresa.com',
+    '$2b$12$I.iSczGyk6ligIKeD.SfJ.AJZXyvZzaZkKOlYw8LFqqSBlA3VHIlm',
     'solicitante',
     'Ventas',
     'activo',
@@ -30,8 +31,8 @@ INSERT INTO usuarios (nombre, email, contraseña, rol, area, estado, especialida
 -- 2. AGENTE DE SOPORTE (Técnico que atiende tickets)
 (
     'Sebastian Agente',
-    'sebastian-agente@empresa.com',
-    '$2b$12$iYqdmnOYc.sFE6TYLkdfIe80LhwpKH/VMRCbBtKBg6wcw7h/t/vvG', 
+    'sebas-agente@empresa.com',
+    '$2b$12$I.iSczGyk6ligIKeD.SfJ.AJZXyvZzaZkKOlYw8LFqqSBlA3VHIlm',
     'agente',
     'Soporte TI',
     'activo',
@@ -46,8 +47,8 @@ INSERT INTO usuarios (nombre, email, contraseña, rol, area, estado, especialida
 -- 3. COORDINADOR DE SOPORTE (Supervisor)
 (
     'Sebastian Coordinador',
-    'sebastian-coordinador@empresa.com',
-    '$2b$12$iYqdmnOYc.sFE6TYLkdfIe80LhwpKH/VMRCbBtKBg6wcw7h/t/vvG', 
+    'sebas-coordinador@empresa.com',
+    '$2b$12$I.iSczGyk6ligIKeD.SfJ.AJZXyvZzaZkKOlYw8LFqqSBlA3VHIlm',
     'coordinador',
     'Soporte TI',
     'activo',
@@ -62,8 +63,8 @@ INSERT INTO usuarios (nombre, email, contraseña, rol, area, estado, especialida
 -- 4. ADMINISTRADOR DEL SISTEMA (Máximos privilegios)
 (
     'Sebastian Administrador',
-    'sebastian-admin@empresa.com',
-    '$2b$12$iYqdmnOYc.sFE6TYLkdfIe80LhwpKH/VMRCbBtKBg6wcw7h/t/vvG',  
+    'sebas-admin@empresa.com',
+    '$2b$12$I.iSczGyk6ligIKeD.SfJ.AJZXyvZzaZkKOlYw8LFqqSBlA3VHIlm',
     'administrador',
     'TI',
     'activo',
