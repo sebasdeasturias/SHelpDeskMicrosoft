@@ -2172,3 +2172,77 @@ body.night-mode .rag-analisis-text code {
 }
 .chat-msg.bot strong,
 .rag-analisis-text strong { font-weight: 700; }
+
+/* ============================================
+   MODO DÍA: aspecto de ".ticket-detail-modal"
+   aplicado al selector de tickets del chat IA.
+   El modo noche conserva su estilo.
+   ============================================ */
+body:not(.night-mode) .card-selector {
+    --tdm-surface: rgba(250, 253, 255, 0.98);
+    --tdm-border: rgba(9, 76, 101, 0.3);
+    --tdm-header-top: #0b5673;
+    --tdm-header-bottom: #0f7a97;
+    --tdm-heading: #08475f;
+    --tdm-text: #123b52;
+    --tdm-muted: #335f75;
+    --tdm-section: rgba(17, 94, 124, 0.06);
+    --tdm-section-border: rgba(17, 94, 124, 0.2);
+    --tdm-divider: rgba(17, 94, 124, 0.14);
+    --tdm-scroll: rgba(17, 94, 124, 0.35);
+    --tdm-shadow: 0 24px 60px rgba(4, 35, 50, 0.35);
+
+    background: var(--tdm-surface);
+    border: 2px solid var(--tdm-border);
+    box-shadow: var(--tdm-shadow);
+    animation: msgIn 0.25s ease;
+}
+
+body:not(.night-mode) .card-selector-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    background: linear-gradient(135deg, var(--tdm-header-top), var(--tdm-header-bottom));
+}
+body:not(.night-mode) .card-selector-header h3 {
+    color: #ffffff;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+body:not(.night-mode) .card-selector-header .card-selector-close {
+    color: #ffffff;
+    background: rgba(0, 0, 0, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    transition: background 0.2s ease;
+}
+body:not(.night-mode) .card-selector-header .card-selector-close:hover { background: rgba(0, 0, 0, 0.3); }
+body:not(.night-mode) .card-selector-header .card-selector-close:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+}
+
+body:not(.night-mode) .card-selector-search {
+    border-bottom: 1px solid var(--tdm-divider);
+    background: var(--tdm-section);
+}
+body:not(.night-mode) .card-selector-search input {
+    background: #ffffff;
+    border: 1px solid var(--tdm-section-border);
+    color: var(--tdm-text);
+}
+body:not(.night-mode) .card-selector-search input::placeholder { color: var(--tdm-muted); }
+body:not(.night-mode) .card-selector-list {
+    scrollbar-color: var(--tdm-scroll) transparent;
+    scrollbar-width: thin;
+}
+body:not(.night-mode) .card-selector-list::-webkit-scrollbar { width: 6px; }
+body:not(.night-mode) .card-selector-list::-webkit-scrollbar-thumb {
+    background: var(--tdm-scroll); border-radius: 3px;
+}
+body:not(.night-mode) .selector-card-item {
+    background: var(--tdm-section);
+    border: 1px solid var(--tdm-section-border);
+}
+body:not(.night-mode) .selector-card-item:hover {
+    background: rgba(17, 94, 124, 0.12);
+    border-color: var(--tdm-scroll);
+}
+body:not(.night-mode) .sci-title { color: var(--tdm-heading); }
+body:not(.night-mode) .sci-meta { color: var(--tdm-muted); }

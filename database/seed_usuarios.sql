@@ -16,7 +16,7 @@ INSERT INTO usuarios (nombre, email, contraseña, rol, area, estado, especialida
 (
     'Sebastian Solicitante',
     'sebas-solicitante@empresa.com',
-    '$2b$12$I.iSczGyk6ligIKeD.SfJ.AJZXyvZzaZkKOlYw8LFqqSBlA3VHIlm',
+    '1f47779c0f2283592b388d1579b5b94baae4ec0e7175dfc2e6fc6d09ddf3fb18',
     'solicitante',
     'Ventas',
     'activo',
@@ -32,7 +32,7 @@ INSERT INTO usuarios (nombre, email, contraseña, rol, area, estado, especialida
 (
     'Sebastian Agente',
     'sebas-agente@empresa.com',
-    '$2b$12$I.iSczGyk6ligIKeD.SfJ.AJZXyvZzaZkKOlYw8LFqqSBlA3VHIlm',
+    '1f47779c0f2283592b388d1579b5b94baae4ec0e7175dfc2e6fc6d09ddf3fb18',
     'agente',
     'Soporte TI',
     'activo',
