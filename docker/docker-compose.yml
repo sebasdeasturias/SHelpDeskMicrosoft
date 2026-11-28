@@ -84,6 +84,11 @@ services:
       # Detrás del proxy de Vercel todas las peticiones comparten IP, así que el
       # límite por IP se eleva; el control real anti-fuerza-bruta es por email.
       LOGIN_MAX_POR_IP: ${LOGIN_MAX_POR_IP:-200}
+      # Cambio obligatorio de contraseña temporal tras un reset del administrador.
+      PWD_CHANGE_MAX_INTENTOS: ${PWD_CHANGE_MAX_INTENTOS:-3}
+      PWD_CHANGE_TOKEN_EXPIRE_MINUTES: ${PWD_CHANGE_TOKEN_EXPIRE_MINUTES:-10}
+      PWD_CHANGE_MAX_POR_IP: ${PWD_CHANGE_MAX_POR_IP:-10}
+      PWD_CHANGE_VENTANA_SEG: ${PWD_CHANGE_VENTANA_SEG:-900}
       # Proxy Docker de SOLO LECTURA (logs del panel admin). El backend ya no
       # monta el socket: no puede ejecutar comandos ni crear contenedores.
       DOCKER_HOST: http://docker-socket-proxy:2375

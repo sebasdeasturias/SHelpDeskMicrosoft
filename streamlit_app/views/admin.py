@@ -174,6 +174,8 @@ def _usuarios():
                     st.rerun()
 
         elif accion == "Restablecer contraseña":
+            st.warning("Valida la identidad del usuario **en persona** antes de restablecer. "
+                       "El usuario deberá cambiar esta contraseña en su próximo inicio de sesión.")
             nueva = st.text_input("Nueva contraseña", type="password", key="u_nueva_pass")
             if st.button("Restablecer", key="u_reset"):
                 if len(nueva or "") < 8:
@@ -181,8 +183,18 @@ def _usuarios():
                 else:
                     from passlib.context import CryptContext
                     hash_pwd = CryptContext(schemes=["bcrypt"], deprecated="auto").hash(nueva)
-                    db.execute("UPDATE usuarios SET contraseña=%s WHERE id_usuario=%s", (hash_pwd, uid))
-                    st.success(f"Contraseña de {fila['nombre']} restablecida.")
+                    db.execute("""
+                        UPDATE usuarios
+                        SET contraseña=%s,
+                            token_version=token_version+1,
+                            intentos_fallidos=0,
+                            bloqueado_hasta=NULL,
+                            debe_cambiar_password=TRUE,
+                            intentos_cambio_password=0
+                        WHERE id_usuario=%s
+                    """, (hash_pwd, uid))
+                    st.success(f"Contraseña de {fila['nombre']} restablecida. "
+                               "Deberá cambiarla en su próximo inicio de sesión.")
 
         elif accion == "Eliminar usuario":
             st.warning("Eliminación permanente. Si el usuario tiene tickets/asociaciones, la BD lo impedirá: desactívalo en su lugar.")

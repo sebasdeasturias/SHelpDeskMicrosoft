@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inicio de Sesión - HelpDesk IT</title>
     <link rel="stylesheet" href="styles/login.css">
+    <link rel="stylesheet" href="styles/password-change.css">
     <link rel="stylesheet" href="styles/badges.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/png" href="favicon.png">
@@ -107,6 +108,58 @@
 
         <div class="global-footer">
             <i class="fas fa-leaf"></i> Sistema HelpDesk V1.0
+        </div>
+    </div>
+
+    <!-- Modal OBLIGATORIO de cambio de contraseña temporal (no se puede cerrar) -->
+    <div class="pwd-change-overlay" id="pwdChangeOverlay" aria-hidden="true">
+        <div class="pwd-change-card" role="dialog" aria-modal="true" aria-labelledby="pwdChangeTitle">
+            <div class="pwd-change-icon"><i class="fas fa-key" aria-hidden="true"></i></div>
+            <h2 id="pwdChangeTitle">Cambio obligatorio de contraseña</h2>
+            <p class="pwd-change-intro">
+                Un administrador restableció tu contraseña. Para continuar debes definir
+                una nueva contraseña personal. Introduce la temporal que acabas de usar
+                y escribe dos veces la nueva.
+            </p>
+            <span class="pwd-change-user" id="pwdChangeUser">Tu cuenta</span>
+
+            <form id="pwdChangeForm">
+                <div class="input-group">
+                    <i class="fas fa-lock input-icon"></i>
+                    <input type="password" id="pwdTemporal" placeholder="Contraseña temporal actual"
+                           required maxlength="128" autocomplete="current-password">
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-key input-icon"></i>
+                    <input type="password" id="pwdNueva" placeholder="Nueva contraseña (mínimo 8)"
+                           required minlength="8" maxlength="128" autocomplete="new-password">
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-key input-icon"></i>
+                    <input type="password" id="pwdNueva2" placeholder="Repetir nueva contraseña"
+                           required minlength="8" maxlength="128" autocomplete="new-password">
+                </div>
+                <button type="submit" class="login-btn" id="btnPwdChange">Cambiar contraseña</button>
+
+                <div id="pwdChangeError" class="error-message" style="display: none;">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span id="pwdChangeErrorText"></span>
+                </div>
+                <div id="pwdChangeLoading" class="loading-message" style="display: none;">
+                    <span class="spinner-ring"></span> Guardando...
+                </div>
+            </form>
+
+            <p class="pwd-change-attempts" id="pwdChangeAttempts">
+                Tienes 3 intentos para confirmar la contraseña temporal. Si se agotan,
+                deberás solicitar un nuevo restablecimiento al administrador.
+            </p>
+
+            <div class="pwd-change-blocked" id="pwdChangeBlocked">
+                <strong>Cambio bloqueado</strong>
+                <p id="pwdChangeBlockedText"></p>
+                <button type="button" class="login-btn" id="btnPwdChangeBack">Volver al inicio de sesión</button>
+            </div>
         </div>
     </div>
 

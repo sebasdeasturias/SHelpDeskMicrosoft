@@ -34,6 +34,14 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24
 MFA_ISSUER = os.getenv("MFA_ISSUER", "SHelpDesk")
 MFA_TOKEN_EXPIRE_MINUTES = 5
 
+# Cambio obligatorio de contraseña tras un restablecimiento por el administrador.
+# El login entrega un ticket restringido (scope "pwd_change") en lugar del token
+# de acceso normal. El ticket caduca rápido y solo sirve para /auth/password-change.
+PWD_CHANGE_TOKEN_EXPIRE_MINUTES = int(os.getenv("PWD_CHANGE_TOKEN_EXPIRE_MINUTES", "10"))
+PWD_CHANGE_MAX_INTENTOS = int(os.getenv("PWD_CHANGE_MAX_INTENTOS", "3"))
+PWD_CHANGE_MAX_POR_IP = int(os.getenv("PWD_CHANGE_MAX_POR_IP", "10"))
+PWD_CHANGE_VENTANA_SEG = int(os.getenv("PWD_CHANGE_VENTANA_SEG", "900"))
+
 # Rate limiting de autenticación (protección contra fuerza bruta / abuso de registro).
 # Limpia si el backend corre detrás de un proxy de confianza que fija
 # X-Forwarded-For (p.ej. Caddy en docker-compose.prod.yml).
@@ -185,6 +193,14 @@ async def usuario_actual(db: AsyncSession, token: str) -> dict:
             detail="Token inválido o expirado",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    # Los tickets intermedios (2FA y cambio de contraseña) NO son tokens de
+    # acceso: no deben servir para llamar al resto de la API.
+    if payload.get("scope") in ("mfa", "pwd_change"):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token no válido para esta operación",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     user_id = payload.get("user_id")
     if not user_id:
         raise HTTPException(
@@ -193,7 +209,8 @@ async def usuario_actual(db: AsyncSession, token: str) -> dict:
             headers={"WWW-Authenticate": "Bearer"},
         )
     row = await db.execute(text("""
-        SELECT id_usuario, nombre, email, rol, area, estado, mfa_enabled, token_version
+        SELECT id_usuario, nombre, email, rol, area, estado, mfa_enabled, token_version,
+               debe_cambiar_password
         FROM usuarios WHERE id_usuario = :id
     """), {"id": user_id})
     u = row.fetchone()
@@ -209,6 +226,14 @@ async def usuario_actual(db: AsyncSession, token: str) -> dict:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Sesión no válida: credenciales actualizadas. Inicia sesión de nuevo.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    # Defensa en profundidad: mientras haya un cambio de contraseña pendiente,
+    # ningún token de acceso normal es utilizable.
+    if u[8]:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Debes cambiar la contraseña temporal antes de continuar",
             headers={"WWW-Authenticate": "Bearer"},
         )
     return {
@@ -238,6 +263,30 @@ def _respuesta_token(user: "UserData") -> dict:
     return {"access_token": access_token, "token_type": "bearer", "user": user.dict()}
 
 
+def _crear_pwd_change_token(user_id: int, token_version: int) -> str:
+    """Ticket temporal y restringido para cambiar la contraseña obligatoria.
+
+    Lleva `tv` para que quede invalidado si la contraseña se cambia, si se
+    agotan los intentos o si el administrador vuelve a restablecerla.
+    """
+    return jwt.encode(
+        {"scope": "pwd_change", "user_id": user_id, "tv": int(token_version),
+         "exp": datetime.utcnow() + timedelta(minutes=PWD_CHANGE_TOKEN_EXPIRE_MINUTES)},
+        SECRET_KEY, algorithm=ALGORITHM)
+
+
+def _respuesta_cambio_password(user: "UserData", intentos: int = 0) -> dict:
+    # No se entrega access_token: el usuario todavía no puede usar la API.
+    restantes = max(0, PWD_CHANGE_MAX_INTENTOS - int(intentos or 0))
+    return {
+        "password_change_required": True,
+        "pwd_change_token": _crear_pwd_change_token(user.id_usuario, user.token_version),
+        "token_type": "bearer",
+        "user": user.dict(),
+        "intentos_restantes": restantes,
+    }
+
+
 # Endpoint de Login
 @router.post("/login")
 async def login(credentials: UserLogin, request: Request, db: AsyncSession = Depends(get_db)):
@@ -260,7 +309,7 @@ async def login(credentials: UserLogin, request: Request, db: AsyncSession = Dep
     fila_user = await db.execute(text("""
         SELECT id_usuario, nombre, email, contraseña, rol, estado,
                (bloqueado_hasta IS NOT NULL AND bloqueado_hasta > NOW()) AS bloqueado,
-               token_version
+               token_version, debe_cambiar_password, intentos_cambio_password
         FROM usuarios WHERE email = :email
     """), {"email": credentials.email})
     u = fila_user.fetchone()
@@ -311,6 +360,18 @@ async def login(credentials: UserLogin, request: Request, db: AsyncSession = Dep
     await registrar_log("login_ok", "autenticación por contraseña",
                         id_usuario=u[0], ip=ip, navegador=ua)
 
+    # Si el administrador restableció la contraseña y ya se agotaron los 3
+    # intentos de cambio, no se permite continuar: hace falta un nuevo reset.
+    if u[8] and int(u[9] or 0) >= PWD_CHANGE_MAX_INTENTOS:
+        await registrar_log("password_cambio_bloqueado",
+                            "intentos de cambio agotados en login",
+                            id_usuario=u[0], ip=ip, navegador=ua)
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=("Has agotado los 3 intentos para cambiar la contraseña temporal. "
+                    "Debes solicitar un nuevo restablecimiento al administrador.")
+        )
+
     user = UserData(id_usuario=u[0], nombre=u[1], email=u[2], rol=u[4],
                     token_version=u[7] or 0)
 
@@ -323,6 +384,8 @@ async def login(credentials: UserLogin, request: Request, db: AsyncSession = Dep
     if mfa and mfa[0] and mfa[1]:
         return {"mfa_required": True, "mfa_token": _crear_mfa_token(user.id_usuario)}
 
+    if u[8]:
+        return _respuesta_cambio_password(user, u[9])
     return _respuesta_token(user)
 
 # backend/auth.py
@@ -337,6 +400,11 @@ class UserRegister(BaseModel):
 class PasswordResetRequest(BaseModel):
     email: EmailStr
     motivo: Optional[str] = Field(None, max_length=500)
+
+class PasswordChange(BaseModel):
+    password_temporal: str = Field(..., min_length=1, max_length=128)
+    password_nueva: str = Field(..., min_length=8, max_length=128)
+    password_nueva2: str = Field(..., min_length=8, max_length=128)
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register_user(user_data: UserRegister, request: Request, db: AsyncSession = Depends(get_db)):
@@ -456,6 +524,130 @@ async def password_reset_request(data: PasswordResetRequest, request: Request,
 
 
 # ============================================
+# CAMBIO OBLIGATORIO DE CONTRASEÑA
+# ============================================
+@router.post("/password-change")
+async def password_change(data: PasswordChange, request: Request,
+                          token: str = Depends(oauth2_scheme),
+                          db: AsyncSession = Depends(get_db)):
+    """Cambia la contraseña temporal usando el ticket restringido del login.
+
+    No acepta tokens de acceso normales: exige `scope="pwd_change"`. Así, hasta
+    que el usuario no cambie la contraseña, no puede usar el resto de la API.
+    """
+    ip = _cliente_ip(request)
+    ua = (request.headers.get("user-agent") or "")[:100] or None
+
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except JWTError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail="Ticket de cambio inválido o expirado")
+    if payload.get("scope") != "pwd_change":
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail="Ticket de cambio inválido")
+    user_id = payload.get("user_id")
+    if not user_id:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail="Ticket de cambio inválido")
+
+    # Límite de tasa adicional (el límite real de intentos vive en la BD).
+    if not await login_limiter.allow(f"pwdchange:ip:{ip}", PWD_CHANGE_MAX_POR_IP, PWD_CHANGE_VENTANA_SEG):
+        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                            detail="Demasiados intentos. Espera unos minutos.")
+    if not await login_limiter.allow(f"pwdchange:user:{user_id}", PWD_CHANGE_MAX_POR_IP, PWD_CHANGE_VENTANA_SEG):
+        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                            detail="Demasiados intentos. Espera unos minutos.")
+
+    row = await db.execute(text("""
+        SELECT id_usuario, nombre, email, rol, contraseña, estado,
+               token_version, debe_cambiar_password, intentos_cambio_password
+        FROM usuarios WHERE id_usuario = :id
+    """), {"id": user_id})
+    u = row.fetchone()
+    if not u or u[5] != "activo":
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Sesión no válida")
+    if int(payload.get("tv", 0)) != int(u[6] or 0):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail="Ticket expirado. Inicia sesión de nuevo con la contraseña temporal.")
+    if not u[7]:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="No hay un cambio de contraseña pendiente")
+    if int(u[8] or 0) >= PWD_CHANGE_MAX_INTENTOS:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"mensaje": ("Has agotado los 3 intentos. Solicita un nuevo "
+                                "restablecimiento al administrador."),
+                    "intentos_restantes": 0, "bloqueado": True}
+        )
+
+    # Errores de validación de la nueva contraseña: no consumen intentos.
+    if data.password_nueva != data.password_nueva2:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Las contraseñas nuevas no coinciden")
+    if verify_password(data.password_nueva, u[4]):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="La nueva contraseña debe ser distinta de la temporal")
+
+    # La contraseña temporal sí se compara contra el hash de la BD. Un fallo
+    # consume uno de los 3 intentos y, al llegar a 0, invalida el ticket.
+    if not verify_password(data.password_temporal, u[4]):
+        res = await db.execute(text("""
+            UPDATE usuarios
+            SET intentos_cambio_password = intentos_cambio_password + 1,
+                token_version = CASE
+                    WHEN intentos_cambio_password + 1 >= :max
+                    THEN token_version + 1
+                    ELSE token_version END
+            WHERE id_usuario = :id
+            RETURNING intentos_cambio_password
+        """), {"max": PWD_CHANGE_MAX_INTENTOS, "id": user_id})
+        intentos = int(res.scalar() or 0)
+        await db.commit()
+        restantes = max(0, PWD_CHANGE_MAX_INTENTOS - intentos)
+        await registrar_log("password_cambio_fallido",
+                            f"intentos={intentos}", id_usuario=user_id,
+                            ip=ip, navegador=ua)
+        if restantes <= 0:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={"mensaje": ("Has agotado los 3 intentos. Solicita un nuevo "
+                                    "restablecimiento al administrador."),
+                        "intentos_restantes": 0, "bloqueado": True}
+            )
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"mensaje": "La contraseña temporal no coincide",
+                    "intentos_restantes": restantes, "bloqueado": False}
+        )
+
+    # Cambio válido: nueva contraseña, se limpia el flag, se reinician intentos
+    # y se revocan todos los JWT previos (incluido el ticket actual).
+    res = await db.execute(text("""
+        UPDATE usuarios
+        SET contraseña = :pwd,
+            debe_cambiar_password = FALSE,
+            intentos_cambio_password = 0,
+            token_version = token_version + 1,
+            intentos_fallidos = 0,
+            bloqueado_hasta = NULL,
+            fecha_ultimo_acceso = NOW()
+        WHERE id_usuario = :id
+        RETURNING token_version
+    """), {"pwd": pwd_context.hash(data.password_nueva), "id": user_id})
+    nuevo_tv = int(res.scalar() or 0)
+    await db.commit()
+
+    await registrar_log("password_cambio_ok", "", id_usuario=user_id,
+                        ip=ip, navegador=ua)
+    usuario = UserData(id_usuario=u[0], nombre=u[1], email=u[2], rol=u[3],
+                       token_version=nuevo_tv)
+    respuesta = _respuesta_token(usuario)
+    respuesta["password_change_completed"] = True
+    return respuesta
+
+
+# ============================================
 # MFA (segundo factor TOTP)
 # ============================================
 def _qr_data_uri(texto: str) -> str:
@@ -486,7 +678,8 @@ async def mfa_verify(data: MfaVerify, request: Request, db: AsyncSession = Depen
                             detail="Demasiados intentos de 2FA. Espera unos minutos.")
 
     row = await db.execute(text("""
-        SELECT id_usuario, nombre, email, rol, mfa_secret, mfa_enabled, estado, token_version
+        SELECT id_usuario, nombre, email, rol, mfa_secret, mfa_enabled, estado, token_version,
+               debe_cambiar_password, intentos_cambio_password
         FROM usuarios WHERE id_usuario = :id
     """), {"id": user_id})
     u = row.fetchone()
@@ -495,9 +688,21 @@ async def mfa_verify(data: MfaVerify, request: Request, db: AsyncSession = Depen
     if not pyotp.TOTP(u[4]).verify((data.code or "").strip(), valid_window=1):
         await registrar_log("mfa_fallido", "código 2FA incorrecto", id_usuario=u[0], ip=ip, navegador=ua)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Código 2FA incorrecto")
+    if u[8] and int(u[9] or 0) >= PWD_CHANGE_MAX_INTENTOS:
+        await registrar_log("password_cambio_bloqueado",
+                            "intentos de cambio agotados tras 2FA",
+                            id_usuario=u[0], ip=ip, navegador=ua)
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=("Has agotado los 3 intentos para cambiar la contraseña temporal. "
+                    "Debes solicitar un nuevo restablecimiento al administrador.")
+        )
     await registrar_log("login_ok", "autenticación con 2FA", id_usuario=u[0], ip=ip, navegador=ua)
-    return _respuesta_token(UserData(id_usuario=u[0], nombre=u[1], email=u[2], rol=u[3],
-                                     token_version=u[7] or 0))
+    usuario = UserData(id_usuario=u[0], nombre=u[1], email=u[2], rol=u[3],
+                       token_version=u[7] or 0)
+    if u[8]:
+        return _respuesta_cambio_password(usuario, u[9])
+    return _respuesta_token(usuario)
 
 
 @router.post("/mfa/setup")

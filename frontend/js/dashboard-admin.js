@@ -484,6 +484,11 @@ function renderSolicitudesPassword() {
         } else if ((s.estado === 'resuelta' || s.estado === 'rechazada') && s.admin_resuelve) {
             estadoExtra = `<br><span class="item-meta">${s.estado === 'resuelta' ? 'Resolvió' : 'Rechazó'}: ${escapeHtml(s.admin_resuelve)} · ${fmtFecha(s.fecha_resolucion)}</span>`;
         }
+        if (s.estado === 'resuelta') {
+            estadoExtra += s.cambio_pendiente
+                ? '<br><span class="item-meta">Cambio de contraseña pendiente</span>'
+                : '<br><span class="item-meta">Contraseña ya cambiada</span>';
+        }
 
         return `
         <tr data-sid="${s.id_solicitud_password}">
@@ -567,7 +572,7 @@ function modalRestablecerSolicitud(s) {
                 if (data.password) {
                     mostrarPasswordTemporal(data.password, s);
                 } else {
-                    mostrarToast('Contraseña restablecida. Entrega la nueva clave al usuario en persona.');
+                    mostrarToast('Contraseña restablecida. El usuario deberá cambiarla en su próximo inicio de sesión.');
                 }
                 loadSolicitudesPassword();
             } catch (e) {
@@ -596,6 +601,7 @@ function mostrarPasswordTemporal(pwd, s) {
             <div class="password-reveal" id="passwordReveal">${escapeHtml(pwd)}</div>
             <p class="hint"><i class="fas fa-eye"></i> Se muestra una sola vez. No se guarda en el log ni se puede recuperar después.</p>
             <p class="hint"><i class="fas fa-user-shield"></i> Entrégala únicamente al titular de la cuenta, tras verificar su identidad.</p>
+            <p class="hint"><i class="fas fa-right-to-bracket"></i> El usuario deberá cambiarla obligatoriamente en su próximo inicio de sesión.</p>
             <button class="btn-mini" id="btnCopiarPassword" type="button"><i class="fas fa-copy"></i> Copiar contraseña</button>`,
         aceptarTexto: 'Entendido',
         onAceptar: () => {}

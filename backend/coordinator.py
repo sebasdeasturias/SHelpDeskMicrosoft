@@ -1063,10 +1063,13 @@ async def actualizar_usuario(usuario_id: int, data: dict, db: AsyncSession = Dep
                                 detail="La contraseña debe tener al menos 8 caracteres")
         cambios.append("contraseña = :pwd")
         params["pwd"] = _pwd_admin.hash(data["password"])
-        # Revoca los JWT vigentes y desbloquea la cuenta tras el reset.
+        # Revoca los JWT vigentes, desbloquea la cuenta y obliga a cambiarla en
+        # el siguiente inicio de sesión.
         cambios.append("token_version = token_version + 1")
         cambios.append("intentos_fallidos = 0")
         cambios.append("bloqueado_hasta = NULL")
+        cambios.append("debe_cambiar_password = TRUE")
+        cambios.append("intentos_cambio_password = 0")
 
     if not cambios:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nada que actualizar")
@@ -1208,7 +1211,8 @@ async def listar_solicitudes_password(estado: Optional[str] = Query(None),
                u.estado AS estado_usuario,
                s.motivo, s.estado, s.fecha_creacion,
                s.fecha_identidad, av.nombre AS admin_valida, s.nota_validacion,
-               s.fecha_resolucion, ar.nombre AS admin_resuelve, s.nota_resolucion
+               s.fecha_resolucion, ar.nombre AS admin_resuelve, s.nota_resolucion,
+               u.debe_cambiar_password AS cambio_pendiente
         FROM solicitud_password s
         LEFT JOIN usuarios u ON u.id_usuario = s.id_usuario
         LEFT JOIN usuarios av ON av.id_usuario = s.id_admin_valida
@@ -1240,6 +1244,7 @@ async def listar_solicitudes_password(estado: Optional[str] = Query(None),
             "fecha_resolucion": _iso(x[12]),
             "admin_resuelve": x[13],
             "nota_resolucion": x[14],
+            "cambio_pendiente": x[15],
         }
         for x in r.fetchall()
     ]
@@ -1316,13 +1321,16 @@ async def restablecer_password_solicitud(solicitud_id: int, data: dict,
     generada = password is None
     pwd = _generar_password_temporal() if generada else password
 
-    # Cambio de contraseña + revocación de JWT + desbloqueo de la cuenta.
+    # Cambio de contraseña + revocación de JWT + desbloqueo + cambio obligatorio
+    # en el siguiente inicio de sesión.
     await db.execute(text("""
         UPDATE usuarios
         SET contraseña = :pwd,
             token_version = token_version + 1,
             intentos_fallidos = 0,
-            bloqueado_hasta = NULL
+            bloqueado_hasta = NULL,
+            debe_cambiar_password = TRUE,
+            intentos_cambio_password = 0
         WHERE id_usuario = :id
     """), {"pwd": _pwd_admin.hash(pwd), "id": s[1]})
 
