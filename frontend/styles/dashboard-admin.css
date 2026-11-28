@@ -411,6 +411,11 @@ body.night-mode .badge-tag { background: #203b5c; border-color: #cfe3ff; color: 
 }
 .status-pill.activo { --pill-bg: #047857; }
 .status-pill.inactivo { --pill-bg: #475569; }
+.status-pill.pendiente { --pill-bg: #b45309; }
+.status-pill.identidad_validada { --pill-bg: #7c3aed; }
+.status-pill.resuelta { --pill-bg: #047857; }
+.status-pill.rechazada { --pill-bg: #991b1b; }
+.status-pill.cancelada { --pill-bg: #475569; }
 .role-pill.administrador { --pill-bg: #b45309; }
 .role-pill.coordinador { --pill-bg: #7c3aed; }
 .role-pill.agente { --pill-bg: #1d4ed8; }
@@ -1038,6 +1043,103 @@ body.night-mode .chat-privado-conv-bar { color: #e0e0ff; }
         animation: spinner-rotar 0.9s linear infinite !important;
         animation-duration: 0.9s !important;
     }
+}
+
+/* ============================================
+   SOLICITUDES DE RESTABLECIMIENTO DE CONTRASEÑA
+   ============================================ */
+.item-meta {
+    color: var(--text-placeholder);
+    font-size: 0.72rem;
+}
+
+.solicitud-motivo {
+    max-width: 260px;
+    white-space: normal;
+    word-break: break-word;
+}
+
+textarea.glass-input {
+    resize: vertical;
+    min-height: 58px;
+    line-height: 1.4;
+}
+
+.modal-body .filter-group label {
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 0.8rem;
+}
+
+.solicitud-opciones {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 12px 0;
+    color: var(--text-dark);
+    font-size: 0.85rem;
+}
+
+.solicitud-opciones label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.solicitud-opciones input[type="radio"] {
+    accent-color: #1a7495;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.password-reveal {
+    margin: 12px 0;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: rgba(16, 185, 129, 0.16);
+    border: 1px solid rgba(16, 185, 129, 0.55);
+    color: var(--text-dark);
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-align: center;
+    word-break: break-all;
+    user-select: all;
+}
+
+.solicitud-detalle {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.solicitud-detalle .detail-row {
+    display: flex;
+    gap: 12px;
+    padding: 7px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+    font-size: 0.84rem;
+}
+
+.solicitud-detalle .detail-row:last-child {
+    border-bottom: none;
+}
+
+.solicitud-detalle .detail-key {
+    flex: 0 0 38%;
+    font-weight: 700;
+    color: var(--text-dark);
+    opacity: 0.85;
+}
+
+.solicitud-detalle .detail-val {
+    flex: 1;
+    color: var(--text-dark);
+    word-break: break-word;
+    white-space: pre-wrap;
 }
 
 

@@ -15,6 +15,7 @@ import json
 import os
 import hashlib
 import time
+import secrets
 
 router = APIRouter(prefix="/coordinator", tags=["Coordinador"])
 
@@ -1062,8 +1063,10 @@ async def actualizar_usuario(usuario_id: int, data: dict, db: AsyncSession = Dep
                                 detail="La contraseña debe tener al menos 8 caracteres")
         cambios.append("contraseña = :pwd")
         params["pwd"] = _pwd_admin.hash(data["password"])
-        # Revoca los JWT vigentes del usuario al cambiarle la contraseña.
+        # Revoca los JWT vigentes y desbloquea la cuenta tras el reset.
         cambios.append("token_version = token_version + 1")
+        cambios.append("intentos_fallidos = 0")
+        cambios.append("bloqueado_hasta = NULL")
 
     if not cambios:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nada que actualizar")
@@ -1147,6 +1150,243 @@ async def eliminar_usuario(usuario_id: int, db: AsyncSession = Depends(get_db), 
     await registrar_log("usuario_eliminado", f"id={usuario_id} email={user[2]} rol={user[3]}",
                         id_usuario=payload.get("user_id"))
     return {"status": "ok", "eliminado": usuario_id}
+
+
+# ============================================================
+# SOLICITUDES DE RESTABLECIMIENTO DE CONTRASEÑA (SOLO ADMIN)
+# ============================================================
+# Flujo obligatorio: el usuario solicita -> el administrador valida su
+# identidad EN PERSONA -> solo entonces puede asignar una contraseña temporal.
+ESTADOS_SOLICITUD_PASSWORD = ("pendiente", "identidad_validada", "resuelta",
+                              "rechazada", "cancelada")
+
+
+def _generar_password_temporal(longitud: int = 16) -> str:
+    # Alfabeto sin caracteres ambiguos (0/O, 1/l/I) y sin comillas.
+    alfabeto = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#%&*"
+    return "".join(secrets.choice(alfabeto) for _ in range(longitud))
+
+
+def _nota_admin(data: dict) -> Optional[str]:
+    """Normaliza una nota opcional del administrador (texto de hasta 500)."""
+    nota = data.get("nota")
+    if nota is None:
+        return None
+    if not isinstance(nota, str):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="La nota debe ser texto")
+    return nota.strip()[:500] or None
+
+
+async def _obtener_solicitud_password(db: AsyncSession, solicitud_id: int, bloquear: bool = False):
+    sql = """
+        SELECT id_solicitud_password, id_usuario, email, estado
+        FROM solicitud_password
+        WHERE id_solicitud_password = :id
+    """
+    if bloquear:
+        sql += " FOR UPDATE"
+    r = await db.execute(text(sql), {"id": solicitud_id})
+    return r.fetchone()
+
+
+@router.get("/solicitudes-password")
+async def listar_solicitudes_password(estado: Optional[str] = Query(None),
+                                      db: AsyncSession = Depends(get_db),
+                                      token: str = Depends(oauth2_scheme)):
+    payload = await _verify_token(db, token)
+    _require_admin(payload)
+    if estado and estado not in ESTADOS_SOLICITUD_PASSWORD:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Estado de solicitud inválido")
+
+    r = await db.execute(text("""
+        SELECT s.id_solicitud_password, s.id_usuario,
+               COALESCE(u.nombre, s.nombre) AS nombre,
+               COALESCE(u.email, s.email) AS email,
+               COALESCE(u.rol, s.rol_solicitante) AS rol,
+               u.estado AS estado_usuario,
+               s.motivo, s.estado, s.fecha_creacion,
+               s.fecha_identidad, av.nombre AS admin_valida, s.nota_validacion,
+               s.fecha_resolucion, ar.nombre AS admin_resuelve, s.nota_resolucion
+        FROM solicitud_password s
+        LEFT JOIN usuarios u ON u.id_usuario = s.id_usuario
+        LEFT JOIN usuarios av ON av.id_usuario = s.id_admin_valida
+        LEFT JOIN usuarios ar ON ar.id_usuario = s.id_admin_resuelve
+        WHERE (CAST(:estado AS TEXT) IS NULL OR s.estado = CAST(:estado AS TEXT))
+        ORDER BY CASE s.estado
+                     WHEN 'pendiente' THEN 0
+                     WHEN 'identidad_validada' THEN 1
+                     WHEN 'resuelta' THEN 2
+                     ELSE 3
+                 END,
+                 s.fecha_creacion DESC
+    """), {"estado": estado or None})
+
+    return [
+        {
+            "id_solicitud_password": x[0],
+            "id_usuario": x[1],
+            "nombre": x[2],
+            "email": x[3],
+            "rol": x[4],
+            "estado_usuario": x[5],
+            "motivo": x[6],
+            "estado": x[7],
+            "fecha_creacion": _iso(x[8]),
+            "fecha_identidad": _iso(x[9]),
+            "admin_valida": x[10],
+            "nota_validacion": x[11],
+            "fecha_resolucion": _iso(x[12]),
+            "admin_resuelve": x[13],
+            "nota_resolucion": x[14],
+        }
+        for x in r.fetchall()
+    ]
+
+
+@router.post("/solicitudes-password/{solicitud_id}/validar")
+async def validar_identidad_solicitud(solicitud_id: int, data: dict,
+                                      db: AsyncSession = Depends(get_db),
+                                      token: str = Depends(oauth2_scheme)):
+    """El admin confirma que validó la identidad del usuario EN PERSONA."""
+    payload = await _verify_token(db, token)
+    _require_admin(payload)
+
+    s = await _obtener_solicitud_password(db, solicitud_id, bloquear=True)
+    if not s:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="Solicitud no encontrada")
+    if s[3] != "pendiente":
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="La solicitud ya no está pendiente de validación")
+
+    nota = _nota_admin(data)
+    await db.execute(text("""
+        UPDATE solicitud_password
+        SET estado = 'identidad_validada',
+            id_admin_valida = :admin,
+            fecha_identidad = NOW(),
+            nota_validacion = :nota,
+            fecha_actualizacion = NOW()
+        WHERE id_solicitud_password = :id
+    """), {"admin": payload.get("user_id"), "nota": nota, "id": solicitud_id})
+    await db.commit()
+
+    await registrar_log("password_reset_identidad_validada",
+                        f"solicitud={solicitud_id} usuario={s[1]}",
+                        id_usuario=payload.get("user_id"))
+    return {"status": "ok", "id_solicitud_password": solicitud_id,
+            "estado": "identidad_validada"}
+
+
+@router.post("/solicitudes-password/{solicitud_id}/restablecer")
+async def restablecer_password_solicitud(solicitud_id: int, data: dict,
+                                         db: AsyncSession = Depends(get_db),
+                                         token: str = Depends(oauth2_scheme)):
+    """Asigna una contraseña (manual o temporal) tras validar la identidad."""
+    payload = await _verify_token(db, token)
+    _require_admin(payload)
+
+    password = data.get("password")
+    if password is not None:
+        if not isinstance(password, str) or not (8 <= len(password) <= 128):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail="La contraseña debe tener entre 8 y 128 caracteres")
+
+    s = await _obtener_solicitud_password(db, solicitud_id, bloquear=True)
+    if not s:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="Solicitud no encontrada")
+    if s[3] != "identidad_validada":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Primero debes validar la identidad del usuario en persona")
+    if not s[1]:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                            detail="El usuario asociado ya no existe: rechaza la solicitud")
+
+    urb = await db.execute(text(
+        "SELECT estado FROM usuarios WHERE id_usuario = :id"), {"id": s[1]})
+    usuario = urb.fetchone()
+    if not usuario:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                            detail="El usuario asociado ya no existe: rechaza la solicitud")
+
+    generada = password is None
+    pwd = _generar_password_temporal() if generada else password
+
+    # Cambio de contraseña + revocación de JWT + desbloqueo de la cuenta.
+    await db.execute(text("""
+        UPDATE usuarios
+        SET contraseña = :pwd,
+            token_version = token_version + 1,
+            intentos_fallidos = 0,
+            bloqueado_hasta = NULL
+        WHERE id_usuario = :id
+    """), {"pwd": _pwd_admin.hash(pwd), "id": s[1]})
+
+    nota = _nota_admin(data)
+    await db.execute(text("""
+        UPDATE solicitud_password
+        SET estado = 'resuelta',
+            id_admin_resuelve = :admin,
+            fecha_resolucion = NOW(),
+            nota_resolucion = :nota,
+            fecha_actualizacion = NOW()
+        WHERE id_solicitud_password = :id
+    """), {"admin": payload.get("user_id"), "nota": nota, "id": solicitud_id})
+    await db.commit()
+
+    # Nunca se registra la contraseña en el log.
+    await registrar_log("password_reset_aplicado",
+                        f"solicitud={solicitud_id} usuario={s[1]} temporal={generada}",
+                        id_usuario=payload.get("user_id"))
+    respuesta = {
+        "status": "ok",
+        "id_solicitud_password": solicitud_id,
+        "usuario_id": s[1],
+        "password_temporal": generada,
+        "estado_usuario": usuario[0],
+    }
+    if generada:
+        # Se devuelve una única vez para que el admin la entregue en persona.
+        respuesta["password"] = pwd
+    return respuesta
+
+
+@router.post("/solicitudes-password/{solicitud_id}/rechazar")
+async def rechazar_solicitud_password(solicitud_id: int, data: dict,
+                                      db: AsyncSession = Depends(get_db),
+                                      token: str = Depends(oauth2_scheme)):
+    payload = await _verify_token(db, token)
+    _require_admin(payload)
+
+    s = await _obtener_solicitud_password(db, solicitud_id, bloquear=True)
+    if not s:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="Solicitud no encontrada")
+    if s[3] not in ("pendiente", "identidad_validada"):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="La solicitud ya está cerrada")
+
+    nota = _nota_admin(data)
+    await db.execute(text("""
+        UPDATE solicitud_password
+        SET estado = 'rechazada',
+            id_admin_resuelve = :admin,
+            fecha_resolucion = NOW(),
+            nota_resolucion = :nota,
+            fecha_actualizacion = NOW()
+        WHERE id_solicitud_password = :id
+    """), {"admin": payload.get("user_id"), "nota": nota, "id": solicitud_id})
+    await db.commit()
+
+    await registrar_log("password_reset_rechazado",
+                        f"solicitud={solicitud_id} usuario={s[1]}",
+                        id_usuario=payload.get("user_id"))
+    return {"status": "ok", "id_solicitud_password": solicitud_id,
+            "estado": "rechazada"}
 
 
 @router.get("/logs/{contenedor}")

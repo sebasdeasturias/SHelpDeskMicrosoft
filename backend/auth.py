@@ -334,6 +334,10 @@ class UserRegister(BaseModel):
     area: str = Field(..., min_length=1, max_length=100)
     password: str = Field(..., min_length=8, max_length=128)
 
+class PasswordResetRequest(BaseModel):
+    email: EmailStr
+    motivo: Optional[str] = Field(None, max_length=500)
+
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register_user(user_data: UserRegister, request: Request, db: AsyncSession = Depends(get_db)):
     """
@@ -387,6 +391,68 @@ async def register_user(user_data: UserRegister, request: Request, db: AsyncSess
         "email": user_data.email,
         "rol": "solicitante"
     }
+
+
+# ============================================
+# RESTABLECIMIENTO DE CONTRASEÑA (solicitud presencial)
+# ============================================
+# El sistema no envía contraseñas por correo ni SMS: el usuario registra la
+# solicitud y el ADMINISTRADOR valida su identidad en persona antes de asignar
+# una contraseña temporal. La respuesta es siempre la misma para no revelar si
+# el correo existe (anti-enumeración).
+_PW_RESET_RESPUESTA = {
+    "status": "ok",
+    "mensaje": ("Si el correo pertenece a una cuenta activa, la solicitud quedó "
+                "registrada. Acude personalmente a TI con tu documento de "
+                "identidad para que el administrador valide tu identidad.")
+}
+
+
+@router.post("/password-reset-request", status_code=status.HTTP_202_ACCEPTED)
+async def password_reset_request(data: PasswordResetRequest, request: Request,
+                                 db: AsyncSession = Depends(get_db)):
+    """Registra una solicitud de restablecimiento para validación presencial."""
+    ip = _cliente_ip(request)
+    ua = (request.headers.get("user-agent") or "")[:100] or None
+
+    # Límites anti-abuso: por IP y por correo (evita inundar el panel del admin).
+    if not await login_limiter.allow(f"pwreset:ip:{ip}", 5, 3600):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Demasiadas solicitudes desde esta IP. Inténtalo de nuevo más tarde."
+        )
+    email = str(data.email).strip().lower()
+    if not await login_limiter.allow(f"pwreset:email:{email}", 3, 3600):
+        return _PW_RESET_RESPUESTA
+
+    result = await db.execute(text("""
+        SELECT id_usuario, nombre, email, rol
+        FROM usuarios
+        WHERE lower(email) = :email AND estado = 'activo'
+    """), {"email": email})
+    u = result.fetchone()
+    if not u:
+        # No se crea nada, pero la respuesta es idéntica (anti-enumeración).
+        return _PW_RESET_RESPUESTA
+
+    motivo = (data.motivo or "").strip()[:500] or None
+    # Una sola solicitud abierta por usuario (índice único parcial).
+    await db.execute(text("""
+        INSERT INTO solicitud_password
+            (id_usuario, email, nombre, rol_solicitante, motivo, origen_ip)
+        VALUES (:id, :email, :nombre, :rol, :motivo, :ip)
+        ON CONFLICT (id_usuario) WHERE estado IN ('pendiente', 'identidad_validada')
+        DO NOTHING
+    """), {
+        "id": u[0], "email": u[2], "nombre": u[1], "rol": u[3],
+        "motivo": motivo, "ip": ip,
+    })
+    await db.commit()
+
+    await registrar_log("password_reset_solicitado",
+                        f"usuario={u[0]} email={u[2]}",
+                        id_usuario=u[0], ip=ip, navegador=ua)
+    return _PW_RESET_RESPUESTA
 
 
 # ============================================

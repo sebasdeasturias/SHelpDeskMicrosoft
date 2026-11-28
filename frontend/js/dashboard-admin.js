@@ -7,6 +7,7 @@ const state = {
     usuarios: [],
     workflows: [],
     respaldos: [],
+    solicitudesPassword: [],
     currentPage: 'resumen'
 };
 
@@ -99,6 +100,7 @@ function initTheme() {
 const LOADERS = {
     'resumen': loadResumen,
     'usuarios': loadUsuarios,
+    'solicitudes': loadSolicitudesPassword,
     'bd': loadBD,
     'respaldos': loadRespaldos,
     'logs': () => {},
@@ -287,6 +289,8 @@ function bindAcciones() {
     });
     document.getElementById('btnRefrescarUsuarios').addEventListener('click', loadUsuarios);
     document.getElementById('btnCrearUsuario').addEventListener('click', crearUsuario);
+    document.getElementById('btnRefrescarSolicitudes').addEventListener('click', loadSolicitudesPassword);
+    document.getElementById('filtroEstadoSolicitud').addEventListener('change', loadSolicitudesPassword);
     document.getElementById('btnRefrescarBD').addEventListener('click', loadBD);
     document.getElementById('btnCrearRespaldo').addEventListener('click', crearRespaldo);
     document.getElementById('btnVerLogs').addEventListener('click', verLogs);
@@ -390,7 +394,8 @@ function modalResetPassword(u) {
     abrirModal({
         titulo: `Restablecer contraseña — ${u.nombre}`,
         cuerpo: `<p>Nueva contraseña para <strong>${escapeHtml(u.email)}</strong> (mínimo 8 caracteres):</p>
-                 <input class="glass-input" id="modalPass" type="password">`,
+                 <p class="hint"><i class="fas fa-triangle-exclamation"></i> Antes de restablecer, valida la identidad del usuario <strong>en persona</strong>. La cuenta se desbloqueará y se cerrarán sus sesiones activas.</p>
+                 <input class="glass-input" id="modalPass" type="password" autocomplete="new-password">`,
         aceptarTexto: 'Restablecer',
         onAceptar: async () => {
             const pass = document.getElementById('modalPass').value;
@@ -420,6 +425,240 @@ function modalEliminar(u) {
                 mostrarToast(`Error: ${e.message}`);
             }
         }
+    });
+}
+
+// ============================================
+// SOLICITUDES DE RESTABLECIMIENTO DE CONTRASEÑA
+// ============================================
+const ESTADO_SOLICITUD_LABEL = {
+    pendiente: 'Pendiente',
+    identidad_validada: 'Identidad validada',
+    resuelta: 'Resuelta',
+    rechazada: 'Rechazada',
+    cancelada: 'Cancelada'
+};
+
+function fmtFecha(iso) {
+    if (!iso) return '—';
+    try { return new Date(iso).toLocaleString('es-ES'); } catch (_) { return '—'; }
+}
+
+async function loadSolicitudesPassword() {
+    try {
+        const estado = document.getElementById('filtroEstadoSolicitud')?.value || '';
+        const qs = estado ? `?estado=${encodeURIComponent(estado)}` : '';
+        state.solicitudesPassword = await apiFetch(`/coordinator/solicitudes-password${qs}`);
+        renderSolicitudesPassword();
+    } catch (e) {
+        mostrarToast(`Error al cargar solicitudes: ${e.message}`);
+    }
+}
+
+function renderSolicitudesPassword() {
+    const body = document.getElementById('solicitudesBody');
+    if (!body) return;
+    const lista = state.solicitudesPassword || [];
+    document.getElementById('solicitudesCount').textContent = `${lista.length} solicitud(es)`;
+
+    if (lista.length === 0) {
+        body.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:16px;">No hay solicitudes registradas</td></tr>';
+        return;
+    }
+
+    body.innerHTML = lista.map(s => {
+        const acciones = [];
+        if (s.estado === 'pendiente') {
+            acciones.push('<button class="btn-mini" data-accion="validar"><i class="fas fa-user-check"></i> Validar identidad</button>');
+            acciones.push('<button class="btn-mini danger" data-accion="rechazar"><i class="fas fa-xmark"></i> Rechazar</button>');
+        } else if (s.estado === 'identidad_validada') {
+            acciones.push('<button class="btn-mini" data-accion="restablecer"><i class="fas fa-key"></i> Restablecer</button>');
+            acciones.push('<button class="btn-mini danger" data-accion="rechazar"><i class="fas fa-xmark"></i> Rechazar</button>');
+        } else {
+            acciones.push('<button class="btn-mini" data-accion="detalle"><i class="fas fa-circle-info"></i> Detalle</button>');
+        }
+
+        let estadoExtra = '';
+        if (s.estado === 'identidad_validada' && s.admin_valida) {
+            estadoExtra = `<br><span class="item-meta">Validó: ${escapeHtml(s.admin_valida)} · ${fmtFecha(s.fecha_identidad)}</span>`;
+        } else if ((s.estado === 'resuelta' || s.estado === 'rechazada') && s.admin_resuelve) {
+            estadoExtra = `<br><span class="item-meta">${s.estado === 'resuelta' ? 'Resolvió' : 'Rechazó'}: ${escapeHtml(s.admin_resuelve)} · ${fmtFecha(s.fecha_resolucion)}</span>`;
+        }
+
+        return `
+        <tr data-sid="${s.id_solicitud_password}">
+            <td><strong>#${s.id_solicitud_password}</strong></td>
+            <td>${escapeHtml(s.nombre || '—')}${s.estado_usuario && s.estado_usuario !== 'activo' ? `<br><span class="item-meta">cuenta ${escapeHtml(s.estado_usuario)}</span>` : ''}</td>
+            <td>${escapeHtml(s.email || '—')}</td>
+            <td>${s.rol ? `<span class="role-pill ${escapeHtml(s.rol)}">${escapeHtml(s.rol)}</span>` : '—'}</td>
+            <td class="solicitud-motivo">${escapeHtml(s.motivo || '—')}</td>
+            <td>${fmtFecha(s.fecha_creacion)}</td>
+            <td><span class="status-pill ${escapeHtml(s.estado)}">${escapeHtml(ESTADO_SOLICITUD_LABEL[s.estado] || s.estado)}</span>${estadoExtra}</td>
+            <td>${acciones.join('')}</td>
+        </tr>`;
+    }).join('');
+
+    body.querySelectorAll('button[data-accion]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const sid = parseInt(btn.closest('tr').dataset.sid, 10);
+            const s = state.solicitudesPassword.find(x => x.id_solicitud_password === sid);
+            if (!s) return;
+            if (btn.dataset.accion === 'validar') modalValidarIdentidad(s);
+            else if (btn.dataset.accion === 'restablecer') modalRestablecerSolicitud(s);
+            else if (btn.dataset.accion === 'rechazar') modalRechazarSolicitud(s);
+            else if (btn.dataset.accion === 'detalle') modalDetalleSolicitud(s);
+        });
+    });
+}
+
+function modalValidarIdentidad(s) {
+    abrirModal({
+        titulo: `Validar identidad — ${s.nombre || s.email}`,
+        cuerpo: `
+            <p>Vas a confirmar que validaste la identidad de <strong>${escapeHtml(s.nombre || s.email)}</strong> <strong>en persona</strong>.</p>
+            <p class="hint">Solicitud #${s.id_solicitud_password} · ${escapeHtml(s.email || '—')}</p>
+            <div class="filter-group" style="margin-top:12px;">
+                <label for="solNotaValidacion">Documento u observación (opcional)</label>
+                <textarea class="glass-input" id="solNotaValidacion" rows="2" maxlength="500"
+                          placeholder="Ej: DNI ****1234, validado en mesa de soporte"></textarea>
+            </div>
+            <p class="hint"><i class="fas fa-triangle-exclamation"></i> No continúes si no has verificado su identidad físicamente.</p>`,
+        aceptarTexto: 'Identidad validada',
+        onAceptar: async () => {
+            try {
+                const nota = document.getElementById('solNotaValidacion')?.value.trim() || null;
+                await apiFetch(`/coordinator/solicitudes-password/${s.id_solicitud_password}/validar`, {
+                    method: 'POST', body: { nota }
+                });
+                mostrarToast('Identidad validada. Ya puedes restablecer la contraseña.');
+                loadSolicitudesPassword();
+            } catch (e) {
+                mostrarToast(`Error: ${e.message}`);
+            }
+        }
+    });
+}
+
+function modalRestablecerSolicitud(s) {
+    abrirModal({
+        titulo: `Restablecer contraseña — ${s.nombre || s.email}`,
+        cuerpo: `
+            <p>Nueva contraseña para <strong>${escapeHtml(s.email || '—')}</strong>.</p>
+            <p class="hint">Identidad validada por ${escapeHtml(s.admin_valida || '—')} el ${fmtFecha(s.fecha_identidad)}.</p>
+            <div class="solicitud-opciones">
+                <label><input type="radio" name="modoPassSolicitud" value="auto" checked> Generar contraseña temporal segura</label>
+                <label><input type="radio" name="modoPassSolicitud" value="manual"> Definir contraseña manual</label>
+            </div>
+            <input class="glass-input" id="solPassManual" type="password" disabled maxlength="128"
+                   placeholder="Contraseña manual (mínimo 8 caracteres)" autocomplete="new-password">`,
+        aceptarTexto: 'Restablecer',
+        onAceptar: async () => {
+            const modo = document.querySelector('input[name="modoPassSolicitud"]:checked')?.value || 'auto';
+            const manual = document.getElementById('solPassManual')?.value || '';
+            if (modo === 'manual' && manual.length < 8) {
+                mostrarToast('La contraseña manual debe tener al menos 8 caracteres');
+                return;
+            }
+            try {
+                const data = await apiFetch(`/coordinator/solicitudes-password/${s.id_solicitud_password}/restablecer`, {
+                    method: 'POST',
+                    body: modo === 'manual' ? { password: manual } : {}
+                });
+                if (data.password) {
+                    mostrarPasswordTemporal(data.password, s);
+                } else {
+                    mostrarToast('Contraseña restablecida. Entrega la nueva clave al usuario en persona.');
+                }
+                loadSolicitudesPassword();
+            } catch (e) {
+                mostrarToast(`Error: ${e.message}`);
+            }
+        }
+    });
+
+    document.querySelectorAll('input[name="modoPassSolicitud"]').forEach(r => {
+        r.addEventListener('change', () => {
+            const manual = document.querySelector('input[name="modoPassSolicitud"]:checked')?.value === 'manual';
+            const input = document.getElementById('solPassManual');
+            if (input) {
+                input.disabled = !manual;
+                if (manual) input.focus();
+            }
+        });
+    });
+}
+
+function mostrarPasswordTemporal(pwd, s) {
+    abrirModal({
+        titulo: 'Contraseña temporal generada',
+        cuerpo: `
+            <p>Entrega esta contraseña a <strong>${escapeHtml(s.nombre || s.email)}</strong> <strong>en persona</strong>.</p>
+            <div class="password-reveal" id="passwordReveal">${escapeHtml(pwd)}</div>
+            <p class="hint"><i class="fas fa-eye"></i> Se muestra una sola vez. No se guarda en el log ni se puede recuperar después.</p>
+            <p class="hint"><i class="fas fa-user-shield"></i> Entrégala únicamente al titular de la cuenta, tras verificar su identidad.</p>
+            <button class="btn-mini" id="btnCopiarPassword" type="button"><i class="fas fa-copy"></i> Copiar contraseña</button>`,
+        aceptarTexto: 'Entendido',
+        onAceptar: () => {}
+    });
+
+    document.getElementById('btnCopiarPassword')?.addEventListener('click', async () => {
+        try {
+            await navigator.clipboard.writeText(pwd);
+            mostrarToast('Contraseña copiada al portapapeles');
+        } catch (_) {
+            mostrarToast('No se pudo copiar automáticamente; selecciónala manualmente');
+        }
+    });
+}
+
+function modalRechazarSolicitud(s) {
+    abrirModal({
+        titulo: `Rechazar solicitud — ${s.nombre || s.email}`,
+        cuerpo: `
+            <p>¿Rechazar la solicitud #${s.id_solicitud_password} de <strong>${escapeHtml(s.nombre || s.email)}</strong>?</p>
+            <div class="filter-group" style="margin-top:12px;">
+                <label for="solNotaRechazo">Motivo del rechazo (opcional)</label>
+                <textarea class="glass-input" id="solNotaRechazo" rows="2" maxlength="500"
+                          placeholder="Ej: no se presentó a validar su identidad"></textarea>
+            </div>`,
+        aceptarTexto: 'Rechazar',
+        peligroso: true,
+        onAceptar: async () => {
+            try {
+                const nota = document.getElementById('solNotaRechazo')?.value.trim() || null;
+                await apiFetch(`/coordinator/solicitudes-password/${s.id_solicitud_password}/rechazar`, {
+                    method: 'POST', body: { nota }
+                });
+                mostrarToast('Solicitud rechazada');
+                loadSolicitudesPassword();
+            } catch (e) {
+                mostrarToast(`Error: ${e.message}`);
+            }
+        }
+    });
+}
+
+function modalDetalleSolicitud(s) {
+    const filas = [
+        ['Solicitud', `#${s.id_solicitud_password}`],
+        ['Usuario', s.nombre || '—'],
+        ['Correo', s.email || '—'],
+        ['Rol', s.rol || '—'],
+        ['Estado', ESTADO_SOLICITUD_LABEL[s.estado] || s.estado],
+        ['Motivo', s.motivo || '—'],
+        ['Solicitada', fmtFecha(s.fecha_creacion)],
+        ['Identidad validada', s.fecha_identidad ? `${fmtFecha(s.fecha_identidad)} · ${s.admin_valida || '—'}` : '—'],
+        ['Nota de validación', s.nota_validacion || '—'],
+        ['Resolución', s.fecha_resolucion ? `${fmtFecha(s.fecha_resolucion)} · ${s.admin_resuelve || '—'}` : '—'],
+        ['Nota de resolución', s.nota_resolucion || '—']
+    ];
+    abrirModal({
+        titulo: `Detalle de la solicitud #${s.id_solicitud_password}`,
+        cuerpo: `<div class="solicitud-detalle">${filas.map(([k, v]) =>
+            `<div class="detail-row"><span class="detail-key">${escapeHtml(k)}</span><span class="detail-val">${escapeHtml(v)}</span></div>`
+        ).join('')}</div>`,
+        aceptarTexto: 'Cerrar',
+        onAceptar: () => {}
     });
 }
 

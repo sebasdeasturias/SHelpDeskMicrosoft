@@ -23,6 +23,7 @@
             <nav class="main-nav">
                 <button class="nav-btn active" data-page="resumen" title="Resumen general"><i class="fas fa-gauge-high"></i> <span>Resumen</span></button>
                 <button class="nav-btn" data-page="usuarios" title="Gestión de usuarios y roles"><i class="fas fa-users-gear"></i> <span>Usuarios</span></button>
+                <button class="nav-btn" data-page="solicitudes" title="Solicitudes de restablecimiento de contraseña"><i class="fas fa-key"></i> <span>Contraseñas</span></button>
                 <button class="nav-btn" data-page="bd" title="Base de datos"><i class="fas fa-database"></i> <span>BD</span></button>
                 <button class="nav-btn" data-page="respaldos" title="Respaldos"><i class="fas fa-shield-halved"></i> <span>Respaldos</span></button>
                 <button class="nav-btn" data-page="logs" title="Logs de contenedores"><i class="fas fa-terminal"></i> <span>Logs</span></button>
@@ -127,6 +128,68 @@
                         <table class="glass-table">
                             <thead><tr><th>#</th><th>Nombre</th><th>Correo</th><th>Rol</th><th>Área</th><th>Estado</th><th>Admin temporal</th><th>Acciones</th></tr></thead>
                             <tbody id="usuariosBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SOLICITUDES DE RESTABLECIMIENTO DE CONTRASEÑA -->
+        <section id="page-solicitudes" class="page-content">
+            <div class="coordinator-panel-scroll">
+                <div class="panel-header-banner">
+                    <div class="header-info">
+                        <h2>Solicitudes de Restablecimiento de Contraseña</h2>
+                        <p>Valida la identidad del usuario <strong>en persona</strong> antes de restablecer. El sistema no envía contraseñas por correo ni por SMS.</p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="action-header-btn" id="btnRefrescarSolicitudes"><i class="fas fa-rotate"></i> Refrescar</button>
+                    </div>
+                </div>
+
+                <div class="filter-panel-card">
+                    <div class="filter-grid">
+                        <div class="filter-group">
+                            <label for="filtroEstadoSolicitud">Estado</label>
+                            <select class="glass-select" id="filtroEstadoSolicitud">
+                                <option value="">Todas (abiertas primero)</option>
+                                <option value="pendiente">Pendiente de validar identidad</option>
+                                <option value="identidad_validada">Identidad validada</option>
+                                <option value="resuelta">Resuelta</option>
+                                <option value="rechazada">Rechazada</option>
+                            </select>
+                        </div>
+                    </div>
+                    <p class="hint" style="margin-top:10px;">
+                        <i class="fas fa-circle-info"></i>
+                        Flujo obligatorio: <strong>1)</strong> el usuario registra la solicitud,
+                        <strong>2)</strong> tú validas su identidad en persona y
+                        <strong>3)</strong> solo entonces puedes asignarle una contraseña temporal.
+                    </p>
+                </div>
+
+                <div class="table-glass-container">
+                    <div class="table-header-bar">
+                        <h3><i class="fas fa-key"></i> Solicitudes registradas</h3>
+                        <span class="badge-tag" id="solicitudesCount">0</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="glass-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Usuario</th>
+                                    <th>Correo</th>
+                                    <th>Rol</th>
+                                    <th>Motivo</th>
+                                    <th>Solicitada</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="solicitudesBody">
+                                <tr><td colspan="8" style="text-align:center;padding:16px;">Cargando...</td></tr>
+                            </tbody>
                         </table>
                     </div>
                 </div>

@@ -1,0 +1,180 @@
+/* recuperar.css — Estilos propios de la pantalla de restablecimiento.
+   Reutiliza login.css; aquí solo se añade lo específico. */
+
+body.recover-page,
+body.recover-page html {
+    overflow-y: auto;
+}
+
+body.recover-page .background {
+    height: auto;
+    min-height: 100vh;
+    padding: 80px 0 40px;
+    box-sizing: border-box;
+}
+
+.recover-panel {
+    max-width: 520px;
+    text-align: left;
+}
+
+.recover-panel h1,
+.recover-panel h2 {
+    text-align: center;
+}
+
+.recover-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin: 0 0 20px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: rgba(255, 193, 7, 0.18);
+    border: 1px solid rgba(255, 193, 7, 0.55);
+    color: var(--text-dark);
+    font-size: 0.85rem;
+    line-height: 1.4;
+    text-align: left;
+}
+
+.recover-notice i {
+    margin-top: 2px;
+    color: #b45309;
+    font-size: 1rem;
+}
+
+.recover-notice p {
+    margin: 0;
+    text-shadow: none;
+}
+
+.recover-field {
+    text-align: left;
+    margin-bottom: 18px;
+}
+
+.recover-field label {
+    display: block;
+    margin: 0 0 6px 6px;
+    color: var(--text-dark);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
+}
+
+body.night-mode .recover-field label {
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+.recover-field textarea {
+    width: 100%;
+    box-sizing: border-box;
+    resize: vertical;
+    min-height: 62px;
+    padding: 12px 14px;
+    font-family: inherit;
+    font-size: 0.92rem;
+    color: var(--text-dark);
+    background: linear-gradient(to bottom, rgba(255,255,255,0.4), rgba(255,255,255,0.7));
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    border-radius: 14px;
+    box-shadow: inset 0 3px 6px rgba(0,0,0,0.15), 0 2px 4px rgba(255,255,255,0.3);
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+body.night-mode .recover-field textarea {
+    background: linear-gradient(to bottom, rgba(40,40,60,0.6), rgba(30,30,50,0.8));
+    border: 1px solid rgba(100, 100, 150, 0.5);
+    color: var(--text-dark);
+}
+
+.recover-field textarea::placeholder {
+    color: var(--text-placeholder);
+}
+
+.recover-field textarea:focus {
+    box-shadow: inset 0 3px 6px rgba(0,0,0,0.2), 0 0 10px rgba(255,255,255,0.8);
+}
+
+body.night-mode .recover-field textarea:focus {
+    box-shadow: inset 0 3px 6px rgba(0,0,0,0.4), 0 0 10px rgba(100,100,200,0.5);
+    border-color: rgba(150, 150, 255, 0.7);
+}
+
+.recover-success {
+    margin-top: 6px;
+    text-align: center;
+    color: var(--text-dark);
+}
+
+.recover-success .success-icon {
+    font-size: 2.6rem;
+    color: #047857;
+    filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.6));
+    margin-bottom: 8px;
+}
+
+.recover-success h3 {
+    margin: 0 0 10px;
+    font-size: 1.15rem;
+    text-shadow: 0 1px 3px rgba(255, 255, 255, 0.6);
+}
+
+body.night-mode .recover-success h3 {
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+}
+
+.recover-success p {
+    margin: 0 0 14px;
+    font-size: 0.9rem;
+    line-height: 1.45;
+}
+
+.recover-steps {
+    text-align: left;
+    margin: 0 0 18px;
+    padding: 12px 14px 12px 32px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid var(--glass-border);
+    font-size: 0.86rem;
+    line-height: 1.5;
+}
+
+.recover-steps li {
+    margin-bottom: 6px;
+}
+
+.recover-steps li:last-child {
+    margin-bottom: 0;
+}
+
+.recover-back {
+    display: inline-block;
+    padding: 11px 22px;
+    border-radius: 50px;
+    background: linear-gradient(to bottom, var(--btn-top), var(--btn-bottom));
+    color: #fff;
+    font-weight: 700;
+    text-decoration: none;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.recover-back:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+
+@media (max-width: 768px) {
+    body.recover-page .background {
+        padding: 70px 12px 30px;
+    }
+
+    .recover-panel {
+        padding: 28px 18px;
+    }
+}

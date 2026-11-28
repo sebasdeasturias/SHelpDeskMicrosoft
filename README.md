@@ -57,6 +57,7 @@ Todo el sistema es **autoalojado**: frontend estático, backend, base de datos, 
 ### Administración
 - **Panel web de administración** (integrado en el frontend) y **panel de analítica** (Streamlit) con control total.
 - **Gestión de usuarios y roles** con ascensos temporales a administrador (auto-degradación al vencer), activación/desactivación, restablecimiento de contraseñas y **protección anti-encierro** (no se puede eliminar ni degradar al último administrador).
+- **Restablecimiento de contraseña con validación presencial**: el usuario solicita el cambio desde el login, el administrador valida su identidad **en persona** desde el panel y solo entonces asigna una contraseña temporal (sin correo ni SMS).
 - **Respaldos de base de datos** (`pg_dump`/`pg_restore`) con creación, descarga, restauración y borrado desde el panel.
 - **Logs de contenedores** y **consola SQL** (con usuario de mínimo privilegio).
 - **Gestión de modelos IA**: listado, cambio de modelo activo, ajuste de parámetros de generación (temperatura, longitud, top-p) y descarga de modelos.
