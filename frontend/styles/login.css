@@ -534,7 +534,8 @@ body.night-mode .badge.silver {
     animation: shake 0.4s ease-in-out;
 }
 
-#errorText {
+#errorText,
+#pwdChangeErrorText {
     color: #ffffff;
     text-shadow:
         0 0 2px #ffffff8f,
