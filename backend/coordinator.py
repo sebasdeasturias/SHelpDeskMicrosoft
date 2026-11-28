@@ -241,7 +241,14 @@ async def get_reportes(
 # ============================================================
 @router.get("/agentes")
 async def get_agentes(db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
-    await _verify_token(db, token)
+    payload = await _verify_token(db, token)
+    # Jerarquía: el coordinador solo ve/gestiona a los agentes. El administrador
+    # conserva la visión completa del personal de soporte (agentes, coordinadores
+    # y administradores). Los solicitantes no forman parte de este directorio.
+    if payload.get("role") == "administrador":
+        roles_visibles = ["agente", "coordinador", "administrador"]
+    else:
+        roles_visibles = ["agente"]
     result = await db.execute(text("""
         SELECT id_usuario, nombre, email, tip_especialidad,
                COALESCE(nivel_jerarquia::text, 'Técnico'), permisos_supervision,
@@ -251,10 +258,10 @@ async def get_agentes(db: AsyncSession = Depends(get_db), token: str = Depends(o
                    nivel_jerarquia, permisos_supervision, permisos_especiales,
                    estado, carga_trabajo, rol
             FROM usuarios
-            WHERE rol IN ('agente','coordinador','administrador')
+            WHERE rol = ANY(:roles)
         ) t
         ORDER BY nombre
-    """))
+    """), {"roles": roles_visibles})
     return [
         {
             "id_usuario": row[0],
@@ -275,19 +282,42 @@ async def get_agentes(db: AsyncSession = Depends(get_db), token: str = Depends(o
 @router.post("/agentes/{usuario_id}/permisos")
 async def set_permisos(usuario_id: int, data: dict, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
     payload = await _verify_token(db, token)
+
+    ps = data.get("permisos_supervision")
+    pe = data.get("permisos_especiales")
+    if ps is None and pe is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nada que actualizar")
+    if ps is not None and not isinstance(ps, bool):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="permisos_supervision debe ser booleano")
+    if pe is not None and not isinstance(pe, bool):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="permisos_especiales debe ser booleano")
+
+    # Jerarquía: el coordinador SOLO edita las banderas de los agentes. No puede
+    # tocar coordinadores, administradores ni solicitantes (el administrador sí).
+    destino = await db.execute(
+        text("SELECT rol FROM usuarios WHERE id_usuario = :id"), {"id": usuario_id})
+    fila = destino.fetchone()
+    if not fila:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado")
+    if payload.get("role") != "administrador" and fila[0] != "agente":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail="El coordinador solo puede modificar permisos de agentes")
+
     await db.execute(text("""
         UPDATE usuarios
         SET permisos_supervision = COALESCE(:ps, permisos_supervision),
             permisos_especiales = COALESCE(:pe, permisos_especiales)
         WHERE id_usuario = :id
     """), {
-        "ps": data.get("permisos_supervision"),
-        "pe": data.get("permisos_especiales"),
+        "ps": ps,
+        "pe": pe,
         "id": usuario_id,
     })
     await db.commit()
     await registrar_log("permisos_actualizados",
-                        f"usuario={usuario_id} sup={data.get('permisos_supervision')} esp={data.get('permisos_especiales')}",
+                        f"usuario={usuario_id} sup={ps} esp={pe}",
                         id_usuario=payload.get("user_id"))
     return {"status": "ok", "usuario_id": usuario_id}
 

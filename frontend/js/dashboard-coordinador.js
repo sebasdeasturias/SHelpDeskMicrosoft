@@ -1364,31 +1364,40 @@ async function loadSupervisar() {
     const body = document.getElementById('supervisarBody');
     try {
         const agentes = await apiFetch('/coordinator/agentes');
+        // Jerarquía: el coordinador solo gestiona agentes. El administrador ve
+        // todo el personal de soporte, pero las filas que no son agentes quedan
+        // en solo lectura para no alterar roles superiores desde esta pantalla.
+        const esAdmin = state.userData?.role === 'administrador';
+        const filas = esAdmin ? agentes : agentes.filter(a => a.rol === 'agente');
         if (body) {
-            if (agentes.length === 0) {
-                body.innerHTML = '<tr><td colspan="7" style="color:var(--text-placeholder);text-align:center;padding:16px;">Sin personal de soporte</td></tr>';
+            if (filas.length === 0) {
+                body.innerHTML = '<tr><td colspan="7" style="color:var(--text-placeholder);text-align:center;padding:16px;">Sin agentes de soporte</td></tr>';
             } else {
-                body.innerHTML = agentes.map(a => `
-                    <tr data-agente-id="${a.id_usuario}">
+                body.innerHTML = filas.map(a => {
+                    const editable = a.rol === 'agente';
+                    const attrs = editable ? '' : 'disabled title="Solo el administrador puede modificar este rol"';
+                    return `
+                    <tr data-agente-id="${a.id_usuario}" data-editable="${editable ? '1' : '0'}">
                         <td><strong>${esc(a.nombre)}</strong><br><small style="color:var(--text-placeholder);">${esc(a.rol)}</small></td>
                         <td>${esc(a.email)}</td>
                         <td>${esc(a.especialidad)}</td>
                         <td>${esc(a.nivel_jerarquia) || 'Técnico'}</td>
                         <td>
                             <label class="glass-switch">
-                                <input type="checkbox" data-permiso="supervision" ${a.permisos_supervision ? 'checked' : ''}>
+                                <input type="checkbox" data-permiso="supervision" ${a.permisos_supervision ? 'checked' : ''} ${attrs}>
                                 <span class="slider-switch"></span>
                             </label>
                         </td>
                         <td>
                             <label class="glass-switch">
-                                <input type="checkbox" data-permiso="especiales" ${a.permisos_especiales ? 'checked' : ''}>
+                                <input type="checkbox" data-permiso="especiales" ${a.permisos_especiales ? 'checked' : ''} ${attrs}>
                                 <span class="slider-switch"></span>
                             </label>
                         </td>
                         <td><span class="status-pill resuelto">${esc(a.estado)}</span></td>
                     </tr>
-                `).join('');
+                `;
+                }).join('');
             }
         }
     } catch (e) {
@@ -1398,9 +1407,9 @@ async function loadSupervisar() {
 }
 
 async function guardarPermisos() {
-    const rows = document.querySelectorAll('#supervisarBody tr[data-agente-id]');
+    const rows = document.querySelectorAll('#supervisarBody tr[data-agente-id][data-editable="1"]');
     if (rows.length === 0) {
-        mostrarToast(' No hay agentes para guardar');
+        mostrarToast('No hay agentes para guardar');
         return;
     }
     let guardados = 0;
